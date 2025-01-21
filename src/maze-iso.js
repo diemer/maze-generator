@@ -391,23 +391,81 @@ Maze.prototype.removeMazeWalls = function () {
   }
 };
 
+Maze.prototype.createRhombus = function ({
+  ctx,
+  isoX,
+  isoY,
+  tileWidth,
+  tileHeight,
+}) {
+  // Draw the isometric tile
+  ctx.beginPath();
+  ctx.moveTo(isoX, isoY);
+  ctx.lineTo(isoX + tileWidth * 0.5, isoY + tileHeight * 0.5);
+  ctx.lineTo(isoX, isoY + tileHeight);
+  ctx.lineTo(isoX - tileWidth * 0.5, isoY + tileHeight * 0.5);
+  ctx.closePath();
+  ctx.fill();
+};
+
+Maze.prototype.createCube = function ({
+  ctx,
+  isoX,
+  isoY,
+  tileWidth,
+  tileHeight,
+  height = tileHeight, // Height of the cube
+  topColor = "#cccccc",
+  leftColor = "#aaaaaa",
+  rightColor = "#888888",
+}) {
+  // Top face
+  ctx.fillStyle = topColor;
+  ctx.beginPath();
+  ctx.moveTo(isoX, isoY); // Top center
+  ctx.lineTo(isoX + tileWidth * 0.5, isoY + tileHeight * 0.5); // Top right
+  ctx.lineTo(isoX, isoY + tileHeight); // Bottom center
+  ctx.lineTo(isoX - tileWidth * 0.5, isoY + tileHeight * 0.5); // Top left
+  ctx.closePath();
+  ctx.fill();
+
+  // Left face
+  ctx.fillStyle = leftColor;
+  ctx.beginPath();
+  ctx.moveTo(isoX, isoY + tileHeight); // Bottom center
+  ctx.lineTo(isoX - tileWidth * 0.5, isoY + tileHeight * 0.5); // Top left
+  ctx.lineTo(isoX - tileWidth * 0.5, isoY + tileHeight * 0.5 + height); // Bottom left
+  ctx.lineTo(isoX, isoY + tileHeight + height); // Bottom center extended
+  ctx.closePath();
+  ctx.fill();
+
+  // Right face
+  ctx.fillStyle = rightColor;
+  ctx.beginPath();
+  ctx.moveTo(isoX, isoY + tileHeight); // Bottom center
+  ctx.lineTo(isoX + tileWidth * 0.5, isoY + tileHeight * 0.5); // Top right
+  ctx.lineTo(isoX + tileWidth * 0.5, isoY + tileHeight * 0.5 + height); // Bottom right
+  ctx.lineTo(isoX, isoY + tileHeight + height); // Bottom center extended
+  ctx.closePath();
+  ctx.fill();
+};
+
 Maze.prototype.draw = function () {
   const canvas = document.getElementById("maze");
   if (!canvas || !this.matrix.length) {
     return;
   }
 
-  if (!this.isValidSize()) {
-    this.matrix = [];
-    alert("Please use smaller maze dimensions");
-    return;
-  }
-
   const tileWidth = this.wallSize; // Base tile width
   const tileHeight = this.wallSize / 2; // Base tile height for isometric view
 
-  canvas.width = (this.width * 2 + 1) * tileWidth * 0.75; // Adjusted for isometric scaling
-  canvas.height = (this.height * 2 + 1) * tileHeight;
+  // Calculate the full isometric dimensions
+  const isoWidth = (this.width * 2 + 1) * tileWidth * 0.5; // Isometric width
+  const isoHeight = (this.height * 2 + 1) * tileHeight * 0.5; // Isometric height
+
+  // Adjust canvas size to fit the isometric maze
+  canvas.width = isoWidth * 2; // Total projected width
+  canvas.height = isoHeight * 2 + tileHeight; // Total projected height
 
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -423,8 +481,9 @@ Maze.prototype.draw = function () {
   const gateEntry = getEntryNode(this.entryNodes, "start", true);
   const gateExit = getEntryNode(this.entryNodes, "end", true);
 
-  const offsetX = canvas.width / 2; // Center the maze
-  const offsetY = tileHeight; // Starting Y offset
+  // Offset to center the maze on the canvas
+  const offsetX = canvas.width / 2; // Center the maze horizontally
+  const offsetY = tileHeight; // Add vertical margin
 
   for (let i = 0; i < rowCount; i++) {
     const rowLength = this.matrix[i].length;
@@ -444,14 +503,16 @@ Maze.prototype.draw = function () {
         const isoX = (j - i) * tileWidth * 0.5 + offsetX;
         const isoY = (j + i) * tileHeight * 0.5 + offsetY;
 
+        // this.createRhombus({ ctx, isoX, isoY, tileWidth, tileHeight });
+        this.createCube({ ctx, isoX, isoY, tileWidth, tileHeight });
         // Draw the isometric tile
-        ctx.beginPath();
-        ctx.moveTo(isoX, isoY);
-        ctx.lineTo(isoX + tileWidth * 0.5, isoY + tileHeight * 0.5);
-        ctx.lineTo(isoX, isoY + tileHeight);
-        ctx.lineTo(isoX - tileWidth * 0.5, isoY + tileHeight * 0.5);
-        ctx.closePath();
-        ctx.fill();
+        // ctx.beginPath();
+        // ctx.moveTo(isoX, isoY);
+        // ctx.lineTo(isoX + tileWidth * 0.5, isoY + tileHeight * 0.5);
+        // ctx.lineTo(isoX, isoY + tileHeight);
+        // ctx.lineTo(isoX - tileWidth * 0.5, isoY + tileHeight * 0.5);
+        // ctx.closePath();
+        // ctx.fill();
       }
     }
   }
