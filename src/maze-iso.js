@@ -408,6 +408,65 @@ Maze.prototype.createRhombus = function ({
   ctx.fill();
 };
 
+Maze.prototype.createBorderCube = function ({
+  ctx,
+  isoX,
+  isoY,
+  tileWidth,
+  tileHeight,
+  height = tileHeight, // Height of the cube
+  borderColor = "#000000", // Border color
+  lineWidth = 2, // Border thickness
+  leftPixel = 0,
+  rightPixel = 0,
+  topPixel = 0,
+  bottomPixel = 0,
+}) {
+  // Set border style
+  ctx.strokeStyle = borderColor;
+  ctx.lineWidth = lineWidth;
+
+  // Draw top face border
+  if (topPixel) {
+    ctx.fillStyle = "#ff0000";
+  } else if (leftPixel || rightPixel) {
+    ctx.fillStyle = "#ff00ff";
+  } else {
+    ctx.fillStyle = "#00ff00";
+  }
+
+  ctx.beginPath();
+  ctx.moveTo(isoX, isoY); // Top center
+  ctx.lineTo(isoX + tileWidth * 0.5, isoY + tileHeight * 0.5); // Top right
+  ctx.lineTo(isoX, isoY + tileHeight); // Bottom center
+  ctx.lineTo(isoX - tileWidth * 0.5, isoY + tileHeight * 0.5); // Top left
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // Draw left face border
+  ctx.fillStyle = "#aaa";
+  ctx.beginPath();
+  ctx.moveTo(isoX, isoY + tileHeight); // Bottom center
+  ctx.lineTo(isoX - tileWidth * 0.5, isoY + tileHeight * 0.5); // Top left
+  ctx.lineTo(isoX - tileWidth * 0.5, isoY + tileHeight * 0.5 + height); // Bottom left
+  ctx.lineTo(isoX, isoY + tileHeight + height); // Bottom center extended
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // Draw right face border
+  ctx.fillStyle = "#888";
+  ctx.beginPath();
+  ctx.moveTo(isoX, isoY + tileHeight); // Bottom center
+  ctx.lineTo(isoX + tileWidth * 0.5, isoY + tileHeight * 0.5); // Top right
+  ctx.lineTo(isoX + tileWidth * 0.5, isoY + tileHeight * 0.5 + height); // Bottom right
+  ctx.lineTo(isoX, isoY + tileHeight + height); // Bottom center extended
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+};
+
 Maze.prototype.createCube = function ({
   ctx,
   isoX,
@@ -485,6 +544,7 @@ Maze.prototype.draw = function () {
   const offsetX = canvas.width / 2; // Center the maze horizontally
   const offsetY = tileHeight; // Add vertical margin
 
+  console.log(this.matrix);
   for (let i = 0; i < rowCount; i++) {
     const rowLength = this.matrix[i].length;
     for (let j = 0; j < rowLength; j++) {
@@ -497,14 +557,51 @@ Maze.prototype.draw = function () {
         }
       }
 
+      // Logic from above to determine wallness or pathness
+      // let hasAbove = nodes.hasOwnProperty(i - this.width);
+      // let above = hasAbove && stringVal(nodes[i - this.width], 4);
+      // let hasNext = nodes.hasOwnProperty(i + 1);
+      // let next = hasNext && stringVal(nodes[i + 1], 1);
+      //
+      // if (stringVal(nodes[i], 4)) {
+      //   row1 += "01";
+      //   row2 += "01";
+      // } else if (next || above) {
+      //   row1 += "01";
+      //   row2 += "00";
+      // } else {
+      //   row1 += "00";
+      //   row2 += "00";
+      // }
+      //
+
+      // Get the pixel value
       const pixel = parseInt(this.matrix[i].charAt(j), 10);
+      // Get previous pixel value
+      const leftPixel = j > 0 ? parseInt(this.matrix[i].charAt(j - 1), 10) : 0;
+      const rightPixel =
+        j < rowLength - 1 ? parseInt(this.matrix[i].charAt(j + 1), 10) : 0;
+      const topPixel = i > 0 ? parseInt(this.matrix[i - 1].charAt(j), 10) : 0;
+      const bottomPixel =
+        i < rowCount - 1 ? parseInt(this.matrix[i + 1].charAt(j), 10) : 0;
+      console.log({ j, pixel, leftPixel, rightPixel, topPixel, bottomPixel });
       if (pixel) {
         // Calculate the isometric tile coordinates
         const isoX = (j - i) * tileWidth * 0.5 + offsetX;
         const isoY = (j + i) * tileHeight * 0.5 + offsetY;
 
         // this.createRhombus({ ctx, isoX, isoY, tileWidth, tileHeight });
-        this.createCube({ ctx, isoX, isoY, tileWidth, tileHeight });
+        this.createBorderCube({
+          ctx,
+          isoX,
+          isoY,
+          tileWidth,
+          tileHeight,
+          leftPixel,
+          rightPixel,
+          topPixel,
+          bottomPixel,
+        });
         // Draw the isometric tile
         // ctx.beginPath();
         // ctx.moveTo(isoX, isoY);
