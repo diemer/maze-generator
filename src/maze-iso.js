@@ -638,27 +638,34 @@ Maze.prototype.createBorderCube = function ({
     }
 
     // Corner edges (vertical edges)
-    // strokeWallCorners: only draw at wall section edges (where there's no adjacent wall)
+    // strokeWallCorners: only draw at wall section corners (outer perimeter of wall structure)
     // strokeCorners: draw all vertical edges on every cube
     if (strokeWallCorners) {
-      // Left corner - draw if no wall to the left
-      if (!leftPixel) {
+      // Left corner - draw if no wall to the left AND this is an outer edge
+      // (either no wall above or no wall below to form a corner)
+      if (!leftPixel && (!topPixel || !bottomPixel)) {
         ctx.beginPath();
         ctx.moveTo(topLeft.x, topLeft.y);
         ctx.lineTo(bottomLeft.x, bottomLeft.y);
         ctx.stroke();
       }
 
-      // Center corner (front) - draw if no wall below or to the right
-      if (!bottomPixel || !rightPixel) {
+      // Center corner (front) - draw only at actual corners of the wall structure
+      // This includes outer corners (two adjacent exposed sides) and inner L-corners
+      const isOuterCorner = (!leftPixel && !bottomPixel) || (!topPixel && !rightPixel) ||
+                            (!leftPixel && !topPixel) || (!rightPixel && !bottomPixel);
+      const isInnerCorner = (leftPixel && topPixel && !rightPixel && !bottomPixel) ||
+                            (rightPixel && bottomPixel && !leftPixel && !topPixel);
+      if (isOuterCorner || isInnerCorner) {
         ctx.beginPath();
         ctx.moveTo(bottomCenter.x, bottomCenter.y);
         ctx.lineTo(bottomCenterLow.x, bottomCenterLow.y);
         ctx.stroke();
       }
 
-      // Right corner - draw if no wall above
-      if (!topPixel) {
+      // Right corner - draw if no wall above AND this is an outer edge
+      // (either no wall to left or no wall to right to form a corner)
+      if (!topPixel && (!leftPixel || !rightPixel)) {
         ctx.beginPath();
         ctx.moveTo(topRight.x, topRight.y);
         ctx.lineTo(bottomRight.x, bottomRight.y);
@@ -800,27 +807,34 @@ Maze.prototype.createTexturedCube = function ({
     }
 
     // Corner edges (vertical edges)
-    // strokeWallCorners: only draw at wall section edges (where there's no adjacent wall)
+    // strokeWallCorners: only draw at wall section corners (outer perimeter of wall structure)
     // strokeCorners: draw all vertical edges on every cube
     if (strokeWallCorners) {
-      // Left corner - draw if no wall to the left
-      if (!leftPixel) {
+      // Left corner - draw if no wall to the left AND this is an outer edge
+      // (either no wall above or no wall below to form a corner)
+      if (!leftPixel && (!topPixel || !bottomPixel)) {
         ctx.beginPath();
         ctx.moveTo(topLeft.x, topLeft.y);
         ctx.lineTo(bottomLeft.x, bottomLeft.y);
         ctx.stroke();
       }
 
-      // Center corner (front) - draw if no wall below or to the right
-      if (!bottomPixel || !rightPixel) {
+      // Center corner (front) - draw only at actual corners of the wall structure
+      // This includes outer corners (two adjacent exposed sides) and inner L-corners
+      const isOuterCorner = (!leftPixel && !bottomPixel) || (!topPixel && !rightPixel) ||
+                            (!leftPixel && !topPixel) || (!rightPixel && !bottomPixel);
+      const isInnerCorner = (leftPixel && topPixel && !rightPixel && !bottomPixel) ||
+                            (rightPixel && bottomPixel && !leftPixel && !topPixel);
+      if (isOuterCorner || isInnerCorner) {
         ctx.beginPath();
         ctx.moveTo(bottomCenter.x, bottomCenter.y);
         ctx.lineTo(bottomCenterLow.x, bottomCenterLow.y);
         ctx.stroke();
       }
 
-      // Right corner - draw if no wall above
-      if (!topPixel) {
+      // Right corner - draw if no wall above AND this is an outer edge
+      // (either no wall to left or no wall to right to form a corner)
+      if (!topPixel && (!leftPixel || !rightPixel)) {
         ctx.beginPath();
         ctx.moveTo(topRight.x, topRight.y);
         ctx.lineTo(bottomRight.x, bottomRight.y);
@@ -913,7 +927,8 @@ Maze.prototype.draw = function () {
   // Only add stroke margin if strokes are enabled
   const strokeMargin = this.showStroke ? this.strokeWidth : 0;
   canvas.width = (isoWidth * 2 + strokeMargin) * scale; // Total projected width
-  canvas.height = (isoHeight * 2 + tileHeight + cubeHeight + strokeMargin) * scale; // Total projected height + cube depth
+  // Height needs: grid area (isoHeight*2) + top offset (tileHeight) + bottom cube extension (tileHeight + cubeHeight)
+  canvas.height = (isoHeight * 2 + tileHeight * 2 + cubeHeight + strokeMargin) * scale;
 
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
