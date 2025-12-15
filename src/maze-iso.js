@@ -464,6 +464,7 @@ Maze.prototype.createBorderCube = function ({
   // Set border style
   ctx.strokeStyle = borderColor;
   ctx.lineWidth = lineWidth;
+  ctx.lineJoin = 'round'; // Prevent spike artifacts at corners
 
   // Draw top face border
   if (topPixel) {
@@ -564,8 +565,10 @@ Maze.prototype.draw = function () {
   const cubeHeight = tileHeight; // Height of the 3D cube faces extending below
 
   // Adjust canvas size to fit the isometric maze (scaled)
-  canvas.width = (isoWidth * 2) * scale; // Total projected width
-  canvas.height = (isoHeight * 2 + tileHeight + cubeHeight) * scale; // Total projected height + cube depth
+  // Add extra margin for stroke width (lineWidth=2 means 1px on each side)
+  const strokeMargin = 2;
+  canvas.width = (isoWidth * 2 + strokeMargin) * scale; // Total projected width
+  canvas.height = (isoHeight * 2 + tileHeight + cubeHeight + strokeMargin) * scale; // Total projected height + cube depth
 
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
