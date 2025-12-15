@@ -41,11 +41,33 @@ function initMaze() {
     download.setAttribute('download', 'maze.png');
     download.innerHTML = 'download maze';
 
+    // Build tileset from input fields
+    const tileWall = document.getElementById('tile-wall');
+    const tilePathway = document.getElementById('tile-pathway');
+    const tileStart = document.getElementById('tile-start');
+    const tileEnd = document.getElementById('tile-end');
+
+    let tileset = null;
+    const wallUrl = tileWall ? tileWall.value.trim() : '';
+    const pathwayUrl = tilePathway ? tilePathway.value.trim() : '';
+    const startUrl = tileStart ? tileStart.value.trim() : '';
+    const endUrl = tileEnd ? tileEnd.value.trim() : '';
+
+    if (wallUrl || pathwayUrl || startUrl || endUrl) {
+        tileset = {};
+        if (wallUrl) tileset.wall = wallUrl;
+        if (pathwayUrl) tileset.pathway = pathwayUrl;
+        if (startUrl) tileset.start = startUrl;
+        if (endUrl) tileset.end = endUrl;
+    }
+
     const settings = {
         width: getInputIntVal('width', 20),
         height: getInputIntVal('height', 20),
         wallSize: getInputIntVal('wall-size', 10),
+        displayScale: getInputFloatVal('display-scale', 1.0),
         removeWalls: getInputIntVal('remove_walls', 0),
+        tileset: tileset,
         entryType: '',
         bias: '',
         color: '#000000',
@@ -93,30 +115,48 @@ function initMaze() {
 
     const maze = new Maze(settings);
     maze.generate();
-    maze.draw();
 
-    if (download && download.classList.contains('hide')) {
-        download.classList.toggle("hide");
-    }
+    // Load tileset images (if any) before drawing
+    maze.loadTileset().then(function() {
+        maze.draw();
 
-    const solveButton = document.getElementById("solve");
-    if (solveButton && solveButton.classList.contains('hide')) {
-        solveButton.classList.toggle("hide");
-    }
+        if (download && download.classList.contains('hide')) {
+            download.classList.toggle("hide");
+        }
 
-    mazeNodes = {}
-    if (maze.matrix.length) {
-        mazeNodes = maze;
-    }
+        const solveButton = document.getElementById("solve");
+        if (solveButton && solveButton.classList.contains('hide')) {
+            solveButton.classList.toggle("hide");
+        }
 
-    location.href = "#";
-    location.href = "#generate";
+        mazeNodes = {}
+        if (maze.matrix.length) {
+            mazeNodes = maze;
+        }
+
+        location.href = "#";
+        location.href = "#generate";
+    });
 }
 
 function downloadImage(e) {
-    const image = document.getElementById('maze').toDataURL("image/png");
-    image.replace("image/png", "image/octet-stream");
-    download.setAttribute("href", image);
+    const formatSelect = document.getElementById('export-format');
+    const format = formatSelect ? formatSelect.value : 'png';
+
+    if (format === 'svg' && mazeNodes && mazeNodes.generateSVG) {
+        const svg = mazeNodes.generateSVG();
+        if (svg) {
+            const blob = new Blob([svg], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            download.setAttribute("href", url);
+            download.setAttribute('download', 'maze.svg');
+        }
+    } else {
+        const image = document.getElementById('maze').toDataURL("image/png");
+        image.replace("image/png", "image/octet-stream");
+        download.setAttribute("href", image);
+        download.setAttribute('download', 'maze.png');
+    }
 }
 
 function initSolve() {

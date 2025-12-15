@@ -3,12 +3,16 @@ function Maze(args) {
     width: 20,
     height: 20,
     wallSize: 10,
+    displayScale: 1.0,
     entryType: "",
     bias: "",
     color: "#000000",
     backgroundColor: "#FFFFFF",
     solveColor: "#cc3737",
     removeWalls: 0,
+
+    // Tileset configuration: { wall: url, pathway: url, start: url, end: url }
+    tileset: null,
 
     // Maximum 300 walls can be removed
     maxWallsRemove: 300,
@@ -27,18 +31,53 @@ function Maze(args) {
   this.width = parseInt(settings["width"], 10);
   this.height = parseInt(settings["height"], 10);
   this.wallSize = parseInt(settings["wallSize"], 10);
+  this.displayScale = parseFloat(settings["displayScale"]) || 1.0;
   this.removeWalls = parseInt(settings["removeWalls"], 10);
   this.entryNodes = this.getEntryNodes(settings["entryType"]);
   this.bias = settings["bias"];
   this.color = settings["color"];
   this.backgroundColor = settings["backgroundColor"];
   this.solveColor = settings["solveColor"];
+  this.tileset = settings["tileset"];
+  this.tileImages = {}; // Will hold loaded Image objects
   this.maxMaze = parseInt(settings["maxMaze"], 10);
   this.maxCanvas = parseInt(settings["maxCanvas"], 10);
   this.maxCanvasDimension = parseInt(settings["maxCanvasDimension"], 10);
   this.maxSolve = parseInt(settings["maxSolve"], 10);
   this.maxWallsRemove = parseInt(settings["maxWallsRemove"], 10);
 }
+
+Maze.prototype.loadTileset = function () {
+  return new Promise((resolve, reject) => {
+    if (!this.tileset) {
+      resolve();
+      return;
+    }
+
+    const tileTypes = ['wall', 'pathway', 'start', 'end'];
+    const promises = [];
+
+    tileTypes.forEach((type) => {
+      if (this.tileset[type]) {
+        const promise = new Promise((res, rej) => {
+          const img = new Image();
+          img.onload = () => {
+            this.tileImages[type] = img;
+            res();
+          };
+          img.onerror = () => {
+            console.warn(`Failed to load tile: ${type}`);
+            res(); // Don't reject, just skip this tile
+          };
+          img.src = this.tileset[type];
+        });
+        promises.push(promise);
+      }
+    });
+
+    Promise.all(promises).then(resolve).catch(reject);
+  });
+};
 
 Maze.prototype.generate = function () {
   if (!this.isValidSize()) {
@@ -515,23 +554,26 @@ Maze.prototype.draw = function () {
     return;
   }
 
+  const scale = this.displayScale;
   const tileWidth = this.wallSize; // Base tile width
   const tileHeight = this.wallSize / 2; // Base tile height for isometric view
 
   // Calculate the full isometric dimensions
   const isoWidth = (this.width * 2 + 1) * tileWidth * 0.5; // Isometric width
   const isoHeight = (this.height * 2 + 1) * tileHeight * 0.5; // Isometric height
+  const cubeHeight = tileHeight; // Height of the 3D cube faces extending below
 
-  // Adjust canvas size to fit the isometric maze
-  canvas.width = isoWidth * 2; // Total projected width
-  canvas.height = isoHeight * 2 + tileHeight; // Total projected height
+  // Adjust canvas size to fit the isometric maze (scaled)
+  canvas.width = (isoWidth * 2) * scale; // Total projected width
+  canvas.height = (isoHeight * 2 + tileHeight + cubeHeight) * scale; // Total projected height + cube depth
 
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.scale(scale, scale); // Apply display scale to all drawing operations
 
-  // Add background
+  // Add background (use unscaled dimensions since ctx is already scaled)
   ctx.fillStyle = this.backgroundColor;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, canvas.width / scale, canvas.height / scale);
 
   // Set maze color
   ctx.fillStyle = this.color;
@@ -540,8 +582,8 @@ Maze.prototype.draw = function () {
   const gateEntry = getEntryNode(this.entryNodes, "start", true);
   const gateExit = getEntryNode(this.entryNodes, "end", true);
 
-  // Offset to center the maze on the canvas
-  const offsetX = canvas.width / 2; // Center the maze horizontally
+  // Offset to center the maze on the canvas (use unscaled dimensions since ctx is scaled)
+  const offsetX = isoWidth; // Center the maze horizontally
   const offsetY = tileHeight; // Add vertical margin
 
   console.log(this.matrix);
@@ -585,23 +627,61 @@ Maze.prototype.draw = function () {
       const bottomPixel =
         i < rowCount - 1 ? parseInt(this.matrix[i + 1].charAt(j), 10) : 0;
       console.log({ j, pixel, leftPixel, rightPixel, topPixel, bottomPixel });
-      if (pixel) {
-        // Calculate the isometric tile coordinates
-        const isoX = (j - i) * tileWidth * 0.5 + offsetX;
-        const isoY = (j + i) * tileHeight * 0.5 + offsetY;
 
-        // this.createRhombus({ ctx, isoX, isoY, tileWidth, tileHeight });
-        this.createBorderCube({
-          ctx,
-          isoX,
-          isoY,
-          tileWidth,
-          tileHeight,
-          leftPixel,
-          rightPixel,
-          topPixel,
-          bottomPixel,
-        });
+      // Calculate the isometric tile coordinates
+      const isoX = (j - i) * tileWidth * 0.5 + offsetX;
+      const isoY = (j + i) * tileHeight * 0.5 + offsetY;
+
+      // Check if this is a start or end position
+      const startNode = getEntryNode(this.entryNodes, "start", false);
+      const endNode = getEntryNode(this.entryNodes, "end", false);
+      const isStart = startNode && j === startNode.x && i === startNode.y;
+      const isEnd = endNode && j === endNode.x && i === endNode.y;
+
+      if (pixel) {
+        // Draw wall tile
+        if (this.tileImages.wall) {
+          // Draw tile image centered on isometric position
+          const img = this.tileImages.wall;
+          const drawX = isoX - tileWidth * 0.5;
+          const drawY = isoY;
+          ctx.drawImage(img, drawX, drawY, tileWidth, tileHeight + cubeHeight);
+        } else {
+          // Fallback to programmatic cube drawing
+          this.createBorderCube({
+            ctx,
+            isoX,
+            isoY,
+            tileWidth,
+            tileHeight,
+            leftPixel,
+            rightPixel,
+            topPixel,
+            bottomPixel,
+          });
+        }
+      } else {
+        // Draw pathway tile if available
+        if (this.tileImages.pathway) {
+          const img = this.tileImages.pathway;
+          const drawX = isoX - tileWidth * 0.5;
+          const drawY = isoY;
+          ctx.drawImage(img, drawX, drawY, tileWidth, tileHeight);
+        }
+
+        // Draw start/end markers
+        if (isStart && this.tileImages.start) {
+          const img = this.tileImages.start;
+          const drawX = isoX - tileWidth * 0.5;
+          const drawY = isoY;
+          ctx.drawImage(img, drawX, drawY, tileWidth, tileHeight);
+        }
+        if (isEnd && this.tileImages.end) {
+          const img = this.tileImages.end;
+          const drawX = isoX - tileWidth * 0.5;
+          const drawY = isoY;
+          ctx.drawImage(img, drawX, drawY, tileWidth, tileHeight);
+        }
         // Draw the isometric tile
         // ctx.beginPath();
         // ctx.moveTo(isoX, isoY);
@@ -613,4 +693,80 @@ Maze.prototype.draw = function () {
       }
     }
   }
+};
+
+Maze.prototype.generateSVG = function () {
+  if (!this.matrix.length) {
+    return null;
+  }
+
+  const scale = this.displayScale;
+  const tileWidth = this.wallSize;
+  const tileHeight = this.wallSize / 2;
+
+  const isoWidth = (this.width * 2 + 1) * tileWidth * 0.5;
+  const isoHeight = (this.height * 2 + 1) * tileHeight * 0.5;
+  const cubeHeight = tileHeight;
+
+  const svgWidth = (isoWidth * 2) * scale;
+  const svgHeight = (isoHeight * 2 + tileHeight + cubeHeight) * scale;
+
+  const rowCount = this.matrix.length;
+  const gateEntry = getEntryNode(this.entryNodes, "start", true);
+  const gateExit = getEntryNode(this.entryNodes, "end", true);
+
+  const offsetX = isoWidth;
+  const offsetY = tileHeight;
+
+  let paths = [];
+
+  for (let i = 0; i < rowCount; i++) {
+    const rowLength = this.matrix[i].length;
+    for (let j = 0; j < rowLength; j++) {
+      if (gateEntry && gateExit) {
+        if (j === gateEntry.x && i === gateEntry.y) continue;
+        if (j === gateExit.x && i === gateExit.y) continue;
+      }
+
+      const pixel = parseInt(this.matrix[i].charAt(j), 10);
+      const leftPixel = j > 0 ? parseInt(this.matrix[i].charAt(j - 1), 10) : 0;
+      const rightPixel = j < rowLength - 1 ? parseInt(this.matrix[i].charAt(j + 1), 10) : 0;
+      const topPixel = i > 0 ? parseInt(this.matrix[i - 1].charAt(j), 10) : 0;
+
+      if (pixel) {
+        const isoX = (j - i) * tileWidth * 0.5 + offsetX;
+        const isoY = (j + i) * tileHeight * 0.5 + offsetY;
+        const height = tileHeight;
+
+        // Determine top face color
+        let topColor;
+        if (topPixel) {
+          topColor = "#ff0000";
+        } else if (leftPixel || rightPixel) {
+          topColor = "#ff00ff";
+        } else {
+          topColor = "#00ff00";
+        }
+
+        // Top face
+        paths.push(`<path d="M ${isoX} ${isoY} L ${isoX + tileWidth * 0.5} ${isoY + tileHeight * 0.5} L ${isoX} ${isoY + tileHeight} L ${isoX - tileWidth * 0.5} ${isoY + tileHeight * 0.5} Z" fill="${topColor}" stroke="#000000" stroke-width="2"/>`);
+
+        // Left face
+        paths.push(`<path d="M ${isoX} ${isoY + tileHeight} L ${isoX - tileWidth * 0.5} ${isoY + tileHeight * 0.5} L ${isoX - tileWidth * 0.5} ${isoY + tileHeight * 0.5 + height} L ${isoX} ${isoY + tileHeight + height} Z" fill="#aaaaaa" stroke="#000000" stroke-width="2"/>`);
+
+        // Right face
+        paths.push(`<path d="M ${isoX} ${isoY + tileHeight} L ${isoX + tileWidth * 0.5} ${isoY + tileHeight * 0.5} L ${isoX + tileWidth * 0.5} ${isoY + tileHeight * 0.5 + height} L ${isoX} ${isoY + tileHeight + height} Z" fill="#888888" stroke="#000000" stroke-width="2"/>`);
+      }
+    }
+  }
+
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${isoWidth * 2} ${isoHeight * 2 + tileHeight + cubeHeight}">
+  <rect width="100%" height="100%" fill="${this.backgroundColor}"/>
+  <g>
+    ${paths.join('\n    ')}
+  </g>
+</svg>`;
+
+  return svg;
 };

@@ -28,6 +28,19 @@ function getInputIntVal(id, defaultValue) {
 	return defaultValue;
 }
 
+function getInputFloatVal(id, defaultValue) {
+	const el = document.getElementById(id);
+	if (el) {
+		let el_value = parseFloat(el.value);
+		el_value = (0 < el_value) ? el_value : defaultValue;
+		el.value = el_value;
+		return el_value;
+	}
+
+	el.value = defaultValue;
+	return defaultValue;
+}
+
 function removeFromArray(arr, element) {
 	const index = arr.indexOf(element);
 	if (-1 !== index) {
