@@ -66,6 +66,8 @@ function initMaze() {
         height: getInputIntVal('height', 20),
         wallSize: getInputIntVal('wall-size', 10),
         displayScale: getInputFloatVal('display-scale', 1.0),
+        pathWidth: getInputIntVal('path-width', 1),
+        pathHeight: getInputIntVal('path-height', 1),
         removeWalls: getInputIntVal('remove_walls', 0),
         tileset: tileset,
         entryType: '',

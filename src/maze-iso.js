@@ -4,6 +4,8 @@ function Maze(args) {
     height: 20,
     wallSize: 10,
     displayScale: 1.0,
+    pathWidth: 1,
+    pathHeight: 1,
     entryType: "",
     bias: "",
     color: "#000000",
@@ -32,6 +34,8 @@ function Maze(args) {
   this.height = parseInt(settings["height"], 10);
   this.wallSize = parseInt(settings["wallSize"], 10);
   this.displayScale = parseFloat(settings["displayScale"]) || 1.0;
+  this.pathWidth = parseInt(settings["pathWidth"], 10) || 1;
+  this.pathHeight = parseInt(settings["pathHeight"], 10) || 1;
   this.removeWalls = parseInt(settings["removeWalls"], 10);
   this.entryNodes = this.getEntryNodes(settings["entryType"]);
   this.bias = settings["bias"];
@@ -90,6 +94,85 @@ Maze.prototype.generate = function () {
   nodes = this.parseMaze(nodes);
   this.getMatrix(nodes);
   this.removeMazeWalls();
+
+  // Apply path scaling if needed
+  if (this.pathWidth > 1 || this.pathHeight > 1) {
+    this.transformMatrix();
+  }
+};
+
+Maze.prototype.transformMatrix = function () {
+  if (!this.matrix.length) return;
+
+  const origRows = this.matrix.length;
+  const origCols = this.matrix[0].length;
+  const pw = this.pathWidth;
+  const ph = this.pathHeight;
+
+  // Calculate new dimensions
+  // Even indices (walls) stay 1, odd indices (corridors) scale
+  const getNewCol = (c) => Math.ceil(c / 2) + Math.floor(c / 2) * pw;
+  const getNewRow = (r) => Math.ceil(r / 2) + Math.floor(r / 2) * ph;
+  const getColWidth = (c) => (c % 2 === 0) ? 1 : pw;
+  const getRowHeight = (r) => (r % 2 === 0) ? 1 : ph;
+
+  const newCols = getNewCol(origCols - 1) + getColWidth(origCols - 1);
+  const newRows = getNewRow(origRows - 1) + getRowHeight(origRows - 1);
+
+  // Create new matrix filled with walls
+  let newMatrix = [];
+  for (let r = 0; r < newRows; r++) {
+    newMatrix.push("1".repeat(newCols));
+  }
+
+  // Transform each cell from original to new matrix
+  for (let r = 0; r < origRows; r++) {
+    for (let c = 0; c < origCols; c++) {
+      const value = this.matrix[r].charAt(c);
+      const newR = getNewRow(r);
+      const newC = getNewCol(c);
+      const blockH = getRowHeight(r);
+      const blockW = getColWidth(c);
+
+      // Fill the block in the new matrix
+      for (let dr = 0; dr < blockH; dr++) {
+        for (let dc = 0; dc < blockW; dc++) {
+          const row = newR + dr;
+          const col = newC + dc;
+          newMatrix[row] = newMatrix[row].substring(0, col) + value + newMatrix[row].substring(col + 1);
+        }
+      }
+    }
+  }
+
+  this.matrix = newMatrix;
+
+  // Transform entry nodes to new coordinates
+  this.transformEntryNodes(getNewCol, getNewRow);
+};
+
+Maze.prototype.transformEntryNodes = function (getNewCol, getNewRow) {
+  if (!this.entryNodes) return;
+
+  if (this.entryNodes.start) {
+    const s = this.entryNodes.start;
+    s.x = getNewCol(s.x);
+    s.y = getNewRow(s.y);
+    if (s.gate) {
+      s.gate.x = getNewCol(s.gate.x);
+      s.gate.y = getNewRow(s.gate.y);
+    }
+  }
+
+  if (this.entryNodes.end) {
+    const e = this.entryNodes.end;
+    e.x = getNewCol(e.x);
+    e.y = getNewRow(e.y);
+    if (e.gate) {
+      e.gate.x = getNewCol(e.gate.x);
+      e.gate.y = getNewRow(e.gate.y);
+    }
+  }
 };
 
 Maze.prototype.isValidSize = function () {
@@ -559,9 +642,13 @@ Maze.prototype.draw = function () {
   const tileWidth = this.wallSize; // Base tile width
   const tileHeight = this.wallSize / 2; // Base tile height for isometric view
 
+  // Use actual matrix dimensions (may be transformed)
+  const matrixCols = this.matrix[0].length;
+  const matrixRows = this.matrix.length;
+
   // Calculate the full isometric dimensions
-  const isoWidth = (this.width * 2 + 1) * tileWidth * 0.5; // Isometric width
-  const isoHeight = (this.height * 2 + 1) * tileHeight * 0.5; // Isometric height
+  const isoWidth = matrixCols * tileWidth * 0.5; // Isometric width
+  const isoHeight = matrixRows * tileHeight * 0.5; // Isometric height
   const cubeHeight = tileHeight; // Height of the 3D cube faces extending below
 
   // Adjust canvas size to fit the isometric maze (scaled)
@@ -707,8 +794,12 @@ Maze.prototype.generateSVG = function () {
   const tileWidth = this.wallSize;
   const tileHeight = this.wallSize / 2;
 
-  const isoWidth = (this.width * 2 + 1) * tileWidth * 0.5;
-  const isoHeight = (this.height * 2 + 1) * tileHeight * 0.5;
+  // Use actual matrix dimensions (may be transformed)
+  const matrixCols = this.matrix[0].length;
+  const matrixRows = this.matrix.length;
+
+  const isoWidth = matrixCols * tileWidth * 0.5;
+  const isoHeight = matrixRows * tileHeight * 0.5;
   const cubeHeight = tileHeight;
 
   const svgWidth = (isoWidth * 2) * scale;

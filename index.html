@@ -135,6 +135,21 @@
       </p>
 
       <p>
+        <label for="display-scale">Display scale:</label>
+        <input id="display-scale" type="number" name="" value="1" min="0.25" max="4" step="0.25" />
+      </p>
+
+      <p>
+        <label for="path-width">Path width:</label>
+        <input id="path-width" type="number" name="" value="1" min="1" max="5" step="1" />
+      </p>
+
+      <p>
+        <label for="path-height">Path height:</label>
+        <input id="path-height" type="number" name="" value="1" min="1" max="5" step="1" />
+      </p>
+
+      <p>
         <label for="width">Columns:</label>
         <input
           id="width"
@@ -226,6 +241,33 @@
         />
         <div class="color-sample" style="background-color: #cc3737"></div>
       </div>
+      <p>
+        <label for="export-format">Export format:</label>
+        <select id="export-format" name="export-format">
+          <option value="png" selected="selected">PNG</option>
+          <option value="svg">SVG</option>
+        </select>
+      </p>
+      <p class="desc">
+        Custom tileset (optional). Enter image URLs for isometric tile images.
+        Leave empty to use default programmatic rendering.
+      </p>
+      <p>
+        <label for="tile-wall">Wall tile URL:</label>
+        <input id="tile-wall" type="text" name="tile-wall" value="" placeholder="https://..." />
+      </p>
+      <p>
+        <label for="tile-pathway">Pathway tile URL:</label>
+        <input id="tile-pathway" type="text" name="tile-pathway" value="" placeholder="https://..." />
+      </p>
+      <p>
+        <label for="tile-start">Start marker URL:</label>
+        <input id="tile-start" type="text" name="tile-start" value="" placeholder="https://..." />
+      </p>
+      <p>
+        <label for="tile-end">End marker URL:</label>
+        <input id="tile-end" type="text" name="tile-end" value="" placeholder="https://..." />
+      </p>
       <div id="generate">
         <button id="create-maze" onclick="initMaze();" class="hide">
           Generate Maze
