@@ -66,6 +66,12 @@ function initMaze() {
     }
 
     const showStroke = showStrokeCheckbox ? showStrokeCheckbox.checked : true;
+    const strokeTopCheckbox = document.getElementById('stroke-top');
+    const strokeBottomCheckbox = document.getElementById('stroke-bottom');
+    const strokeCornersCheckbox = document.getElementById('stroke-corners');
+    const strokeTop = strokeTopCheckbox ? strokeTopCheckbox.checked : true;
+    const strokeBottom = strokeBottomCheckbox ? strokeBottomCheckbox.checked : true;
+    const strokeCorners = strokeCornersCheckbox ? strokeCornersCheckbox.checked : true;
     const wallHeight = getInputFloatVal('wall-height', 1.0);
     const strokeWidth = getInputFloatVal('stroke-width', 2);
     const wallBgColorInput = document.getElementById('wall-bg-color');
@@ -81,6 +87,9 @@ function initMaze() {
         removeWalls: getInputIntVal('remove_walls', 0),
         tileset: tileset,
         showStroke: showStroke,
+        strokeTop: strokeTop,
+        strokeBottom: strokeBottom,
+        strokeCorners: strokeCorners,
         wallHeight: wallHeight,
         strokeWidth: strokeWidth,
         wallBgColor: wallBgColor,

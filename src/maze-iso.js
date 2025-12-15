@@ -16,6 +16,9 @@ function Maze(args) {
     // Tileset configuration: { wallLeft: url, wallRight: url, pathway: url, start: url, end: url }
     tileset: null,
     showStroke: true,
+    strokeTop: true, // Stroke the top face edges
+    strokeBottom: true, // Stroke the bottom edges
+    strokeCorners: true, // Stroke the vertical corner edges
     wallHeight: 1.0, // Multiplier for wall height (1.0 = same as tileHeight)
     strokeWidth: 2, // Border thickness in pixels
     wallBgColor: "", // Optional background color for wall faces (behind transparent textures)
@@ -49,6 +52,9 @@ function Maze(args) {
   this.tileset = settings["tileset"];
   this.tileImages = {}; // Will hold loaded Image objects
   this.showStroke = settings["showStroke"] !== false;
+  this.strokeTop = settings["strokeTop"] !== false;
+  this.strokeBottom = settings["strokeBottom"] !== false;
+  this.strokeCorners = settings["strokeCorners"] !== false;
   this.wallHeight = parseFloat(settings["wallHeight"]) || 1.0;
   this.strokeWidth = parseFloat(settings["strokeWidth"]) || 2;
   this.wallBgColor = settings["wallBgColor"] || "";
@@ -548,6 +554,9 @@ Maze.prototype.createBorderCube = function ({
   borderColor = "#000000", // Border color
   lineWidth = 2, // Border thickness
   showStroke = true,
+  strokeTop = true,
+  strokeBottom = true,
+  strokeCorners = true,
   leftPixel = 0,
   rightPixel = 0,
   topPixel = 0,
@@ -556,9 +565,19 @@ Maze.prototype.createBorderCube = function ({
   // Set border style
   ctx.strokeStyle = borderColor;
   ctx.lineWidth = lineWidth;
-  ctx.lineJoin = 'round'; // Prevent spike artifacts at corners
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
 
-  // Draw top face border
+  // Key points for the cube
+  const topCenter = { x: isoX, y: isoY };
+  const topRight = { x: isoX + tileWidth * 0.5, y: isoY + tileHeight * 0.5 };
+  const bottomCenter = { x: isoX, y: isoY + tileHeight };
+  const topLeft = { x: isoX - tileWidth * 0.5, y: isoY + tileHeight * 0.5 };
+  const bottomLeft = { x: isoX - tileWidth * 0.5, y: isoY + tileHeight * 0.5 + height };
+  const bottomRight = { x: isoX + tileWidth * 0.5, y: isoY + tileHeight * 0.5 + height };
+  const bottomCenterLow = { x: isoX, y: isoY + tileHeight + height };
+
+  // Draw top face
   if (topPixel) {
     ctx.fillStyle = "#ff0000";
   } else if (leftPixel || rightPixel) {
@@ -568,35 +587,70 @@ Maze.prototype.createBorderCube = function ({
   }
 
   ctx.beginPath();
-  ctx.moveTo(isoX, isoY); // Top center
-  ctx.lineTo(isoX + tileWidth * 0.5, isoY + tileHeight * 0.5); // Top right
-  ctx.lineTo(isoX, isoY + tileHeight); // Bottom center
-  ctx.lineTo(isoX - tileWidth * 0.5, isoY + tileHeight * 0.5); // Top left
+  ctx.moveTo(topCenter.x, topCenter.y);
+  ctx.lineTo(topRight.x, topRight.y);
+  ctx.lineTo(bottomCenter.x, bottomCenter.y);
+  ctx.lineTo(topLeft.x, topLeft.y);
   ctx.closePath();
   ctx.fill();
-  if (showStroke) ctx.stroke();
 
-  // Draw left face border
+  // Draw left face
   ctx.fillStyle = "#aaa";
   ctx.beginPath();
-  ctx.moveTo(isoX, isoY + tileHeight); // Bottom center
-  ctx.lineTo(isoX - tileWidth * 0.5, isoY + tileHeight * 0.5); // Top left
-  ctx.lineTo(isoX - tileWidth * 0.5, isoY + tileHeight * 0.5 + height); // Bottom left
-  ctx.lineTo(isoX, isoY + tileHeight + height); // Bottom center extended
+  ctx.moveTo(bottomCenter.x, bottomCenter.y);
+  ctx.lineTo(topLeft.x, topLeft.y);
+  ctx.lineTo(bottomLeft.x, bottomLeft.y);
+  ctx.lineTo(bottomCenterLow.x, bottomCenterLow.y);
   ctx.closePath();
   ctx.fill();
-  if (showStroke) ctx.stroke();
 
-  // Draw right face border
+  // Draw right face
   ctx.fillStyle = "#888";
   ctx.beginPath();
-  ctx.moveTo(isoX, isoY + tileHeight); // Bottom center
-  ctx.lineTo(isoX + tileWidth * 0.5, isoY + tileHeight * 0.5); // Top right
-  ctx.lineTo(isoX + tileWidth * 0.5, isoY + tileHeight * 0.5 + height); // Bottom right
-  ctx.lineTo(isoX, isoY + tileHeight + height); // Bottom center extended
+  ctx.moveTo(bottomCenter.x, bottomCenter.y);
+  ctx.lineTo(topRight.x, topRight.y);
+  ctx.lineTo(bottomRight.x, bottomRight.y);
+  ctx.lineTo(bottomCenterLow.x, bottomCenterLow.y);
   ctx.closePath();
   ctx.fill();
-  if (showStroke) ctx.stroke();
+
+  // Draw strokes selectively
+  if (showStroke) {
+    if (strokeTop) {
+      ctx.beginPath();
+      ctx.moveTo(topCenter.x, topCenter.y);
+      ctx.lineTo(topRight.x, topRight.y);
+      ctx.lineTo(bottomCenter.x, bottomCenter.y);
+      ctx.lineTo(topLeft.x, topLeft.y);
+      ctx.closePath();
+      ctx.stroke();
+    }
+
+    if (strokeBottom) {
+      ctx.beginPath();
+      ctx.moveTo(bottomLeft.x, bottomLeft.y);
+      ctx.lineTo(bottomCenterLow.x, bottomCenterLow.y);
+      ctx.lineTo(bottomRight.x, bottomRight.y);
+      ctx.stroke();
+    }
+
+    if (strokeCorners) {
+      ctx.beginPath();
+      ctx.moveTo(topLeft.x, topLeft.y);
+      ctx.lineTo(bottomLeft.x, bottomLeft.y);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(bottomCenter.x, bottomCenter.y);
+      ctx.lineTo(bottomCenterLow.x, bottomCenterLow.y);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(topRight.x, topRight.y);
+      ctx.lineTo(bottomRight.x, bottomRight.y);
+      ctx.stroke();
+    }
+  }
 };
 
 Maze.prototype.createTexturedCube = function ({
@@ -612,105 +666,123 @@ Maze.prototype.createTexturedCube = function ({
   borderColor = "#000000",
   lineWidth = 2,
   showStroke = true,
+  strokeTop = true,
+  strokeBottom = true,
+  strokeCorners = true,
   wallBgColor = "",
 }) {
   ctx.strokeStyle = borderColor;
   ctx.lineWidth = lineWidth;
   ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
+  // Key points for the cube
+  const topCenter = { x: isoX, y: isoY };
+  const topRight = { x: isoX + tileWidth * 0.5, y: isoY + tileHeight * 0.5 };
+  const bottomCenter = { x: isoX, y: isoY + tileHeight };
+  const topLeft = { x: isoX - tileWidth * 0.5, y: isoY + tileHeight * 0.5 };
+  const bottomLeft = { x: isoX - tileWidth * 0.5, y: isoY + tileHeight * 0.5 + height };
+  const bottomRight = { x: isoX + tileWidth * 0.5, y: isoY + tileHeight * 0.5 + height };
+  const bottomCenterLow = { x: isoX, y: isoY + tileHeight + height };
 
   // Draw top face (solid color)
   ctx.fillStyle = topColor;
   ctx.beginPath();
-  ctx.moveTo(isoX, isoY);
-  ctx.lineTo(isoX + tileWidth * 0.5, isoY + tileHeight * 0.5);
-  ctx.lineTo(isoX, isoY + tileHeight);
-  ctx.lineTo(isoX - tileWidth * 0.5, isoY + tileHeight * 0.5);
+  ctx.moveTo(topCenter.x, topCenter.y);
+  ctx.lineTo(topRight.x, topRight.y);
+  ctx.lineTo(bottomCenter.x, bottomCenter.y);
+  ctx.lineTo(topLeft.x, topLeft.y);
   ctx.closePath();
   ctx.fill();
-  if (showStroke) ctx.stroke();
 
   // Draw left face with image or fallback color
   ctx.save();
   ctx.beginPath();
-  ctx.moveTo(isoX, isoY + tileHeight);
-  ctx.lineTo(isoX - tileWidth * 0.5, isoY + tileHeight * 0.5);
-  ctx.lineTo(isoX - tileWidth * 0.5, isoY + tileHeight * 0.5 + height);
-  ctx.lineTo(isoX, isoY + tileHeight + height);
+  ctx.moveTo(bottomCenter.x, bottomCenter.y);
+  ctx.lineTo(topLeft.x, topLeft.y);
+  ctx.lineTo(bottomLeft.x, bottomLeft.y);
+  ctx.lineTo(bottomCenterLow.x, bottomCenterLow.y);
   ctx.closePath();
 
   if (leftImage) {
-    // Fill with background color first if specified (for transparent textures)
     if (wallBgColor) {
       ctx.fillStyle = wallBgColor;
       ctx.fill();
     }
     ctx.clip();
-    // Draw image to cover the clipped area
-    ctx.drawImage(
-      leftImage,
-      isoX - tileWidth * 0.5,
-      isoY + tileHeight * 0.5,
-      tileWidth * 0.5,
-      height
-    );
+    ctx.drawImage(leftImage, topLeft.x, topLeft.y, tileWidth * 0.5, height);
     ctx.restore();
-    // Redraw path for stroke
-    if (showStroke) {
-      ctx.beginPath();
-      ctx.moveTo(isoX, isoY + tileHeight);
-      ctx.lineTo(isoX - tileWidth * 0.5, isoY + tileHeight * 0.5);
-      ctx.lineTo(isoX - tileWidth * 0.5, isoY + tileHeight * 0.5 + height);
-      ctx.lineTo(isoX, isoY + tileHeight + height);
-      ctx.closePath();
-      ctx.stroke();
-    }
   } else {
     ctx.fillStyle = wallBgColor || "#aaa";
     ctx.fill();
-    if (showStroke) ctx.stroke();
     ctx.restore();
   }
 
   // Draw right face with image or fallback color
   ctx.save();
   ctx.beginPath();
-  ctx.moveTo(isoX, isoY + tileHeight);
-  ctx.lineTo(isoX + tileWidth * 0.5, isoY + tileHeight * 0.5);
-  ctx.lineTo(isoX + tileWidth * 0.5, isoY + tileHeight * 0.5 + height);
-  ctx.lineTo(isoX, isoY + tileHeight + height);
+  ctx.moveTo(bottomCenter.x, bottomCenter.y);
+  ctx.lineTo(topRight.x, topRight.y);
+  ctx.lineTo(bottomRight.x, bottomRight.y);
+  ctx.lineTo(bottomCenterLow.x, bottomCenterLow.y);
   ctx.closePath();
 
   if (rightImage) {
-    // Fill with background color first if specified (for transparent textures)
     if (wallBgColor) {
       ctx.fillStyle = wallBgColor;
       ctx.fill();
     }
     ctx.clip();
-    // Draw image to cover the clipped area
-    ctx.drawImage(
-      rightImage,
-      isoX,
-      isoY + tileHeight * 0.5,
-      tileWidth * 0.5,
-      height
-    );
+    ctx.drawImage(rightImage, isoX, topRight.y, tileWidth * 0.5, height);
     ctx.restore();
-    // Redraw path for stroke
-    if (showStroke) {
-      ctx.beginPath();
-      ctx.moveTo(isoX, isoY + tileHeight);
-      ctx.lineTo(isoX + tileWidth * 0.5, isoY + tileHeight * 0.5);
-      ctx.lineTo(isoX + tileWidth * 0.5, isoY + tileHeight * 0.5 + height);
-      ctx.lineTo(isoX, isoY + tileHeight + height);
-      ctx.closePath();
-      ctx.stroke();
-    }
   } else {
     ctx.fillStyle = wallBgColor || "#888";
     ctx.fill();
-    if (showStroke) ctx.stroke();
     ctx.restore();
+  }
+
+  // Draw strokes selectively
+  if (showStroke) {
+    // Top face edges
+    if (strokeTop) {
+      ctx.beginPath();
+      ctx.moveTo(topCenter.x, topCenter.y);
+      ctx.lineTo(topRight.x, topRight.y);
+      ctx.lineTo(bottomCenter.x, bottomCenter.y);
+      ctx.lineTo(topLeft.x, topLeft.y);
+      ctx.closePath();
+      ctx.stroke();
+    }
+
+    // Bottom edges (horizontal bottom of cube)
+    if (strokeBottom) {
+      ctx.beginPath();
+      ctx.moveTo(bottomLeft.x, bottomLeft.y);
+      ctx.lineTo(bottomCenterLow.x, bottomCenterLow.y);
+      ctx.lineTo(bottomRight.x, bottomRight.y);
+      ctx.stroke();
+    }
+
+    // Corner edges (vertical edges)
+    if (strokeCorners) {
+      // Left corner
+      ctx.beginPath();
+      ctx.moveTo(topLeft.x, topLeft.y);
+      ctx.lineTo(bottomLeft.x, bottomLeft.y);
+      ctx.stroke();
+
+      // Center corner (front)
+      ctx.beginPath();
+      ctx.moveTo(bottomCenter.x, bottomCenter.y);
+      ctx.lineTo(bottomCenterLow.x, bottomCenterLow.y);
+      ctx.stroke();
+
+      // Right corner
+      ctx.beginPath();
+      ctx.moveTo(topRight.x, topRight.y);
+      ctx.lineTo(bottomRight.x, bottomRight.y);
+      ctx.stroke();
+    }
   }
 };
 
@@ -867,6 +939,9 @@ Maze.prototype.draw = function () {
             rightImage: this.tileImages.wallRight || null,
             topColor: "#ffffff",
             showStroke: this.showStroke,
+            strokeTop: this.strokeTop,
+            strokeBottom: this.strokeBottom,
+            strokeCorners: this.strokeCorners,
             lineWidth: this.strokeWidth,
             wallBgColor: this.wallBgColor,
           });
@@ -880,6 +955,9 @@ Maze.prototype.draw = function () {
             tileHeight,
             height: cubeHeight,
             showStroke: this.showStroke,
+            strokeTop: this.strokeTop,
+            strokeBottom: this.strokeBottom,
+            strokeCorners: this.strokeCorners,
             lineWidth: this.strokeWidth,
             leftPixel,
             rightPixel,

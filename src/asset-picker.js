@@ -175,10 +175,16 @@ function refreshMazeTileset() {
   const wallHeightInput = document.getElementById('wall-height');
   const strokeWidthInput = document.getElementById('stroke-width');
   const wallBgColorInput = document.getElementById('wall-bg-color');
+  const strokeTopCheckbox = document.getElementById('stroke-top');
+  const strokeBottomCheckbox = document.getElementById('stroke-bottom');
+  const strokeCornersCheckbox = document.getElementById('stroke-corners');
 
   mazeNodes.tileset = tileset;
   mazeNodes.tileImages = {}; // Clear cached images
   mazeNodes.showStroke = showStrokeCheckbox ? showStrokeCheckbox.checked : true;
+  mazeNodes.strokeTop = strokeTopCheckbox ? strokeTopCheckbox.checked : true;
+  mazeNodes.strokeBottom = strokeBottomCheckbox ? strokeBottomCheckbox.checked : true;
+  mazeNodes.strokeCorners = strokeCornersCheckbox ? strokeCornersCheckbox.checked : true;
   mazeNodes.wallHeight = wallHeightInput ? parseFloat(wallHeightInput.value) || 1.0 : 1.0;
   mazeNodes.strokeWidth = strokeWidthInput ? parseFloat(strokeWidthInput.value) || 2 : 2;
   mazeNodes.wallBgColor = wallBgColorInput ? wallBgColorInput.value.trim() : '';
@@ -189,12 +195,20 @@ function refreshMazeTileset() {
   });
 }
 
-// Initialize stroke toggle listener
+// Initialize stroke toggle listeners
 function initStrokeToggle() {
-  const showStrokeCheckbox = document.getElementById('show-stroke');
-  if (showStrokeCheckbox) {
-    showStrokeCheckbox.addEventListener('change', refreshMazeTileset);
-  }
+  const strokeCheckboxes = [
+    'show-stroke',
+    'stroke-top',
+    'stroke-bottom',
+    'stroke-corners'
+  ];
+  strokeCheckboxes.forEach(id => {
+    const checkbox = document.getElementById(id);
+    if (checkbox) {
+      checkbox.addEventListener('change', refreshMazeTileset);
+    }
+  });
 }
 
 // Initialize wall background color listener
