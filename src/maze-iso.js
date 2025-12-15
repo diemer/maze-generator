@@ -567,6 +567,7 @@ Maze.prototype.createBorderCube = function ({
   rightPixel = 0,
   topPixel = 0,
   bottomPixel = 0,
+  topRightPixel = 0, // Diagonal neighbor for T-junction detection
 }) {
   // Set border style
   ctx.strokeStyle = borderColor;
@@ -693,12 +694,10 @@ Maze.prototype.createBorderCube = function ({
         ctx.stroke();
       }
 
-      // Center corner (front) - draw at actual corners of the wall structure
-      // Draw when at least one front face is exposed (right or bottom direction)
-      const frontExposed = !rightPixel || !bottomPixel;
-      // Not in a straight wall section (would have walls on opposite sides)
-      const notInStraightSection = !(leftPixel && rightPixel) && !(topPixel && bottomPixel);
-      if (frontExposed && notInStraightSection) {
+      // Center corner (front) - only draw when fully exposed at front
+      // If there's a wall below (bottomPixel) or to the right (rightPixel), that cube's
+      // face will be drawn on top of this stroke, causing thin line artifacts
+      if (!bottomPixel && !rightPixel) {
         if (debugStrokeColors) ctx.strokeStyle = "#FF00FF"; // MAGENTA
         ctx.beginPath();
         ctx.moveTo(bottomCenter.x, bottomCenter.y);
@@ -706,9 +705,12 @@ Maze.prototype.createBorderCube = function ({
         ctx.stroke();
       }
 
-      // Right corner - draw if right face is exposed AND not in middle of vertical wall section
-      // This draws at wall ends and fills in shared edges where center corner can't be drawn
-      if (!rightPixel && !(topPixel && bottomPixel)) {
+      // Right corner - draw when right face is exposed, OR at T-junction inner corners
+      // T-junction inner corner: wall to right (rightPixel=1), no wall above (topPixel=0),
+      // but wall at diagonal top-right (topRightPixel=1)
+      const rightExposed = !rightPixel;
+      const tJunctionInnerCorner = rightPixel && !topPixel && topRightPixel;
+      if (rightExposed || tJunctionInnerCorner) {
         if (debugStrokeColors) ctx.strokeStyle = "#00FF00"; // GREEN
         ctx.beginPath();
         ctx.moveTo(topRight.x, topRight.y);
@@ -758,6 +760,7 @@ Maze.prototype.createTexturedCube = function ({
   rightPixel = 0,
   topPixel = 0,
   bottomPixel = 0,
+  topRightPixel = 0, // Diagonal neighbor for T-junction detection
 }) {
   ctx.strokeStyle = borderColor;
   ctx.lineWidth = lineWidth;
@@ -904,12 +907,10 @@ Maze.prototype.createTexturedCube = function ({
         ctx.stroke();
       }
 
-      // Center corner (front) - draw at actual corners of the wall structure
-      // Draw when at least one front face is exposed (right or bottom direction)
-      const frontExposed = !rightPixel || !bottomPixel;
-      // Not in a straight wall section (would have walls on opposite sides)
-      const notInStraightSection = !(leftPixel && rightPixel) && !(topPixel && bottomPixel);
-      if (frontExposed && notInStraightSection) {
+      // Center corner (front) - only draw when fully exposed at front
+      // If there's a wall below (bottomPixel) or to the right (rightPixel), that cube's
+      // face will be drawn on top of this stroke, causing thin line artifacts
+      if (!bottomPixel && !rightPixel) {
         if (debugStrokeColors) ctx.strokeStyle = "#FF00FF"; // MAGENTA
         ctx.beginPath();
         ctx.moveTo(bottomCenter.x, bottomCenter.y);
@@ -917,9 +918,12 @@ Maze.prototype.createTexturedCube = function ({
         ctx.stroke();
       }
 
-      // Right corner - draw if right face is exposed AND not in middle of vertical wall section
-      // This draws at wall ends and fills in shared edges where center corner can't be drawn
-      if (!rightPixel && !(topPixel && bottomPixel)) {
+      // Right corner - draw when right face is exposed, OR at T-junction inner corners
+      // T-junction inner corner: wall to right (rightPixel=1), no wall above (topPixel=0),
+      // but wall at diagonal top-right (topRightPixel=1)
+      const rightExposed = !rightPixel;
+      const tJunctionInnerCorner = rightPixel && !topPixel && topRightPixel;
+      if (rightExposed || tJunctionInnerCorner) {
         if (debugStrokeColors) ctx.strokeStyle = "#00FF00"; // GREEN
         ctx.beginPath();
         ctx.moveTo(topRight.x, topRight.y);
@@ -1068,14 +1072,18 @@ Maze.prototype.draw = function () {
 
       // Get the pixel value
       const pixel = parseInt(this.matrix[i].charAt(j), 10);
-      // Get previous pixel value
+      // Get neighbor pixel values
       const leftPixel = j > 0 ? parseInt(this.matrix[i].charAt(j - 1), 10) : 0;
       const rightPixel =
         j < rowLength - 1 ? parseInt(this.matrix[i].charAt(j + 1), 10) : 0;
       const topPixel = i > 0 ? parseInt(this.matrix[i - 1].charAt(j), 10) : 0;
       const bottomPixel =
         i < rowCount - 1 ? parseInt(this.matrix[i + 1].charAt(j), 10) : 0;
-      console.log({ j, pixel, leftPixel, rightPixel, topPixel, bottomPixel });
+      // Diagonal neighbor for detecting T-junction inner corners
+      const topRightPixel =
+        i > 0 && j < rowLength - 1
+          ? parseInt(this.matrix[i - 1].charAt(j + 1), 10)
+          : 0;
 
       // Calculate the isometric tile coordinates
       const isoX = (j - i) * tileWidth * 0.5 + offsetX;
@@ -1113,6 +1121,7 @@ Maze.prototype.draw = function () {
             rightPixel,
             topPixel,
             bottomPixel,
+            topRightPixel,
           });
         } else {
           // Fallback to programmatic cube drawing
@@ -1134,6 +1143,7 @@ Maze.prototype.draw = function () {
             rightPixel,
             topPixel,
             bottomPixel,
+            topRightPixel,
           });
         }
       } else {
