@@ -174,12 +174,14 @@ function refreshMazeTileset() {
 
   const wallHeightInput = document.getElementById('wall-height');
   const strokeWidthInput = document.getElementById('stroke-width');
+  const wallBgColorInput = document.getElementById('wall-bg-color');
 
   mazeNodes.tileset = tileset;
   mazeNodes.tileImages = {}; // Clear cached images
   mazeNodes.showStroke = showStrokeCheckbox ? showStrokeCheckbox.checked : true;
   mazeNodes.wallHeight = wallHeightInput ? parseFloat(wallHeightInput.value) || 1.0 : 1.0;
   mazeNodes.strokeWidth = strokeWidthInput ? parseFloat(strokeWidthInput.value) || 2 : 2;
+  mazeNodes.wallBgColor = wallBgColorInput ? wallBgColorInput.value.trim() : '';
 
   // Reload tileset and redraw
   mazeNodes.loadTileset().then(function() {
@@ -195,8 +197,24 @@ function initStrokeToggle() {
   }
 }
 
+// Initialize wall background color listener
+function initWallBgColor() {
+  const wallBgColorInput = document.getElementById('wall-bg-color');
+  if (wallBgColorInput) {
+    wallBgColorInput.addEventListener('change', function() {
+      // Update color sample preview
+      const colorSample = wallBgColorInput.parentNode.querySelector('.color-sample');
+      if (colorSample) {
+        colorSample.style.backgroundColor = wallBgColorInput.value.trim() || 'transparent';
+      }
+      refreshMazeTileset();
+    });
+  }
+}
+
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', function() {
   initAssetPickers();
   initStrokeToggle();
+  initWallBgColor();
 });

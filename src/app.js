@@ -68,6 +68,8 @@ function initMaze() {
     const showStroke = showStrokeCheckbox ? showStrokeCheckbox.checked : true;
     const wallHeight = getInputFloatVal('wall-height', 1.0);
     const strokeWidth = getInputFloatVal('stroke-width', 2);
+    const wallBgColorInput = document.getElementById('wall-bg-color');
+    const wallBgColor = wallBgColorInput ? wallBgColorInput.value.trim() : '';
 
     const settings = {
         width: getInputIntVal('width', 20),
@@ -81,6 +83,7 @@ function initMaze() {
         showStroke: showStroke,
         wallHeight: wallHeight,
         strokeWidth: strokeWidth,
+        wallBgColor: wallBgColor,
         entryType: '',
         bias: '',
         color: '#000000',

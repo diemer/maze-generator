@@ -18,6 +18,7 @@ function Maze(args) {
     showStroke: true,
     wallHeight: 1.0, // Multiplier for wall height (1.0 = same as tileHeight)
     strokeWidth: 2, // Border thickness in pixels
+    wallBgColor: "", // Optional background color for wall faces (behind transparent textures)
 
     // Maximum 300 walls can be removed
     maxWallsRemove: 300,
@@ -50,6 +51,7 @@ function Maze(args) {
   this.showStroke = settings["showStroke"] !== false;
   this.wallHeight = parseFloat(settings["wallHeight"]) || 1.0;
   this.strokeWidth = parseFloat(settings["strokeWidth"]) || 2;
+  this.wallBgColor = settings["wallBgColor"] || "";
   this.maxMaze = parseInt(settings["maxMaze"], 10);
   this.maxCanvas = parseInt(settings["maxCanvas"], 10);
   this.maxCanvasDimension = parseInt(settings["maxCanvasDimension"], 10);
@@ -610,6 +612,7 @@ Maze.prototype.createTexturedCube = function ({
   borderColor = "#000000",
   lineWidth = 2,
   showStroke = true,
+  wallBgColor = "",
 }) {
   ctx.strokeStyle = borderColor;
   ctx.lineWidth = lineWidth;
@@ -636,6 +639,11 @@ Maze.prototype.createTexturedCube = function ({
   ctx.closePath();
 
   if (leftImage) {
+    // Fill with background color first if specified (for transparent textures)
+    if (wallBgColor) {
+      ctx.fillStyle = wallBgColor;
+      ctx.fill();
+    }
     ctx.clip();
     // Draw image to cover the clipped area
     ctx.drawImage(
@@ -657,7 +665,7 @@ Maze.prototype.createTexturedCube = function ({
       ctx.stroke();
     }
   } else {
-    ctx.fillStyle = "#aaa";
+    ctx.fillStyle = wallBgColor || "#aaa";
     ctx.fill();
     if (showStroke) ctx.stroke();
     ctx.restore();
@@ -673,6 +681,11 @@ Maze.prototype.createTexturedCube = function ({
   ctx.closePath();
 
   if (rightImage) {
+    // Fill with background color first if specified (for transparent textures)
+    if (wallBgColor) {
+      ctx.fillStyle = wallBgColor;
+      ctx.fill();
+    }
     ctx.clip();
     // Draw image to cover the clipped area
     ctx.drawImage(
@@ -694,7 +707,7 @@ Maze.prototype.createTexturedCube = function ({
       ctx.stroke();
     }
   } else {
-    ctx.fillStyle = "#888";
+    ctx.fillStyle = wallBgColor || "#888";
     ctx.fill();
     if (showStroke) ctx.stroke();
     ctx.restore();
@@ -855,6 +868,7 @@ Maze.prototype.draw = function () {
             topColor: "#ffffff",
             showStroke: this.showStroke,
             lineWidth: this.strokeWidth,
+            wallBgColor: this.wallBgColor,
           });
         } else {
           // Fallback to programmatic cube drawing
