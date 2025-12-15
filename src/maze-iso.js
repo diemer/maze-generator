@@ -19,6 +19,7 @@ function Maze(args) {
     strokeTop: true, // Stroke the top face edges
     strokeBottom: true, // Stroke the bottom edges
     strokeCorners: true, // Stroke the vertical corner edges
+    strokeWallCorners: false, // Only stroke corners at wall section edges (overrides strokeCorners)
     wallHeight: 1.0, // Multiplier for wall height (1.0 = same as tileHeight)
     strokeWidth: 2, // Border thickness in pixels
     wallBgColor: "", // Optional background color for wall faces (behind transparent textures)
@@ -55,6 +56,7 @@ function Maze(args) {
   this.strokeTop = settings["strokeTop"] !== false;
   this.strokeBottom = settings["strokeBottom"] !== false;
   this.strokeCorners = settings["strokeCorners"] !== false;
+  this.strokeWallCorners = settings["strokeWallCorners"] === true;
   this.wallHeight = parseFloat(settings["wallHeight"]) || 1.0;
   this.strokeWidth = parseFloat(settings["strokeWidth"]) || 2;
   this.wallBgColor = settings["wallBgColor"] || "";
@@ -557,6 +559,7 @@ Maze.prototype.createBorderCube = function ({
   strokeTop = true,
   strokeBottom = true,
   strokeCorners = true,
+  strokeWallCorners = false,
   leftPixel = 0,
   rightPixel = 0,
   topPixel = 0,
@@ -634,7 +637,34 @@ Maze.prototype.createBorderCube = function ({
       ctx.stroke();
     }
 
-    if (strokeCorners) {
+    // Corner edges (vertical edges)
+    // strokeWallCorners: only draw at wall section edges (where there's no adjacent wall)
+    // strokeCorners: draw all vertical edges on every cube
+    if (strokeWallCorners) {
+      // Left corner - draw if no wall to the left
+      if (!leftPixel) {
+        ctx.beginPath();
+        ctx.moveTo(topLeft.x, topLeft.y);
+        ctx.lineTo(bottomLeft.x, bottomLeft.y);
+        ctx.stroke();
+      }
+
+      // Center corner (front) - draw if no wall below or to the right
+      if (!bottomPixel || !rightPixel) {
+        ctx.beginPath();
+        ctx.moveTo(bottomCenter.x, bottomCenter.y);
+        ctx.lineTo(bottomCenterLow.x, bottomCenterLow.y);
+        ctx.stroke();
+      }
+
+      // Right corner - draw if no wall above
+      if (!topPixel) {
+        ctx.beginPath();
+        ctx.moveTo(topRight.x, topRight.y);
+        ctx.lineTo(bottomRight.x, bottomRight.y);
+        ctx.stroke();
+      }
+    } else if (strokeCorners) {
       ctx.beginPath();
       ctx.moveTo(topLeft.x, topLeft.y);
       ctx.lineTo(bottomLeft.x, bottomLeft.y);
@@ -669,7 +699,13 @@ Maze.prototype.createTexturedCube = function ({
   strokeTop = true,
   strokeBottom = true,
   strokeCorners = true,
+  strokeWallCorners = false,
   wallBgColor = "",
+  // Neighbor info for wall corner detection
+  leftPixel = 0,
+  rightPixel = 0,
+  topPixel = 0,
+  bottomPixel = 0,
 }) {
   ctx.strokeStyle = borderColor;
   ctx.lineWidth = lineWidth;
@@ -764,7 +800,33 @@ Maze.prototype.createTexturedCube = function ({
     }
 
     // Corner edges (vertical edges)
-    if (strokeCorners) {
+    // strokeWallCorners: only draw at wall section edges (where there's no adjacent wall)
+    // strokeCorners: draw all vertical edges on every cube
+    if (strokeWallCorners) {
+      // Left corner - draw if no wall to the left
+      if (!leftPixel) {
+        ctx.beginPath();
+        ctx.moveTo(topLeft.x, topLeft.y);
+        ctx.lineTo(bottomLeft.x, bottomLeft.y);
+        ctx.stroke();
+      }
+
+      // Center corner (front) - draw if no wall below or to the right
+      if (!bottomPixel || !rightPixel) {
+        ctx.beginPath();
+        ctx.moveTo(bottomCenter.x, bottomCenter.y);
+        ctx.lineTo(bottomCenterLow.x, bottomCenterLow.y);
+        ctx.stroke();
+      }
+
+      // Right corner - draw if no wall above
+      if (!topPixel) {
+        ctx.beginPath();
+        ctx.moveTo(topRight.x, topRight.y);
+        ctx.lineTo(bottomRight.x, bottomRight.y);
+        ctx.stroke();
+      }
+    } else if (strokeCorners) {
       // Left corner
       ctx.beginPath();
       ctx.moveTo(topLeft.x, topLeft.y);
@@ -942,8 +1004,13 @@ Maze.prototype.draw = function () {
             strokeTop: this.strokeTop,
             strokeBottom: this.strokeBottom,
             strokeCorners: this.strokeCorners,
+            strokeWallCorners: this.strokeWallCorners,
             lineWidth: this.strokeWidth,
             wallBgColor: this.wallBgColor,
+            leftPixel,
+            rightPixel,
+            topPixel,
+            bottomPixel,
           });
         } else {
           // Fallback to programmatic cube drawing
@@ -958,6 +1025,7 @@ Maze.prototype.draw = function () {
             strokeTop: this.strokeTop,
             strokeBottom: this.strokeBottom,
             strokeCorners: this.strokeCorners,
+            strokeWallCorners: this.strokeWallCorners,
             lineWidth: this.strokeWidth,
             leftPixel,
             rightPixel,
