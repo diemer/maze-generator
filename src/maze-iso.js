@@ -23,6 +23,7 @@ function Maze(args) {
     wallHeight: 1.0, // Multiplier for wall height (1.0 = same as tileHeight)
     strokeWidth: 2, // Border thickness in pixels
     wallBgColor: "", // Optional background color for wall faces (behind transparent textures)
+    debugStrokeColors: false, // Show different colors for each stroke type (for debugging)
 
     // Maximum 300 walls can be removed
     maxWallsRemove: 300,
@@ -60,6 +61,7 @@ function Maze(args) {
   this.wallHeight = parseFloat(settings["wallHeight"]) || 1.0;
   this.strokeWidth = parseFloat(settings["strokeWidth"]) || 2;
   this.wallBgColor = settings["wallBgColor"] || "";
+  this.debugStrokeColors = settings["debugStrokeColors"] === true;
   this.maxMaze = parseInt(settings["maxMaze"], 10);
   this.maxCanvas = parseInt(settings["maxCanvas"], 10);
   this.maxCanvasDimension = parseInt(settings["maxCanvasDimension"], 10);
@@ -560,6 +562,7 @@ Maze.prototype.createBorderCube = function ({
   strokeBottom = true,
   strokeCorners = true,
   strokeWallCorners = false,
+  debugStrokeColors = false,
   leftPixel = 0,
   rightPixel = 0,
   topPixel = 0,
@@ -619,41 +622,39 @@ Maze.prototype.createBorderCube = function ({
 
   // Draw strokes selectively
   if (showStroke) {
-    // DEBUG: Color codes for strokeWallCorners mode
-    // Top edges: Red (#FF0000) = topCenter→topRight, Orange (#FF8800) = topRight→bottomCenter
-    //            Yellow (#CCCC00) = bottomCenter→topLeft, Lime (#88FF00) = topLeft→topCenter
-    // Bottom: Cyan (#00FFFF)
-    // Left corner: Blue (#0000FF)
-    // Center corner: Magenta (#FF00FF)
-    // Right corner: Green (#00FF00)
+    // Debug color codes (when debugStrokeColors is enabled):
+    // Top edges: Red = topCenter→topRight, Orange = topRight→bottomCenter
+    //            Yellow = bottomCenter→topLeft, Lime = topLeft→topCenter
+    // Bottom: Cyan
+    // Left corner: Blue, Center corner: Magenta, Right corner: Green
 
     // Top face edges - when strokeWallCorners is enabled, only draw edges on the outer boundary
     if (strokeTop) {
       if (strokeWallCorners) {
         // Draw each edge only if there's no adjacent wall sharing it
         if (!topPixel) {
-          ctx.strokeStyle = "#FF0000"; // RED - top edge (topCenter→topRight)
+          if (debugStrokeColors) ctx.strokeStyle = "#FF0000"; // RED
           ctx.beginPath();
           ctx.moveTo(topCenter.x, topCenter.y);
           ctx.lineTo(topRight.x, topRight.y);
           ctx.stroke();
         }
         if (!rightPixel) {
-          ctx.strokeStyle = "#FF8800"; // ORANGE - top edge (topRight→bottomCenter)
+          if (debugStrokeColors) ctx.strokeStyle = "#FF8800"; // ORANGE
           ctx.beginPath();
           ctx.moveTo(topRight.x, topRight.y);
           ctx.lineTo(bottomCenter.x, bottomCenter.y);
           ctx.stroke();
         }
         if (!bottomPixel) {
-          ctx.strokeStyle = "#CCCC00"; // YELLOW - top edge (bottomCenter→topLeft)
+          if (debugStrokeColors) ctx.strokeStyle = "#CCCC00"; // YELLOW
           ctx.beginPath();
           ctx.moveTo(bottomCenter.x, bottomCenter.y);
           ctx.lineTo(topLeft.x, topLeft.y);
           ctx.stroke();
         }
         if (!leftPixel) {
-          ctx.strokeStyle = "#88FF00"; // LIME - top edge (topLeft→topCenter)
+          if (debugStrokeColors) ctx.strokeStyle = "#88FF00"; // LIME
           ctx.beginPath();
           ctx.moveTo(topLeft.x, topLeft.y);
           ctx.lineTo(topCenter.x, topCenter.y);
@@ -671,7 +672,7 @@ Maze.prototype.createBorderCube = function ({
     }
 
     if (strokeBottom) {
-      ctx.strokeStyle = "#00FFFF"; // CYAN - bottom edges
+      if (debugStrokeColors) ctx.strokeStyle = "#00FFFF"; // CYAN
       ctx.beginPath();
       ctx.moveTo(bottomLeft.x, bottomLeft.y);
       ctx.lineTo(bottomCenterLow.x, bottomCenterLow.y);
@@ -685,7 +686,7 @@ Maze.prototype.createBorderCube = function ({
     if (strokeWallCorners) {
       // Left corner - draw if left face is exposed (no wall to the left)
       if (!leftPixel) {
-        ctx.strokeStyle = "#0000FF"; // BLUE - left corner
+        if (debugStrokeColors) ctx.strokeStyle = "#0000FF"; // BLUE
         ctx.beginPath();
         ctx.moveTo(topLeft.x, topLeft.y);
         ctx.lineTo(bottomLeft.x, bottomLeft.y);
@@ -693,22 +694,22 @@ Maze.prototype.createBorderCube = function ({
       }
 
       // Center corner (front) - draw at actual corners of the wall structure
-      // Only draw when BOTH front faces are exposed (no cubes in front that would cover this line)
-      // If rightPixel=1 or bottomPixel=1, those cubes' faces would be drawn on top and cover this line
-      const bothFrontFacesExposed = !rightPixel && !bottomPixel;
+      // Draw when at least one front face is exposed (right or bottom direction)
+      const frontExposed = !rightPixel || !bottomPixel;
       // Not in a straight wall section (would have walls on opposite sides)
       const notInStraightSection = !(leftPixel && rightPixel) && !(topPixel && bottomPixel);
-      if (bothFrontFacesExposed && notInStraightSection) {
-        ctx.strokeStyle = "#FF00FF"; // MAGENTA - center corner
+      if (frontExposed && notInStraightSection) {
+        if (debugStrokeColors) ctx.strokeStyle = "#FF00FF"; // MAGENTA
         ctx.beginPath();
         ctx.moveTo(bottomCenter.x, bottomCenter.y);
         ctx.lineTo(bottomCenterLow.x, bottomCenterLow.y);
         ctx.stroke();
       }
 
-      // Right corner - draw if top face is exposed AND at end of wall section
-      if (!topPixel && !rightPixel) {
-        ctx.strokeStyle = "#00FF00"; // GREEN - right corner
+      // Right corner - draw if right face is exposed AND not in middle of vertical wall section
+      // This draws at wall ends and fills in shared edges where center corner can't be drawn
+      if (!rightPixel && !(topPixel && bottomPixel)) {
+        if (debugStrokeColors) ctx.strokeStyle = "#00FF00"; // GREEN
         ctx.beginPath();
         ctx.moveTo(topRight.x, topRight.y);
         ctx.lineTo(bottomRight.x, bottomRight.y);
@@ -750,6 +751,7 @@ Maze.prototype.createTexturedCube = function ({
   strokeBottom = true,
   strokeCorners = true,
   strokeWallCorners = false,
+  debugStrokeColors = false,
   wallBgColor = "",
   // Neighbor info for wall corner detection
   leftPixel = 0,
@@ -830,40 +832,39 @@ Maze.prototype.createTexturedCube = function ({
   // Draw strokes selectively
   if (showStroke) {
     // DEBUG: Color codes for strokeWallCorners mode
-    // Top edges: Red (#FF0000) = topCenter→topRight, Orange (#FF8800) = topRight→bottomCenter
-    //            Yellow (#CCCC00) = bottomCenter→topLeft, Lime (#88FF00) = topLeft→topCenter
-    // Bottom: Cyan (#00FFFF)
-    // Left corner: Blue (#0000FF)
-    // Center corner: Magenta (#FF00FF)
-    // Right corner: Green (#00FF00)
+    // Debug color codes (when debugStrokeColors is enabled):
+    // Top edges: Red = topCenter→topRight, Orange = topRight→bottomCenter
+    //            Yellow = bottomCenter→topLeft, Lime = topLeft→topCenter
+    // Bottom: Cyan
+    // Left corner: Blue, Center corner: Magenta, Right corner: Green
 
     // Top face edges - when strokeWallCorners is enabled, only draw edges on the outer boundary
     if (strokeTop) {
       if (strokeWallCorners) {
         // Draw each edge only if there's no adjacent wall sharing it
         if (!topPixel) {
-          ctx.strokeStyle = "#FF0000"; // RED - top edge (topCenter→topRight)
+          if (debugStrokeColors) ctx.strokeStyle = "#FF0000"; // RED
           ctx.beginPath();
           ctx.moveTo(topCenter.x, topCenter.y);
           ctx.lineTo(topRight.x, topRight.y);
           ctx.stroke();
         }
         if (!rightPixel) {
-          ctx.strokeStyle = "#FF8800"; // ORANGE - top edge (topRight→bottomCenter)
+          if (debugStrokeColors) ctx.strokeStyle = "#FF8800"; // ORANGE
           ctx.beginPath();
           ctx.moveTo(topRight.x, topRight.y);
           ctx.lineTo(bottomCenter.x, bottomCenter.y);
           ctx.stroke();
         }
         if (!bottomPixel) {
-          ctx.strokeStyle = "#CCCC00"; // YELLOW - top edge (bottomCenter→topLeft)
+          if (debugStrokeColors) ctx.strokeStyle = "#CCCC00"; // YELLOW
           ctx.beginPath();
           ctx.moveTo(bottomCenter.x, bottomCenter.y);
           ctx.lineTo(topLeft.x, topLeft.y);
           ctx.stroke();
         }
         if (!leftPixel) {
-          ctx.strokeStyle = "#88FF00"; // LIME - top edge (topLeft→topCenter)
+          if (debugStrokeColors) ctx.strokeStyle = "#88FF00"; // LIME
           ctx.beginPath();
           ctx.moveTo(topLeft.x, topLeft.y);
           ctx.lineTo(topCenter.x, topCenter.y);
@@ -882,7 +883,7 @@ Maze.prototype.createTexturedCube = function ({
 
     // Bottom edges (horizontal bottom of cube)
     if (strokeBottom) {
-      ctx.strokeStyle = "#00FFFF"; // CYAN - bottom edges
+      if (debugStrokeColors) ctx.strokeStyle = "#00FFFF"; // CYAN
       ctx.beginPath();
       ctx.moveTo(bottomLeft.x, bottomLeft.y);
       ctx.lineTo(bottomCenterLow.x, bottomCenterLow.y);
@@ -896,7 +897,7 @@ Maze.prototype.createTexturedCube = function ({
     if (strokeWallCorners) {
       // Left corner - draw if left face is exposed (no wall to the left)
       if (!leftPixel) {
-        ctx.strokeStyle = "#0000FF"; // BLUE - left corner
+        if (debugStrokeColors) ctx.strokeStyle = "#0000FF"; // BLUE
         ctx.beginPath();
         ctx.moveTo(topLeft.x, topLeft.y);
         ctx.lineTo(bottomLeft.x, bottomLeft.y);
@@ -904,22 +905,22 @@ Maze.prototype.createTexturedCube = function ({
       }
 
       // Center corner (front) - draw at actual corners of the wall structure
-      // Only draw when BOTH front faces are exposed (no cubes in front that would cover this line)
-      // If rightPixel=1 or bottomPixel=1, those cubes' faces would be drawn on top and cover this line
-      const bothFrontFacesExposed = !rightPixel && !bottomPixel;
+      // Draw when at least one front face is exposed (right or bottom direction)
+      const frontExposed = !rightPixel || !bottomPixel;
       // Not in a straight wall section (would have walls on opposite sides)
       const notInStraightSection = !(leftPixel && rightPixel) && !(topPixel && bottomPixel);
-      if (bothFrontFacesExposed && notInStraightSection) {
-        ctx.strokeStyle = "#FF00FF"; // MAGENTA - center corner
+      if (frontExposed && notInStraightSection) {
+        if (debugStrokeColors) ctx.strokeStyle = "#FF00FF"; // MAGENTA
         ctx.beginPath();
         ctx.moveTo(bottomCenter.x, bottomCenter.y);
         ctx.lineTo(bottomCenterLow.x, bottomCenterLow.y);
         ctx.stroke();
       }
 
-      // Right corner - draw if top face is exposed AND at end of wall section
-      if (!topPixel && !rightPixel) {
-        ctx.strokeStyle = "#00FF00"; // GREEN - right corner
+      // Right corner - draw if right face is exposed AND not in middle of vertical wall section
+      // This draws at wall ends and fills in shared edges where center corner can't be drawn
+      if (!rightPixel && !(topPixel && bottomPixel)) {
+        if (debugStrokeColors) ctx.strokeStyle = "#00FF00"; // GREEN
         ctx.beginPath();
         ctx.moveTo(topRight.x, topRight.y);
         ctx.lineTo(bottomRight.x, bottomRight.y);
@@ -1105,6 +1106,7 @@ Maze.prototype.draw = function () {
             strokeBottom: this.strokeBottom,
             strokeCorners: this.strokeCorners,
             strokeWallCorners: this.strokeWallCorners,
+            debugStrokeColors: this.debugStrokeColors,
             lineWidth: this.strokeWidth,
             wallBgColor: this.wallBgColor,
             leftPixel,
@@ -1126,6 +1128,7 @@ Maze.prototype.draw = function () {
             strokeBottom: this.strokeBottom,
             strokeCorners: this.strokeCorners,
             strokeWallCorners: this.strokeWallCorners,
+            debugStrokeColors: this.debugStrokeColors,
             lineWidth: this.strokeWidth,
             leftPixel,
             rightPixel,

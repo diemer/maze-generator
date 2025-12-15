@@ -179,6 +179,7 @@ function refreshMazeTileset() {
   const strokeBottomCheckbox = document.getElementById('stroke-bottom');
   const strokeCornersCheckbox = document.getElementById('stroke-corners');
   const strokeWallCornersCheckbox = document.getElementById('stroke-wall-corners');
+  const debugStrokeColorsCheckbox = document.getElementById('debug-stroke-colors');
 
   mazeNodes.tileset = tileset;
   mazeNodes.tileImages = {}; // Clear cached images
@@ -187,6 +188,7 @@ function refreshMazeTileset() {
   mazeNodes.strokeBottom = strokeBottomCheckbox ? strokeBottomCheckbox.checked : true;
   mazeNodes.strokeCorners = strokeCornersCheckbox ? strokeCornersCheckbox.checked : true;
   mazeNodes.strokeWallCorners = strokeWallCornersCheckbox ? strokeWallCornersCheckbox.checked : false;
+  mazeNodes.debugStrokeColors = debugStrokeColorsCheckbox ? debugStrokeColorsCheckbox.checked : false;
   mazeNodes.wallHeight = wallHeightInput ? parseFloat(wallHeightInput.value) || 1.0 : 1.0;
   mazeNodes.strokeWidth = strokeWidthInput ? parseFloat(strokeWidthInput.value) || 2 : 2;
   mazeNodes.wallBgColor = wallBgColorInput ? wallBgColorInput.value.trim() : '';
@@ -204,7 +206,8 @@ function initStrokeToggle() {
     'stroke-top',
     'stroke-bottom',
     'stroke-corners',
-    'stroke-wall-corners'
+    'stroke-wall-corners',
+    'debug-stroke-colors'
   ];
   strokeCheckboxes.forEach(id => {
     const checkbox = document.getElementById(id);
