@@ -42,24 +42,32 @@ function initMaze() {
     download.innerHTML = 'download maze';
 
     // Build tileset from input fields
-    const tileWall = document.getElementById('tile-wall');
+    const tileWallLeft = document.getElementById('tile-wall-left');
+    const tileWallRight = document.getElementById('tile-wall-right');
     const tilePathway = document.getElementById('tile-pathway');
     const tileStart = document.getElementById('tile-start');
     const tileEnd = document.getElementById('tile-end');
+    const showStrokeCheckbox = document.getElementById('show-stroke');
 
     let tileset = null;
-    const wallUrl = tileWall ? tileWall.value.trim() : '';
+    const wallLeftUrl = tileWallLeft ? tileWallLeft.value.trim() : '';
+    const wallRightUrl = tileWallRight ? tileWallRight.value.trim() : '';
     const pathwayUrl = tilePathway ? tilePathway.value.trim() : '';
     const startUrl = tileStart ? tileStart.value.trim() : '';
     const endUrl = tileEnd ? tileEnd.value.trim() : '';
 
-    if (wallUrl || pathwayUrl || startUrl || endUrl) {
+    if (wallLeftUrl || wallRightUrl || pathwayUrl || startUrl || endUrl) {
         tileset = {};
-        if (wallUrl) tileset.wall = wallUrl;
+        if (wallLeftUrl) tileset.wallLeft = wallLeftUrl;
+        if (wallRightUrl) tileset.wallRight = wallRightUrl;
         if (pathwayUrl) tileset.pathway = pathwayUrl;
         if (startUrl) tileset.start = startUrl;
         if (endUrl) tileset.end = endUrl;
     }
+
+    const showStroke = showStrokeCheckbox ? showStrokeCheckbox.checked : true;
+    const wallHeight = getInputFloatVal('wall-height', 1.0);
+    const strokeWidth = getInputFloatVal('stroke-width', 2);
 
     const settings = {
         width: getInputIntVal('width', 20),
@@ -70,6 +78,9 @@ function initMaze() {
         pathHeight: getInputIntVal('path-height', 1),
         removeWalls: getInputIntVal('remove_walls', 0),
         tileset: tileset,
+        showStroke: showStroke,
+        wallHeight: wallHeight,
+        strokeWidth: strokeWidth,
         entryType: '',
         bias: '',
         color: '#000000',

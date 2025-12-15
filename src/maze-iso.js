@@ -13,8 +13,11 @@ function Maze(args) {
     solveColor: "#cc3737",
     removeWalls: 0,
 
-    // Tileset configuration: { wall: url, pathway: url, start: url, end: url }
+    // Tileset configuration: { wallLeft: url, wallRight: url, pathway: url, start: url, end: url }
     tileset: null,
+    showStroke: true,
+    wallHeight: 1.0, // Multiplier for wall height (1.0 = same as tileHeight)
+    strokeWidth: 2, // Border thickness in pixels
 
     // Maximum 300 walls can be removed
     maxWallsRemove: 300,
@@ -44,6 +47,9 @@ function Maze(args) {
   this.solveColor = settings["solveColor"];
   this.tileset = settings["tileset"];
   this.tileImages = {}; // Will hold loaded Image objects
+  this.showStroke = settings["showStroke"] !== false;
+  this.wallHeight = parseFloat(settings["wallHeight"]) || 1.0;
+  this.strokeWidth = parseFloat(settings["strokeWidth"]) || 2;
   this.maxMaze = parseInt(settings["maxMaze"], 10);
   this.maxCanvas = parseInt(settings["maxCanvas"], 10);
   this.maxCanvasDimension = parseInt(settings["maxCanvasDimension"], 10);
@@ -58,7 +64,7 @@ Maze.prototype.loadTileset = function () {
       return;
     }
 
-    const tileTypes = ['wall', 'pathway', 'start', 'end'];
+    const tileTypes = ['wallLeft', 'wallRight', 'pathway', 'start', 'end'];
     const promises = [];
 
     tileTypes.forEach((type) => {
@@ -539,6 +545,7 @@ Maze.prototype.createBorderCube = function ({
   height = tileHeight, // Height of the cube
   borderColor = "#000000", // Border color
   lineWidth = 2, // Border thickness
+  showStroke = true,
   leftPixel = 0,
   rightPixel = 0,
   topPixel = 0,
@@ -565,7 +572,7 @@ Maze.prototype.createBorderCube = function ({
   ctx.lineTo(isoX - tileWidth * 0.5, isoY + tileHeight * 0.5); // Top left
   ctx.closePath();
   ctx.fill();
-  ctx.stroke();
+  if (showStroke) ctx.stroke();
 
   // Draw left face border
   ctx.fillStyle = "#aaa";
@@ -576,7 +583,7 @@ Maze.prototype.createBorderCube = function ({
   ctx.lineTo(isoX, isoY + tileHeight + height); // Bottom center extended
   ctx.closePath();
   ctx.fill();
-  ctx.stroke();
+  if (showStroke) ctx.stroke();
 
   // Draw right face border
   ctx.fillStyle = "#888";
@@ -587,7 +594,111 @@ Maze.prototype.createBorderCube = function ({
   ctx.lineTo(isoX, isoY + tileHeight + height); // Bottom center extended
   ctx.closePath();
   ctx.fill();
-  ctx.stroke();
+  if (showStroke) ctx.stroke();
+};
+
+Maze.prototype.createTexturedCube = function ({
+  ctx,
+  isoX,
+  isoY,
+  tileWidth,
+  tileHeight,
+  height = tileHeight,
+  leftImage = null,
+  rightImage = null,
+  topColor = "#ffffff",
+  borderColor = "#000000",
+  lineWidth = 2,
+  showStroke = true,
+}) {
+  ctx.strokeStyle = borderColor;
+  ctx.lineWidth = lineWidth;
+  ctx.lineJoin = 'round';
+
+  // Draw top face (solid color)
+  ctx.fillStyle = topColor;
+  ctx.beginPath();
+  ctx.moveTo(isoX, isoY);
+  ctx.lineTo(isoX + tileWidth * 0.5, isoY + tileHeight * 0.5);
+  ctx.lineTo(isoX, isoY + tileHeight);
+  ctx.lineTo(isoX - tileWidth * 0.5, isoY + tileHeight * 0.5);
+  ctx.closePath();
+  ctx.fill();
+  if (showStroke) ctx.stroke();
+
+  // Draw left face with image or fallback color
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(isoX, isoY + tileHeight);
+  ctx.lineTo(isoX - tileWidth * 0.5, isoY + tileHeight * 0.5);
+  ctx.lineTo(isoX - tileWidth * 0.5, isoY + tileHeight * 0.5 + height);
+  ctx.lineTo(isoX, isoY + tileHeight + height);
+  ctx.closePath();
+
+  if (leftImage) {
+    ctx.clip();
+    // Draw image to cover the clipped area
+    ctx.drawImage(
+      leftImage,
+      isoX - tileWidth * 0.5,
+      isoY + tileHeight * 0.5,
+      tileWidth * 0.5,
+      height
+    );
+    ctx.restore();
+    // Redraw path for stroke
+    if (showStroke) {
+      ctx.beginPath();
+      ctx.moveTo(isoX, isoY + tileHeight);
+      ctx.lineTo(isoX - tileWidth * 0.5, isoY + tileHeight * 0.5);
+      ctx.lineTo(isoX - tileWidth * 0.5, isoY + tileHeight * 0.5 + height);
+      ctx.lineTo(isoX, isoY + tileHeight + height);
+      ctx.closePath();
+      ctx.stroke();
+    }
+  } else {
+    ctx.fillStyle = "#aaa";
+    ctx.fill();
+    if (showStroke) ctx.stroke();
+    ctx.restore();
+  }
+
+  // Draw right face with image or fallback color
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(isoX, isoY + tileHeight);
+  ctx.lineTo(isoX + tileWidth * 0.5, isoY + tileHeight * 0.5);
+  ctx.lineTo(isoX + tileWidth * 0.5, isoY + tileHeight * 0.5 + height);
+  ctx.lineTo(isoX, isoY + tileHeight + height);
+  ctx.closePath();
+
+  if (rightImage) {
+    ctx.clip();
+    // Draw image to cover the clipped area
+    ctx.drawImage(
+      rightImage,
+      isoX,
+      isoY + tileHeight * 0.5,
+      tileWidth * 0.5,
+      height
+    );
+    ctx.restore();
+    // Redraw path for stroke
+    if (showStroke) {
+      ctx.beginPath();
+      ctx.moveTo(isoX, isoY + tileHeight);
+      ctx.lineTo(isoX + tileWidth * 0.5, isoY + tileHeight * 0.5);
+      ctx.lineTo(isoX + tileWidth * 0.5, isoY + tileHeight * 0.5 + height);
+      ctx.lineTo(isoX, isoY + tileHeight + height);
+      ctx.closePath();
+      ctx.stroke();
+    }
+  } else {
+    ctx.fillStyle = "#888";
+    ctx.fill();
+    if (showStroke) ctx.stroke();
+    ctx.restore();
+  }
 };
 
 Maze.prototype.createCube = function ({
@@ -649,11 +760,11 @@ Maze.prototype.draw = function () {
   // Calculate the full isometric dimensions
   const isoWidth = matrixCols * tileWidth * 0.5; // Isometric width
   const isoHeight = matrixRows * tileHeight * 0.5; // Isometric height
-  const cubeHeight = tileHeight; // Height of the 3D cube faces extending below
+  const cubeHeight = tileHeight * this.wallHeight; // Height of the 3D cube faces extending below
 
   // Adjust canvas size to fit the isometric maze (scaled)
-  // Add extra margin for stroke width (lineWidth=2 means 1px on each side)
-  const strokeMargin = 2;
+  // Only add stroke margin if strokes are enabled
+  const strokeMargin = this.showStroke ? this.strokeWidth : 0;
   canvas.width = (isoWidth * 2 + strokeMargin) * scale; // Total projected width
   canvas.height = (isoHeight * 2 + tileHeight + cubeHeight + strokeMargin) * scale; // Total projected height + cube depth
 
@@ -730,12 +841,21 @@ Maze.prototype.draw = function () {
 
       if (pixel) {
         // Draw wall tile
-        if (this.tileImages.wall) {
-          // Draw tile image centered on isometric position
-          const img = this.tileImages.wall;
-          const drawX = isoX - tileWidth * 0.5;
-          const drawY = isoY;
-          ctx.drawImage(img, drawX, drawY, tileWidth, tileHeight + cubeHeight);
+        if (this.tileImages.wallLeft || this.tileImages.wallRight) {
+          // Use textured cube with directional wall images
+          this.createTexturedCube({
+            ctx,
+            isoX,
+            isoY,
+            tileWidth,
+            tileHeight,
+            height: cubeHeight,
+            leftImage: this.tileImages.wallLeft || null,
+            rightImage: this.tileImages.wallRight || null,
+            topColor: "#ffffff",
+            showStroke: this.showStroke,
+            lineWidth: this.strokeWidth,
+          });
         } else {
           // Fallback to programmatic cube drawing
           this.createBorderCube({
@@ -744,6 +864,9 @@ Maze.prototype.draw = function () {
             isoY,
             tileWidth,
             tileHeight,
+            height: cubeHeight,
+            showStroke: this.showStroke,
+            lineWidth: this.strokeWidth,
             leftPixel,
             rightPixel,
             topPixel,
