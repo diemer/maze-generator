@@ -1426,7 +1426,7 @@ Maze.prototype.draw = function () {
       const markerX = gateX + outX;
       const markerY = gateY + outY;
 
-      // Draw end marker tile at offset position, shifted down to align with floor level
+      // Draw end marker tile at offset position, bottom-aligned like start marker
       if (img) {
         const markerIsoX = (markerX - markerY) * tileWidth * 0.5 + offsetX;
         const markerIsoY = (markerX + markerY) * tileHeight * 0.5 + offsetY;
@@ -1434,8 +1434,9 @@ Maze.prototype.draw = function () {
         const drawWidth = tileWidth + tightPadding * 2;
         const drawHeight = drawWidth * tileAspect;
         const drawX = markerIsoX - drawWidth * 0.5 + this.endMarkerOffsetX; // Apply horizontal offset
+        // Bottom-align: same as start gate, plus user offset
         const cubeBottomY = markerIsoY + tileHeight + cubeHeight;
-        const drawY = cubeBottomY - drawHeight + cubeHeight + this.endMarkerOffset; // Shift down one cubeHeight + offset
+        const drawY = cubeBottomY - drawHeight + this.endMarkerOffset;
         ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
       }
     } else {
