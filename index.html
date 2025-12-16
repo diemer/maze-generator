@@ -277,12 +277,12 @@
 
     <p>
       <label for="width">Columns:</label>
-      <input id="width" type="number" name="width" value="20" min="3" max="200" />
+      <input id="width" type="number" name="width" value="10" min="3" max="200" />
     </p>
 
     <p>
       <label for="height">Rows:</label>
-      <input id="height" type="number" name="height" value="20" min="3" max="200" />
+      <input id="height" type="number" name="height" value="10" min="3" max="200" />
     </p>
     <p>
       <label for="entry">Maze entries:</label>
@@ -378,12 +378,12 @@
     <p>
       <label for="debug-test-pattern">Debug test pattern:</label>
       <input id="debug-test-pattern" type="checkbox" name="debug-test-pattern" />
-      <span style="font-size: smaller; color: #666;">(Shows numbered wall configurations)</span>
+      <span style="font-size: smaller; color: #666">(Shows numbered wall configurations)</span>
     </p>
     <p>
       <label for="tight-spacing">Tight spacing:</label>
       <input id="tight-spacing" type="checkbox" name="tight-spacing" />
-      <span style="font-size: smaller; color: #666;">(Seamless floor tiles for tilesets)</span>
+      <span style="font-size: smaller; color: #666">(Seamless floor tiles for tilesets)</span>
     </p>
     <div class="color-picker" data-default="">
       <label for="wall-bg-color">Wall bg color:</label>
@@ -423,13 +423,15 @@
       </div>
       <div class="asset-grid"></div>
     </div>
-    <p class="desc" style="margin-top: 1em;">
-      Start/End markers (directional). Use N/S/E/W variants based on gate direction.
+    <p class="desc" style="margin-top: 1em">
+      Start/End markers (directional). Use N/S/E/W variants based on gate
+      direction.
     </p>
     <div class="asset-picker">
       <label for="tile-start-n">Start (North):</label>
       <div class="asset-picker-controls">
-        <input id="tile-start-n" type="text" name="tile-start-n" value="" placeholder="URL or select..." />
+        <input id="tile-start-n" type="text" name="tile-start-n" value="src/assets/isostair3.png"
+          placeholder="URL or select..." />
         <button type="button" class="picker-toggle">Browse</button>
         <button type="button" class="clear-btn">Clear</button>
         <div class="selected-preview"></div>
@@ -439,7 +441,8 @@
     <div class="asset-picker">
       <label for="tile-start-s">Start (South):</label>
       <div class="asset-picker-controls">
-        <input id="tile-start-s" type="text" name="tile-start-s" value="" placeholder="URL or select..." />
+        <input id="tile-start-s" type="text" name="tile-start-s" value="src/assets/isostair.png"
+          placeholder="URL or select..." />
         <button type="button" class="picker-toggle">Browse</button>
         <button type="button" class="clear-btn">Clear</button>
         <div class="selected-preview"></div>
@@ -449,7 +452,8 @@
     <div class="asset-picker">
       <label for="tile-start-e">Start (East):</label>
       <div class="asset-picker-controls">
-        <input id="tile-start-e" type="text" name="tile-start-e" value="" placeholder="URL or select..." />
+        <input id="tile-start-e" type="text" name="tile-start-e" value="src/assets/isostair4.png"
+          placeholder="URL or select..." />
         <button type="button" class="picker-toggle">Browse</button>
         <button type="button" class="clear-btn">Clear</button>
         <div class="selected-preview"></div>
@@ -459,7 +463,8 @@
     <div class="asset-picker">
       <label for="tile-start-w">Start (West):</label>
       <div class="asset-picker-controls">
-        <input id="tile-start-w" type="text" name="tile-start-w" value="" placeholder="URL or select..." />
+        <input id="tile-start-w" type="text" name="tile-start-w" value="src/assets/isostair2.png"
+          placeholder="URL or select..." />
         <button type="button" class="picker-toggle">Browse</button>
         <button type="button" class="clear-btn">Clear</button>
         <div class="selected-preview"></div>
@@ -469,7 +474,8 @@
     <div class="asset-picker">
       <label for="tile-end-n">End (North):</label>
       <div class="asset-picker-controls">
-        <input id="tile-end-n" type="text" name="tile-end-n" value="" placeholder="URL or select..." />
+        <input id="tile-end-n" type="text" name="tile-end-n" value="src/assets/isostair3.png"
+          placeholder="URL or select..." />
         <button type="button" class="picker-toggle">Browse</button>
         <button type="button" class="clear-btn">Clear</button>
         <div class="selected-preview"></div>
@@ -479,7 +485,8 @@
     <div class="asset-picker">
       <label for="tile-end-s">End (South):</label>
       <div class="asset-picker-controls">
-        <input id="tile-end-s" type="text" name="tile-end-s" value="" placeholder="URL or select..." />
+        <input id="tile-end-s" type="text" name="tile-end-s" value="src/assets/isostair.png"
+          placeholder="URL or select..." />
         <button type="button" class="picker-toggle">Browse</button>
         <button type="button" class="clear-btn">Clear</button>
         <div class="selected-preview"></div>
@@ -489,7 +496,8 @@
     <div class="asset-picker">
       <label for="tile-end-e">End (East):</label>
       <div class="asset-picker-controls">
-        <input id="tile-end-e" type="text" name="tile-end-e" value="" placeholder="URL or select..." />
+        <input id="tile-end-e" type="text" name="tile-end-e" value="src/assets/isostair4.png"
+          placeholder="URL or select..." />
         <button type="button" class="picker-toggle">Browse</button>
         <button type="button" class="clear-btn">Clear</button>
         <div class="selected-preview"></div>
@@ -499,7 +507,8 @@
     <div class="asset-picker">
       <label for="tile-end-w">End (West):</label>
       <div class="asset-picker-controls">
-        <input id="tile-end-w" type="text" name="tile-end-w" value="" placeholder="URL or select..." />
+        <input id="tile-end-w" type="text" name="tile-end-w" value="src/assets/isostair2.png"
+          placeholder="URL or select..." />
         <button type="button" class="picker-toggle">Browse</button>
         <button type="button" class="clear-btn">Clear</button>
         <div class="selected-preview"></div>

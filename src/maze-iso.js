@@ -1185,39 +1185,6 @@ Maze.prototype.draw = function () {
         ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
       }
 
-      // Draw start/end markers with directional support
-      if (isStart) {
-        // Determine direction from start point to its gate
-        const startDir = this.entryNodes.start && this.entryNodes.start.gate
-          ? this.getGateDirection(startNode.x, startNode.y, this.entryNodes.start.gate.x, this.entryNodes.start.gate.y)
-          : 'N';
-        // Try directional tile first, fall back to generic
-        const img = this.tileImages['start' + startDir] || this.tileImages.start;
-        if (img) {
-          const tileAspect = img.naturalHeight / img.naturalWidth;
-          const drawWidth = tileWidth + tightPadding * 2;
-          const drawHeight = drawWidth * tileAspect;
-          const drawX = isoX - drawWidth * 0.5;
-          const drawY = isoY - tightPadding * tileAspect;
-          ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
-        }
-      }
-      if (isEnd) {
-        // Determine direction from end point to its gate
-        const endDir = this.entryNodes.end && this.entryNodes.end.gate
-          ? this.getGateDirection(endNode.x, endNode.y, this.entryNodes.end.gate.x, this.entryNodes.end.gate.y)
-          : 'S';
-        // Try directional tile first, fall back to generic
-        const img = this.tileImages['end' + endDir] || this.tileImages.end;
-        if (img) {
-          const tileAspect = img.naturalHeight / img.naturalWidth;
-          const drawWidth = tileWidth + tightPadding * 2;
-          const drawHeight = drawWidth * tileAspect;
-          const drawX = isoX - drawWidth * 0.5;
-          const drawY = isoY - tightPadding * tileAspect;
-          ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
-        }
-      }
     }
   }
 
@@ -1227,13 +1194,45 @@ Maze.prototype.draw = function () {
            (gateExit && x === gateExit.x && y === gateExit.y);
   };
 
-  // PASS 2: Draw all wall tiles on top
+  // Helper to draw a gate tile at the given position
+  const drawGateTile = (gateX, gateY, isStart) => {
+    const entryData = isStart ? this.entryNodes.start : this.entryNodes.end;
+    if (!entryData) return;
+
+    const dir = entryData.gate
+      ? this.getGateDirection(entryData.x, entryData.y, gateX, gateY)
+      : (isStart ? 'N' : 'S');
+    const tileKey = (isStart ? 'start' : 'end') + dir;
+    const img = this.tileImages[tileKey] || this.tileImages[isStart ? 'start' : 'end'];
+
+    if (img) {
+      const gateIsoX = (gateX - gateY) * tileWidth * 0.5 + offsetX;
+      const gateIsoY = (gateX + gateY) * tileHeight * 0.5 + offsetY;
+      const tightPadding = this.tightSpacing ? this.strokeWidth * 0.5 : 0;
+      const tileAspect = img.naturalHeight / img.naturalWidth;
+      const drawWidth = tileWidth + tightPadding * 2;
+      const drawHeight = drawWidth * tileAspect;
+      const drawX = gateIsoX - drawWidth * 0.5;
+      const drawY = gateIsoY - tightPadding * tileAspect;
+      ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+    }
+  };
+
+  // PASS 2: Draw all wall tiles and gate tiles in correct depth order
   for (let i = 0; i < rowCount; i++) {
     const rowLength = this.matrix[i].length;
     for (let j = 0; j < rowLength; j++) {
-      if (gateEntry && gateExit) {
-        if (j === gateEntry.x && i === gateEntry.y) continue;
-        if (j === gateExit.x && i === gateExit.y) continue;
+      // Check if this is a gate position - draw gate tile instead of wall
+      const isStartGate = gateEntry && j === gateEntry.x && i === gateEntry.y;
+      const isEndGate = gateExit && j === gateExit.x && i === gateExit.y;
+
+      if (isStartGate) {
+        drawGateTile(j, i, true);
+        continue;
+      }
+      if (isEndGate) {
+        drawGateTile(j, i, false);
+        continue;
       }
 
       const pixel = parseInt(this.matrix[i].charAt(j), 10);

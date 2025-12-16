@@ -680,10 +680,23 @@ function initIsoRatio() {
   }
 }
 
+// Initialize previews for inputs with existing values
+function initPreviews() {
+  const pickers = document.querySelectorAll('.asset-picker');
+  pickers.forEach(picker => {
+    const input = picker.querySelector('input[type="text"]');
+    const preview = picker.querySelector('.selected-preview');
+    if (input && preview && input.value.trim()) {
+      updatePreview(preview, input.value.trim());
+    }
+  });
+}
+
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', function() {
   initAssetPickers();
   initStrokeToggle();
   initWallBgColor();
   initIsoRatio();
+  initPreviews();
 });
