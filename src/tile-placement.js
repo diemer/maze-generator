@@ -6,35 +6,48 @@
 (function(root) {
   'use strict';
 
-  // Currently selected decoration tile URL
+  // Currently selected decoration tile URL and layer
   var selectedDecorationTile = null;
+  var selectedLayer = 'floor'; // 'floor' (under walls) or 'overlay' (above walls)
 
-  // Decoration categories with available tiles
+  // Decoration categories with available tiles and their default layers
   var DECORATION_CATEGORIES = {
-    furniture: [
-      'src/assets/isoChest.png',
-      'src/assets/isoChest2.png',
-      'src/assets/IsoTableRound.png',
-      'src/assets/IsoTableSquare.png',
-      'src/assets/IsoChair1.png',
-      'src/assets/IsoChair2.png',
-      'src/assets/isobed.png',
-      'src/assets/isobookcase.png',
-      'src/assets/IsoBarrel.png',
-      'src/assets/isocrate.png'
-    ],
-    lighting: [
-      'src/assets/isowalltorch.png',
-      'src/assets/isowalltorch2.png',
-      'src/assets/isocandle.png',
-      'src/assets/isocandlelit.png'
-    ],
-    hazards: [
-      'src/assets/Iso-Pit.png',
-      'src/assets/isobones.png',
-      'src/assets/isobones2.png'
-    ]
+    furniture: {
+      layer: 'floor',  // Furniture goes under walls
+      tiles: [
+        'src/assets/isoChest.png',
+        'src/assets/isoChest2.png',
+        'src/assets/IsoTableRound.png',
+        'src/assets/IsoTableSquare.png',
+        'src/assets/IsoChair1.png',
+        'src/assets/IsoChair2.png',
+        'src/assets/isobed.png',
+        'src/assets/isobookcase.png',
+        'src/assets/IsoBarrel.png',
+        'src/assets/isocrate.png'
+      ]
+    },
+    lighting: {
+      layer: 'overlay',  // Lighting effects go on top
+      tiles: [
+        'src/assets/isowalltorch.png',
+        'src/assets/isowalltorch2.png',
+        'src/assets/isocandle.png',
+        'src/assets/isocandlelit.png'
+      ]
+    },
+    hazards: {
+      layer: 'floor',  // Hazards on floor
+      tiles: [
+        'src/assets/Iso-Pit.png',
+        'src/assets/isobones.png',
+        'src/assets/isobones2.png'
+      ]
+    }
   };
+
+  // Map tile URL to its default layer
+  var tileLayerMap = {};
 
   // Track hovered grid cell
   var hoveredCell = null;
@@ -98,7 +111,8 @@
         y: coords.gridY,
         isFloor: isFloor,
         hasDecoration: !!decoration,
-        decorationUrl: decoration ? decoration.tileUrl : null
+        decorationUrl: decoration ? decoration.tileUrl : null,
+        decorationLayer: decoration ? decoration.layer : null
       });
     } else {
       updateHoverInfo(null);
@@ -128,9 +142,11 @@
       el.textContent = 'Cell (' + info.x + ', ' + info.y + '): Wall (cannot place)';
     } else if (info.hasDecoration) {
       var filename = info.decorationUrl.split('/').pop();
-      el.textContent = 'Cell (' + info.x + ', ' + info.y + '): ' + filename + ' (click to remove)';
+      var layerInfo = info.decorationLayer ? ' [' + info.decorationLayer + ']' : '';
+      el.textContent = 'Cell (' + info.x + ', ' + info.y + '): ' + filename + layerInfo + ' (click to remove)';
     } else {
-      el.textContent = 'Cell (' + info.x + ', ' + info.y + '): Empty floor (click to place)';
+      var placingLayer = tileLayerMap[selectedDecorationTile] || selectedLayer;
+      el.textContent = 'Cell (' + info.x + ', ' + info.y + '): Empty (place on ' + placingLayer + ' layer)';
     }
   }
 
@@ -186,8 +202,9 @@
       // Same tile - remove it (toggle off)
       mazeNodes.setDecoration(gridX, gridY, null);
     } else {
-      // Place new decoration
-      mazeNodes.setDecoration(gridX, gridY, selectedDecorationTile);
+      // Place new decoration with layer
+      var layer = tileLayerMap[selectedDecorationTile] || selectedLayer;
+      mazeNodes.setDecoration(gridX, gridY, selectedDecorationTile, 'misc', layer);
     }
 
     // Reload decoration images and redraw
@@ -252,7 +269,9 @@
   function initDecorationPalette() {
     Object.entries(DECORATION_CATEGORIES).forEach(function(entry) {
       var category = entry[0];
-      var tiles = entry[1];
+      var categoryData = entry[1];
+      var tiles = categoryData.tiles;
+      var categoryLayer = categoryData.layer;
 
       var container = document.querySelector(
         '.palette-category[data-category="' + category + '"] .palette-items'
@@ -260,9 +279,14 @@
       if (!container) return;
 
       tiles.forEach(function(tileUrl) {
+        // Map tile to its default layer
+        tileLayerMap[tileUrl] = categoryLayer;
+
         var item = document.createElement('div');
         item.className = 'palette-item';
         item.dataset.tile = tileUrl;
+        item.dataset.layer = categoryLayer;
+        item.title = tileUrl.split('/').pop() + ' (' + categoryLayer + ' layer)';
 
         var img = document.createElement('img');
         img.src = tileUrl;
@@ -271,6 +295,7 @@
 
         item.addEventListener('click', function() {
           setSelectedDecoration(tileUrl);
+          selectedLayer = categoryLayer;
         });
 
         container.appendChild(item);

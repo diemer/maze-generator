@@ -407,6 +407,27 @@
       color: #666;
       min-height: 1.2em;
     }
+
+    .layer-badge {
+      display: inline-block;
+      padding: 1px 6px;
+      font-size: 0.7em;
+      font-weight: normal;
+      border-radius: 3px;
+      vertical-align: middle;
+    }
+
+    .layer-badge.floor {
+      background: #e8f5e9;
+      color: #2e7d32;
+      border: 1px solid #a5d6a7;
+    }
+
+    .layer-badge.overlay {
+      background: #fff3e0;
+      color: #e65100;
+      border: 1px solid #ffcc80;
+    }
   </style>
 </head>
 
@@ -731,15 +752,15 @@
     <h4>Decorations</h4>
     <p class="palette-hint">Select a decoration, then click on a floor tile to place it</p>
     <div class="palette-category" data-category="furniture">
-      <h5>Furniture</h5>
+      <h5>Furniture <span class="layer-badge floor">floor</span></h5>
       <div class="palette-items"></div>
     </div>
     <div class="palette-category" data-category="lighting">
-      <h5>Lighting</h5>
+      <h5>Lighting <span class="layer-badge overlay">overlay</span></h5>
       <div class="palette-items"></div>
     </div>
     <div class="palette-category" data-category="hazards">
-      <h5>Hazards</h5>
+      <h5>Hazards <span class="layer-badge floor">floor</span></h5>
       <div class="palette-items"></div>
     </div>
     <div class="palette-actions">

@@ -184,7 +184,8 @@ Maze.prototype.loadDecorations = function () {
 };
 
 // Set a decoration at a grid position
-Maze.prototype.setDecoration = function (gridX, gridY, tileUrl, category) {
+// layer: "floor" (above floor, below walls) or "overlay" (above everything)
+Maze.prototype.setDecoration = function (gridX, gridY, tileUrl, category, layer) {
   const key = `${gridX},${gridY}`;
 
   // Validate it's a floor cell (not a wall)
@@ -197,7 +198,11 @@ Maze.prototype.setDecoration = function (gridX, gridY, tileUrl, category) {
   }
 
   if (tileUrl) {
-    this.decorations[key] = { tileUrl, category: category || 'misc' };
+    this.decorations[key] = {
+      tileUrl,
+      category: category || 'misc',
+      layer: layer || 'floor'  // Default to floor layer
+    };
   } else {
     delete this.decorations[key];
   }
@@ -1345,12 +1350,18 @@ Maze.prototype.draw = function () {
     }
   }
 
-  // PASS 1.5: Draw decorative tiles on floor cells (on top of floors, under walls)
+  // Helper to draw decorations for a specific layer
   const decorationEntries = Object.entries(this.decorations);
-  if (decorationEntries.length > 0) {
+  const drawDecorationsForLayer = (layerName) => {
+    if (decorationEntries.length === 0) return;
+
     const tightPadding = this.tightSpacing ? this.strokeWidth * 0.5 : 0;
 
     for (const [key, decoration] of decorationEntries) {
+      // Skip if not in the requested layer
+      const decorLayer = decoration.layer || 'floor';
+      if (decorLayer !== layerName) continue;
+
       const [j, i] = key.split(',').map(Number);
 
       // Skip if out of bounds
@@ -1375,7 +1386,10 @@ Maze.prototype.draw = function () {
 
       ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
     }
-  }
+  };
+
+  // PASS 1.5: Draw "floor" layer decorations (on top of floors, under walls)
+  drawDecorationsForLayer('floor');
 
   // Helper to check if a position is a gate (should be treated as empty for neighbor calculations)
   const isGate = (x, y) => {
@@ -1534,6 +1548,9 @@ Maze.prototype.draw = function () {
       }
     }
   }
+
+  // PASS 3: Draw "overlay" layer decorations (on top of everything)
+  drawDecorationsForLayer('overlay');
 };
 
 Maze.prototype.generateSVG = function () {
