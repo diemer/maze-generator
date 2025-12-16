@@ -817,6 +817,7 @@ Maze.prototype.createTexturedCube = function ({
   strokeWallCorners = false,
   debugStrokeColors = false,
   wallBgColor = "",
+  tightSpacing = false,
   // Neighbor info for wall corner detection
   leftPixel = 0,
   rightPixel = 0,
@@ -849,6 +850,9 @@ Maze.prototype.createTexturedCube = function ({
   ctx.closePath();
   ctx.fill();
 
+  // Tight spacing padding for wall faces
+  const tightPad = tightSpacing ? lineWidth * 0.5 : 0;
+
   // Draw left face with image or fallback color
   ctx.save();
   ctx.beginPath();
@@ -864,7 +868,12 @@ Maze.prototype.createTexturedCube = function ({
       ctx.fill();
     }
     ctx.clip();
-    ctx.drawImage(leftImage, topLeft.x, topLeft.y, tileWidth * 0.5, height);
+    // Expand image slightly when tightSpacing to eliminate gaps
+    const leftDrawX = topLeft.x - tightPad;
+    const leftDrawY = topLeft.y - tightPad;
+    const leftDrawW = tileWidth * 0.5 + tightPad * 2;
+    const leftDrawH = height + tightPad * 2;
+    ctx.drawImage(leftImage, leftDrawX, leftDrawY, leftDrawW, leftDrawH);
     ctx.restore();
   } else {
     ctx.fillStyle = wallBgColor || "#aaa";
@@ -887,7 +896,12 @@ Maze.prototype.createTexturedCube = function ({
       ctx.fill();
     }
     ctx.clip();
-    ctx.drawImage(rightImage, isoX, topRight.y, tileWidth * 0.5, height);
+    // Expand image slightly when tightSpacing to eliminate gaps
+    const rightDrawX = isoX - tightPad;
+    const rightDrawY = topRight.y - tightPad;
+    const rightDrawW = tileWidth * 0.5 + tightPad * 2;
+    const rightDrawH = height + tightPad * 2;
+    ctx.drawImage(rightImage, rightDrawX, rightDrawY, rightDrawW, rightDrawH);
     ctx.restore();
   } else {
     ctx.fillStyle = wallBgColor || "#888";
@@ -1190,6 +1204,7 @@ Maze.prototype.draw = function () {
             debugStrokeColors: this.debugStrokeColors,
             lineWidth: this.strokeWidth,
             wallBgColor: this.wallBgColor,
+            tightSpacing: this.tightSpacing,
             leftPixel,
             rightPixel,
             topPixel,
