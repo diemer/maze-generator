@@ -1383,8 +1383,9 @@ Maze.prototype.draw = function () {
       const drawWidth = tileWidth + tightPadding * 2;
       const drawHeight = drawWidth * tileAspect;
       const drawX = isoX - drawWidth * 0.5;
-      // Bottom-align decoration to floor level
-      const drawY = isoY + tileHeight - drawHeight;
+      // Bottom-align decoration to floor level (accounting for wall height)
+      const floorBottomY = isoY + tileHeight + cubeHeight;
+      const drawY = floorBottomY - drawHeight;
 
       ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
     }
