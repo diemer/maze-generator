@@ -26,6 +26,7 @@ function Maze(args) {
     debugStrokeColors: false, // Show different colors for each stroke type (for debugging)
     debugTestPattern: false, // Use a static test pattern instead of random maze
     isoRatio: 0.5, // Isometric ratio (height/width): 0.5=2:1 pixel art, 0.577=true iso (~30°)
+    tightSpacing: false, // Remove stroke-based spacing for seamless tileset rendering
 
     // Maximum 300 walls can be removed
     maxWallsRemove: 300,
@@ -66,6 +67,7 @@ function Maze(args) {
   this.debugStrokeColors = settings["debugStrokeColors"] === true;
   this.debugTestPattern = settings["debugTestPattern"] === true;
   this.isoRatio = parseFloat(settings["isoRatio"]) || 0.5;
+  this.tightSpacing = settings["tightSpacing"] === true;
   this.maxMaze = parseInt(settings["maxMaze"], 10);
   this.maxCanvas = parseInt(settings["maxCanvas"], 10);
   this.maxCanvasDimension = parseInt(settings["maxCanvasDimension"], 10);
@@ -1078,8 +1080,8 @@ Maze.prototype.draw = function () {
   const cubeHeight = tileHeight * this.wallHeight; // Height of the 3D cube faces extending below
 
   // Adjust canvas size to fit the isometric maze (scaled)
-  // Only add stroke margin if strokes are enabled
-  const strokeMargin = this.showStroke ? this.strokeWidth : 0;
+  // Only add stroke margin if strokes are enabled and tight spacing is off
+  const strokeMargin = (this.showStroke && !this.tightSpacing) ? this.strokeWidth : 0;
   canvas.width = (isoWidth * 2 + strokeMargin) * scale; // Total projected width
   // Height needs: grid area (isoHeight*2) + top offset (tileHeight) + bottom cube extension (tileHeight + cubeHeight)
   canvas.height = (isoHeight * 2 + tileHeight * 2 + cubeHeight + strokeMargin) * scale;
@@ -1232,15 +1234,18 @@ Maze.prototype.draw = function () {
           ctx.fillText(this.wallCubeNumber.toString(), isoX, labelY);
         }
       } else {
+        // When tightSpacing is enabled, expand tiles slightly to eliminate stroke-sized gaps
+        const tightPadding = this.tightSpacing ? this.strokeWidth * 0.5 : 0;
+
         // Draw pathway tile if available
         if (this.tileImages.pathway) {
           const img = this.tileImages.pathway;
           // Preserve tile's aspect ratio - scale height based on tile's natural ratio
           const tileAspect = img.naturalHeight / img.naturalWidth;
-          const drawWidth = tileWidth;
-          const drawHeight = tileWidth * tileAspect;
-          const drawX = isoX - tileWidth * 0.5;
-          const drawY = isoY;
+          const drawWidth = tileWidth + tightPadding * 2;
+          const drawHeight = drawWidth * tileAspect;
+          const drawX = isoX - drawWidth * 0.5;
+          const drawY = isoY - tightPadding * tileAspect;
           ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
         }
 
@@ -1248,19 +1253,19 @@ Maze.prototype.draw = function () {
         if (isStart && this.tileImages.start) {
           const img = this.tileImages.start;
           const tileAspect = img.naturalHeight / img.naturalWidth;
-          const drawWidth = tileWidth;
-          const drawHeight = tileWidth * tileAspect;
-          const drawX = isoX - tileWidth * 0.5;
-          const drawY = isoY;
+          const drawWidth = tileWidth + tightPadding * 2;
+          const drawHeight = drawWidth * tileAspect;
+          const drawX = isoX - drawWidth * 0.5;
+          const drawY = isoY - tightPadding * tileAspect;
           ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
         }
         if (isEnd && this.tileImages.end) {
           const img = this.tileImages.end;
           const tileAspect = img.naturalHeight / img.naturalWidth;
-          const drawWidth = tileWidth;
-          const drawHeight = tileWidth * tileAspect;
-          const drawX = isoX - tileWidth * 0.5;
-          const drawY = isoY;
+          const drawWidth = tileWidth + tightPadding * 2;
+          const drawHeight = drawWidth * tileAspect;
+          const drawX = isoX - drawWidth * 0.5;
+          const drawY = isoY - tightPadding * tileAspect;
           ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
         }
         // Draw the isometric tile

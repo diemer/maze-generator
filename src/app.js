@@ -72,12 +72,14 @@ function initMaze() {
     const strokeWallCornersCheckbox = document.getElementById('stroke-wall-corners');
     const debugStrokeColorsCheckbox = document.getElementById('debug-stroke-colors');
     const debugTestPatternCheckbox = document.getElementById('debug-test-pattern');
+    const tightSpacingCheckbox = document.getElementById('tight-spacing');
     const strokeTop = strokeTopCheckbox ? strokeTopCheckbox.checked : true;
     const strokeBottom = strokeBottomCheckbox ? strokeBottomCheckbox.checked : true;
     const strokeCorners = strokeCornersCheckbox ? strokeCornersCheckbox.checked : true;
     const strokeWallCorners = strokeWallCornersCheckbox ? strokeWallCornersCheckbox.checked : false;
     const debugStrokeColors = debugStrokeColorsCheckbox ? debugStrokeColorsCheckbox.checked : false;
     const debugTestPattern = debugTestPatternCheckbox ? debugTestPatternCheckbox.checked : false;
+    const tightSpacing = tightSpacingCheckbox ? tightSpacingCheckbox.checked : false;
     const wallHeight = getInputFloatVal('wall-height', 1.0);
     const strokeWidth = getInputFloatVal('stroke-width', 2);
     const wallBgColorInput = document.getElementById('wall-bg-color');
@@ -101,6 +103,7 @@ function initMaze() {
         strokeWallCorners: strokeWallCorners,
         debugStrokeColors: debugStrokeColors,
         debugTestPattern: debugTestPattern,
+        tightSpacing: tightSpacing,
         wallHeight: wallHeight,
         strokeWidth: strokeWidth,
         wallBgColor: wallBgColor,
