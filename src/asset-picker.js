@@ -739,6 +739,10 @@ function refreshMazeTileset() {
   // Reload tileset and redraw
   mazeNodes.loadTileset().then(function() {
     mazeNodes.draw();
+    // Save canvas state for decoration preview overlay
+    if (typeof TilePlacement !== 'undefined' && TilePlacement.saveCanvasState) {
+      TilePlacement.saveCanvasState();
+    }
   });
 }
 

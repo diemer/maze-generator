@@ -54,8 +54,15 @@
   // Map tile URL to its default layer
   var tileLayerMap = {};
 
-  // Track hovered grid cell
+  // Track hovered grid cell for preview
   var hoveredCell = null;
+
+  // Cache for preview image
+  var previewImage = null;
+  var previewImageUrl = null;
+
+  // Saved canvas state for preview overlay
+  var savedCanvasData = null;
 
   /**
    * Initialize tile placement functionality
@@ -80,6 +87,8 @@
    */
   function handleCanvasMouseMove(e) {
     if (!selectedDecorationTile) {
+      hoveredCell = null;
+      clearPreview();
       updateHoverInfo(null);
       return;
     }
@@ -111,6 +120,15 @@
       var isFloor = pixel === 0;
       var decoration = mazeNodes.getDecoration(coords.gridX, coords.gridY);
 
+      var newHoveredCell = isFloor ? { x: coords.gridX, y: coords.gridY } : null;
+
+      // Only redraw if hovered cell changed
+      if (!hoveredCell || !newHoveredCell ||
+          hoveredCell.x !== newHoveredCell.x || hoveredCell.y !== newHoveredCell.y) {
+        hoveredCell = newHoveredCell;
+        drawPreview();
+      }
+
       updateHoverInfo({
         x: coords.gridX,
         y: coords.gridY,
@@ -120,6 +138,10 @@
         decorationLayer: decoration ? decoration.layer : null
       });
     } else {
+      if (hoveredCell) {
+        hoveredCell = null;
+        clearPreview();
+      }
       updateHoverInfo(null);
     }
   }
@@ -128,7 +150,109 @@
    * Handle mouse leave on the canvas
    */
   function handleCanvasMouseLeave() {
+    hoveredCell = null;
+    clearPreview();
     updateHoverInfo(null);
+  }
+
+  /**
+   * Save the current canvas state for preview overlay
+   */
+  function saveCanvasState() {
+    var canvas = document.getElementById('maze');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    savedCanvasData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  }
+
+  /**
+   * Clear the preview by restoring saved canvas state
+   */
+  function clearPreview() {
+    if (!savedCanvasData) return;
+    var canvas = document.getElementById('maze');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    ctx.putImageData(savedCanvasData, 0, 0);
+  }
+
+  /**
+   * Draw the preview decoration at the hovered cell
+   */
+  function drawPreview() {
+    if (!hoveredCell || !selectedDecorationTile || !previewImage) {
+      clearPreview();
+      return;
+    }
+
+    if (typeof mazeNodes === 'undefined' || !mazeNodes.matrix) return;
+
+    var canvas = document.getElementById('maze');
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+
+    // Restore clean canvas first
+    if (savedCanvasData) {
+      ctx.putImageData(savedCanvasData, 0, 0);
+    }
+
+    // Calculate position (same as decoration rendering in maze-iso.js)
+    var tileWidth = mazeNodes.wallSize;
+    var tileHeight = mazeNodes.wallSize * mazeNodes.isoRatio;
+    var cubeHeight = tileHeight * mazeNodes.wallHeight;
+    var matrixCols = mazeNodes.matrix[0].length;
+    var offsetX = matrixCols * tileWidth * 0.5;
+    var offsetY = tileHeight;
+    var scale = mazeNodes.displayScale;
+
+    var j = hoveredCell.x;
+    var i = hoveredCell.y;
+
+    var isoX = (j - i) * tileWidth * 0.5 + offsetX;
+    var isoY = (j + i) * tileHeight * 0.5 + offsetY;
+
+    var tightPadding = mazeNodes.tightSpacing ? mazeNodes.strokeWidth * 0.5 : 0;
+    var tileAspect = previewImage.naturalHeight / previewImage.naturalWidth;
+    var drawWidth = tileWidth + tightPadding * 2;
+    var drawHeight = drawWidth * tileAspect;
+    var drawX = isoX - drawWidth * 0.5;
+    var floorBottomY = isoY + tileHeight + cubeHeight;
+    var drawY = floorBottomY - drawHeight;
+
+    // Apply scale
+    ctx.save();
+    ctx.scale(scale, scale);
+
+    // Draw with transparency to indicate preview
+    ctx.globalAlpha = 0.6;
+    ctx.drawImage(previewImage, drawX, drawY, drawWidth, drawHeight);
+    ctx.globalAlpha = 1.0;
+
+    ctx.restore();
+  }
+
+  /**
+   * Load preview image for selected decoration
+   */
+  function loadPreviewImage(tileUrl) {
+    if (previewImageUrl === tileUrl && previewImage) {
+      return; // Already loaded
+    }
+
+    previewImageUrl = tileUrl;
+    previewImage = null;
+
+    if (!tileUrl) return;
+
+    var img = new Image();
+    img.onload = function() {
+      previewImage = img;
+      // Redraw preview if we're hovering
+      if (hoveredCell) {
+        drawPreview();
+      }
+    };
+    img.src = tileUrl;
   }
 
   /**
@@ -228,6 +352,7 @@
     // Reload decoration images and redraw
     mazeNodes.loadDecorations().then(function() {
       mazeNodes.draw();
+      saveCanvasState(); // Save for preview overlay
     });
   }
 
@@ -260,6 +385,7 @@
 
     mazeNodes.loadDecorations().then(function() {
       mazeNodes.draw();
+      saveCanvasState(); // Save for preview overlay
     });
   }
 
@@ -279,6 +405,7 @@
    */
   function setSelectedDecoration(tileUrl) {
     selectedDecorationTile = tileUrl;
+    loadPreviewImage(tileUrl);
     updatePaletteSelection();
     updateCursor();
   }
@@ -288,6 +415,10 @@
    */
   function clearSelectedDecoration() {
     selectedDecorationTile = null;
+    previewImage = null;
+    previewImageUrl = null;
+    hoveredCell = null;
+    clearPreview();
     updatePaletteSelection();
     updateCursor();
   }
@@ -471,6 +602,7 @@
         if (mazeNodes.importDecorations(json)) {
           mazeNodes.loadDecorations().then(function() {
             mazeNodes.draw();
+            saveCanvasState(); // Save for preview overlay
             var count = Object.keys(mazeNodes.decorations).length;
             alert('Imported ' + count + ' decoration(s)');
           });
@@ -491,6 +623,7 @@
     getSelectedLayer: function() { return selectedLayer; },
     undo: undoLastPlacement,
     getUndoCount: function() { return undoStack.length; },
+    saveCanvasState: saveCanvasState,
     DECORATION_CATEGORIES: DECORATION_CATEGORIES
   };
 

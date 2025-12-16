@@ -238,6 +238,11 @@ function initMaze() {
     maze.loadTileset().then(function () {
         maze.draw();
 
+        // Save canvas state for decoration preview overlay
+        if (typeof TilePlacement !== 'undefined' && TilePlacement.saveCanvasState) {
+            TilePlacement.saveCanvasState();
+        }
+
         if (download && download.classList.contains("hide")) {
             download.classList.toggle("hide");
         }
