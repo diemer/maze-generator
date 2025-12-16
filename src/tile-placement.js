@@ -61,8 +61,8 @@
   var previewImage = null;
   var previewImageUrl = null;
 
-  // Saved canvas state for preview overlay
-  var savedCanvasData = null;
+  // Overlay canvas for preview (avoids CORS issues with getImageData)
+  var overlayCanvas = null;
 
   /**
    * Initialize tile placement functionality
@@ -70,6 +70,9 @@
   function initTilePlacement() {
     var canvas = document.getElementById('maze');
     if (!canvas) return;
+
+    // Create overlay canvas for preview
+    createOverlayCanvas();
 
     canvas.addEventListener('click', handleCanvasClick);
     canvas.addEventListener('mousemove', handleCanvasMouseMove);
@@ -80,6 +83,46 @@
 
     // Initialize export/import buttons
     initExportImport();
+  }
+
+  /**
+   * Create or update the overlay canvas for preview
+   */
+  function createOverlayCanvas() {
+    var mazeCanvas = document.getElementById('maze');
+    if (!mazeCanvas) return;
+
+    // Remove existing overlay if any
+    if (overlayCanvas && overlayCanvas.parentNode) {
+      overlayCanvas.parentNode.removeChild(overlayCanvas);
+    }
+
+    // Create new overlay canvas
+    overlayCanvas = document.createElement('canvas');
+    overlayCanvas.id = 'maze-preview-overlay';
+    overlayCanvas.style.position = 'absolute';
+    overlayCanvas.style.pointerEvents = 'none'; // Let clicks pass through
+    overlayCanvas.style.left = mazeCanvas.offsetLeft + 'px';
+    overlayCanvas.style.top = mazeCanvas.offsetTop + 'px';
+
+    // Insert after maze canvas
+    mazeCanvas.parentNode.insertBefore(overlayCanvas, mazeCanvas.nextSibling);
+
+    // Match size
+    updateOverlaySize();
+  }
+
+  /**
+   * Update overlay canvas size to match maze canvas
+   */
+  function updateOverlaySize() {
+    var mazeCanvas = document.getElementById('maze');
+    if (!mazeCanvas || !overlayCanvas) return;
+
+    overlayCanvas.width = mazeCanvas.width;
+    overlayCanvas.height = mazeCanvas.height;
+    overlayCanvas.style.left = mazeCanvas.offsetLeft + 'px';
+    overlayCanvas.style.top = mazeCanvas.offsetTop + 'px';
   }
 
   /**
@@ -156,48 +199,37 @@
   }
 
   /**
-   * Save the current canvas state for preview overlay
+   * Update overlay canvas after maze redraws
    */
   function saveCanvasState() {
-    var canvas = document.getElementById('maze');
-    if (!canvas) return;
-    var ctx = canvas.getContext('2d');
-    savedCanvasData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    // Update overlay size to match maze canvas (in case it changed)
+    updateOverlaySize();
   }
 
   /**
-   * Clear the preview by restoring saved canvas state
+   * Clear the preview overlay
    */
   function clearPreview() {
-    if (!savedCanvasData) return;
-    var canvas = document.getElementById('maze');
-    if (!canvas) return;
-    var ctx = canvas.getContext('2d');
-    ctx.putImageData(savedCanvasData, 0, 0);
+    if (!overlayCanvas) return;
+    var ctx = overlayCanvas.getContext('2d');
+    ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
   }
 
   /**
    * Draw the preview decoration at the hovered cell
    */
   function drawPreview() {
+    // Clear overlay first
+    clearPreview();
+
     if (!hoveredCell || !selectedDecorationTile || !previewImage) {
-      clearPreview();
       return;
     }
 
     if (typeof mazeNodes === 'undefined' || !mazeNodes.matrix) return;
+    if (!overlayCanvas) return;
 
-    var canvas = document.getElementById('maze');
-    if (!canvas) return;
-    var ctx = canvas.getContext('2d');
-
-    // Restore clean canvas first
-    if (savedCanvasData) {
-      ctx.putImageData(savedCanvasData, 0, 0);
-    } else {
-      // No saved state yet, can't draw preview
-      return;
-    }
+    var ctx = overlayCanvas.getContext('2d');
 
     // Calculate position (same as decoration rendering in maze-iso.js)
     var tileWidth = mazeNodes.wallSize;
@@ -222,7 +254,7 @@
     var floorBottomY = isoY + tileHeight + cubeHeight;
     var drawY = floorBottomY - drawHeight;
 
-    // Draw with transparency - scale coordinates directly since putImageData resets transform
+    // Draw with transparency on overlay canvas
     ctx.globalAlpha = 0.6;
     ctx.drawImage(previewImage,
       drawX * scale, drawY * scale,
