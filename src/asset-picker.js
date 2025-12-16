@@ -556,25 +556,53 @@ function refreshMazeTileset() {
   const tileWallLeft = document.getElementById('tile-wall-left');
   const tileWallRight = document.getElementById('tile-wall-right');
   const tilePathway = document.getElementById('tile-pathway');
-  const tileStart = document.getElementById('tile-start');
-  const tileEnd = document.getElementById('tile-end');
+  // Directional start tiles
+  const tileStartN = document.getElementById('tile-start-n');
+  const tileStartS = document.getElementById('tile-start-s');
+  const tileStartE = document.getElementById('tile-start-e');
+  const tileStartW = document.getElementById('tile-start-w');
+  // Directional end tiles
+  const tileEndN = document.getElementById('tile-end-n');
+  const tileEndS = document.getElementById('tile-end-s');
+  const tileEndE = document.getElementById('tile-end-e');
+  const tileEndW = document.getElementById('tile-end-w');
   const showStrokeCheckbox = document.getElementById('show-stroke');
 
   const wallLeftUrl = tileWallLeft ? tileWallLeft.value.trim() : '';
   const wallRightUrl = tileWallRight ? tileWallRight.value.trim() : '';
   const pathwayUrl = tilePathway ? tilePathway.value.trim() : '';
-  const startUrl = tileStart ? tileStart.value.trim() : '';
-  const endUrl = tileEnd ? tileEnd.value.trim() : '';
+  // Directional start URLs
+  const startNUrl = tileStartN ? tileStartN.value.trim() : '';
+  const startSUrl = tileStartS ? tileStartS.value.trim() : '';
+  const startEUrl = tileStartE ? tileStartE.value.trim() : '';
+  const startWUrl = tileStartW ? tileStartW.value.trim() : '';
+  // Directional end URLs
+  const endNUrl = tileEndN ? tileEndN.value.trim() : '';
+  const endSUrl = tileEndS ? tileEndS.value.trim() : '';
+  const endEUrl = tileEndE ? tileEndE.value.trim() : '';
+  const endWUrl = tileEndW ? tileEndW.value.trim() : '';
 
   // Update tileset on existing maze
   let tileset = null;
-  if (wallLeftUrl || wallRightUrl || pathwayUrl || startUrl || endUrl) {
+  const hasAnyTile = wallLeftUrl || wallRightUrl || pathwayUrl ||
+    startNUrl || startSUrl || startEUrl || startWUrl ||
+    endNUrl || endSUrl || endEUrl || endWUrl;
+
+  if (hasAnyTile) {
     tileset = {};
     if (wallLeftUrl) tileset.wallLeft = wallLeftUrl;
     if (wallRightUrl) tileset.wallRight = wallRightUrl;
     if (pathwayUrl) tileset.pathway = pathwayUrl;
-    if (startUrl) tileset.start = startUrl;
-    if (endUrl) tileset.end = endUrl;
+    // Directional start tiles
+    if (startNUrl) tileset.startN = startNUrl;
+    if (startSUrl) tileset.startS = startSUrl;
+    if (startEUrl) tileset.startE = startEUrl;
+    if (startWUrl) tileset.startW = startWUrl;
+    // Directional end tiles
+    if (endNUrl) tileset.endN = endNUrl;
+    if (endSUrl) tileset.endS = endSUrl;
+    if (endEUrl) tileset.endE = endEUrl;
+    if (endWUrl) tileset.endW = endWUrl;
   }
 
   const wallHeightInput = document.getElementById('wall-height');

@@ -13,7 +13,9 @@ function Maze(args) {
     solveColor: "#cc3737",
     removeWalls: 0,
 
-    // Tileset configuration: { wallLeft: url, wallRight: url, pathway: url, start: url, end: url }
+    // Tileset configuration:
+    // { wallLeft, wallRight, pathway, start, end } - basic tiles
+    // { startN, startS, startE, startW, endN, endS, endE, endW } - directional gate tiles
     tileset: null,
     showStroke: true,
     strokeTop: true, // Stroke the top face edges
@@ -82,7 +84,12 @@ Maze.prototype.loadTileset = function () {
       return;
     }
 
-    const tileTypes = ['wallLeft', 'wallRight', 'pathway', 'start', 'end'];
+    // Include directional gate tiles
+    const tileTypes = [
+      'wallLeft', 'wallRight', 'pathway', 'start', 'end',
+      'startN', 'startS', 'startE', 'startW',
+      'endN', 'endS', 'endE', 'endW'
+    ];
     const promises = [];
 
     tileTypes.forEach((type) => {
@@ -105,6 +112,16 @@ Maze.prototype.loadTileset = function () {
 
     Promise.all(promises).then(resolve).catch(reject);
   });
+};
+
+// Determine the direction of a gate relative to its entry point
+// Returns 'N', 'S', 'E', or 'W'
+Maze.prototype.getGateDirection = function (entryX, entryY, gateX, gateY) {
+  if (gateY < entryY) return 'N'; // Gate is north of entry
+  if (gateY > entryY) return 'S'; // Gate is south of entry
+  if (gateX < entryX) return 'W'; // Gate is west of entry
+  if (gateX > entryX) return 'E'; // Gate is east of entry
+  return 'N'; // Default fallback
 };
 
 Maze.prototype.generate = function () {
@@ -1168,24 +1185,38 @@ Maze.prototype.draw = function () {
         ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
       }
 
-      // Draw start/end markers
-      if (isStart && this.tileImages.start) {
-        const img = this.tileImages.start;
-        const tileAspect = img.naturalHeight / img.naturalWidth;
-        const drawWidth = tileWidth + tightPadding * 2;
-        const drawHeight = drawWidth * tileAspect;
-        const drawX = isoX - drawWidth * 0.5;
-        const drawY = isoY - tightPadding * tileAspect;
-        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+      // Draw start/end markers with directional support
+      if (isStart) {
+        // Determine direction from start point to its gate
+        const startDir = this.entryNodes.start && this.entryNodes.start.gate
+          ? this.getGateDirection(startNode.x, startNode.y, this.entryNodes.start.gate.x, this.entryNodes.start.gate.y)
+          : 'N';
+        // Try directional tile first, fall back to generic
+        const img = this.tileImages['start' + startDir] || this.tileImages.start;
+        if (img) {
+          const tileAspect = img.naturalHeight / img.naturalWidth;
+          const drawWidth = tileWidth + tightPadding * 2;
+          const drawHeight = drawWidth * tileAspect;
+          const drawX = isoX - drawWidth * 0.5;
+          const drawY = isoY - tightPadding * tileAspect;
+          ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+        }
       }
-      if (isEnd && this.tileImages.end) {
-        const img = this.tileImages.end;
-        const tileAspect = img.naturalHeight / img.naturalWidth;
-        const drawWidth = tileWidth + tightPadding * 2;
-        const drawHeight = drawWidth * tileAspect;
-        const drawX = isoX - drawWidth * 0.5;
-        const drawY = isoY - tightPadding * tileAspect;
-        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+      if (isEnd) {
+        // Determine direction from end point to its gate
+        const endDir = this.entryNodes.end && this.entryNodes.end.gate
+          ? this.getGateDirection(endNode.x, endNode.y, this.entryNodes.end.gate.x, this.entryNodes.end.gate.y)
+          : 'S';
+        // Try directional tile first, fall back to generic
+        const img = this.tileImages['end' + endDir] || this.tileImages.end;
+        if (img) {
+          const tileAspect = img.naturalHeight / img.naturalWidth;
+          const drawWidth = tileWidth + tightPadding * 2;
+          const drawHeight = drawWidth * tileAspect;
+          const drawX = isoX - drawWidth * 0.5;
+          const drawY = isoY - tightPadding * tileAspect;
+          ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+        }
       }
     }
   }
