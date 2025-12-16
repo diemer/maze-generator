@@ -1195,6 +1195,7 @@ Maze.prototype.draw = function () {
   };
 
   // Helper to draw a gate tile at the given position
+  // Gate tiles are bottom-aligned to match the base of wall cubes
   const drawGateTile = (gateX, gateY, isStart) => {
     const entryData = isStart ? this.entryNodes.start : this.entryNodes.end;
     if (!entryData) return;
@@ -1213,7 +1214,10 @@ Maze.prototype.draw = function () {
       const drawWidth = tileWidth + tightPadding * 2;
       const drawHeight = drawWidth * tileAspect;
       const drawX = gateIsoX - drawWidth * 0.5;
-      const drawY = gateIsoY - tightPadding * tileAspect;
+      // Bottom-align: position so tile bottom matches the base of wall cubes
+      // Wall cube bottom is at: gateIsoY + tileHeight + cubeHeight
+      const cubeBottomY = gateIsoY + tileHeight + cubeHeight;
+      const drawY = cubeBottomY - drawHeight;
       ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
     }
   };
