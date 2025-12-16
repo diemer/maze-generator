@@ -180,6 +180,7 @@ function refreshMazeTileset() {
   const strokeCornersCheckbox = document.getElementById('stroke-corners');
   const strokeWallCornersCheckbox = document.getElementById('stroke-wall-corners');
   const debugStrokeColorsCheckbox = document.getElementById('debug-stroke-colors');
+  const debugTestPatternCheckbox = document.getElementById('debug-test-pattern');
 
   mazeNodes.tileset = tileset;
   mazeNodes.tileImages = {}; // Clear cached images
@@ -189,6 +190,7 @@ function refreshMazeTileset() {
   mazeNodes.strokeCorners = strokeCornersCheckbox ? strokeCornersCheckbox.checked : true;
   mazeNodes.strokeWallCorners = strokeWallCornersCheckbox ? strokeWallCornersCheckbox.checked : false;
   mazeNodes.debugStrokeColors = debugStrokeColorsCheckbox ? debugStrokeColorsCheckbox.checked : false;
+  mazeNodes.debugTestPattern = debugTestPatternCheckbox ? debugTestPatternCheckbox.checked : false;
   mazeNodes.wallHeight = wallHeightInput ? parseFloat(wallHeightInput.value) || 1.0 : 1.0;
   mazeNodes.strokeWidth = strokeWidthInput ? parseFloat(strokeWidthInput.value) || 2 : 2;
   mazeNodes.wallBgColor = wallBgColorInput ? wallBgColorInput.value.trim() : '';

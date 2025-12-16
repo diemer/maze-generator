@@ -24,6 +24,7 @@ function Maze(args) {
     strokeWidth: 2, // Border thickness in pixels
     wallBgColor: "", // Optional background color for wall faces (behind transparent textures)
     debugStrokeColors: false, // Show different colors for each stroke type (for debugging)
+    debugTestPattern: false, // Use a static test pattern instead of random maze
 
     // Maximum 300 walls can be removed
     maxWallsRemove: 300,
@@ -62,6 +63,7 @@ function Maze(args) {
   this.strokeWidth = parseFloat(settings["strokeWidth"]) || 2;
   this.wallBgColor = settings["wallBgColor"] || "";
   this.debugStrokeColors = settings["debugStrokeColors"] === true;
+  this.debugTestPattern = settings["debugTestPattern"] === true;
   this.maxMaze = parseInt(settings["maxMaze"], 10);
   this.maxCanvas = parseInt(settings["maxCanvas"], 10);
   this.maxCanvasDimension = parseInt(settings["maxCanvasDimension"], 10);
@@ -102,6 +104,12 @@ Maze.prototype.loadTileset = function () {
 };
 
 Maze.prototype.generate = function () {
+  // Use debug test pattern if enabled
+  if (this.debugTestPattern) {
+    this.generateDebugTestPattern();
+    return;
+  }
+
   if (!this.isValidSize()) {
     this.matrix = [];
     alert("Please use smaller maze dimensions");
@@ -117,6 +125,52 @@ Maze.prototype.generate = function () {
   if (this.pathWidth > 1 || this.pathHeight > 1) {
     this.transformMatrix();
   }
+};
+
+// Generate a debug test pattern showing all wall configurations
+// Each wall cube will be numbered for identification
+Maze.prototype.generateDebugTestPattern = function () {
+  // Test pattern with clear spacing between each configuration
+  // Numbers refer to cube IDs that will be displayed
+  //
+  // Layout key:
+  // - Cubes 1: Single isolated
+  // - Cubes 2-3: Horizontal pair
+  // - Cubes 4-6: Horizontal triple
+  // - Cubes 7-8: Vertical pair
+  // - Cubes 9-11: Vertical triple
+  // - Cubes 12-13: L-corner (┘ shape)
+  // - Cubes 14-15: L-corner (└ shape)
+  // - Cubes 16-17: L-corner (┐ shape)
+  // - Cubes 18-19: L-corner (┌ shape)
+  // - Cubes 20-22: T-junction (┴ shape)
+  // - Cubes 23-25: T-junction (┬ shape)
+  // - Cubes 26-28: T-junction (├ shape)
+  // - Cubes 29-31: T-junction (┤ shape)
+  // - Cubes 32-35: Cross/+ junction
+  // - Cubes 36-39: 2x2 block
+
+  this.matrix = [
+    //         1         2
+    // 12345678901234567890123456
+    "000000000000000000000000000", // row 0
+    "010011100111110000000000000", // row 1: single(1), h-pair(2,3), h-triple(4,5,6)
+    "000000000000000000000000000", // row 2
+    "010010001100110011000110000", // row 3: v-pair top(7), v-triple top(9), L corners
+    "010010001100010010000100000", // row 4: v-pair bot(8), v-triple mid(10)
+    "000010000000110011000110000", // row 5: v-triple bot(11), more L corners
+    "000000000000000000000000000", // row 6
+    "001000010001000010000000000", // row 7: T-junctions top row
+    "011100111001110111011100000", // row 8: T-junctions middle
+    "001000010001000010001000000", // row 9: T-junctions bottom
+    "000000000000000000000000000", // row 10
+    "000001100000000000000000000", // row 11: 2x2 block top
+    "000001100000000000000000000", // row 12: 2x2 block bottom
+    "000000000000000000000000000", // row 13
+  ];
+
+  // Clear entry nodes for test pattern
+  this.entryNodes = {};
 };
 
 Maze.prototype.transformMatrix = function () {
@@ -568,6 +622,7 @@ Maze.prototype.createBorderCube = function ({
   topPixel = 0,
   bottomPixel = 0,
   topRightPixel = 0, // Diagonal neighbor for T-junction detection
+  bottomRightPixel = 0, // Diagonal neighbor for T-junction detection (other orientation)
 }) {
   // Set border style
   ctx.strokeStyle = borderColor;
@@ -705,12 +760,14 @@ Maze.prototype.createBorderCube = function ({
         ctx.stroke();
       }
 
-      // Right corner - draw when right face is exposed, OR at T-junction inner corners
-      // T-junction inner corner: wall to right (rightPixel=1), no wall above (topPixel=0),
-      // but wall at diagonal top-right (topRightPixel=1)
-      const rightExposed = !rightPixel;
-      const tJunctionInnerCorner = rightPixel && !topPixel && topRightPixel;
-      if (rightExposed || tJunctionInnerCorner) {
+      // Right corner - draw only at the TOP of a vertical wall section or at inner corners
+      // If topPixel=1 (wall above), this edge is interior to a vertical wall, don't draw
+      // Inner corner cases still need the diagonal checks for L-corners and T-junctions
+      const rightExposed = !rightPixel && !topPixel;
+      const innerLCorner = rightPixel && ((topPixel && !topRightPixel) || (bottomPixel && !bottomRightPixel));
+      const tJunctionTop = rightPixel && !topPixel && topRightPixel;
+      const tJunctionBottom = rightPixel && !bottomPixel && bottomRightPixel;
+      if (rightExposed || innerLCorner || tJunctionTop || tJunctionBottom) {
         if (debugStrokeColors) ctx.strokeStyle = "#00FF00"; // GREEN
         ctx.beginPath();
         ctx.moveTo(topRight.x, topRight.y);
@@ -761,6 +818,7 @@ Maze.prototype.createTexturedCube = function ({
   topPixel = 0,
   bottomPixel = 0,
   topRightPixel = 0, // Diagonal neighbor for T-junction detection
+  bottomRightPixel = 0, // Diagonal neighbor for T-junction detection (other orientation)
 }) {
   ctx.strokeStyle = borderColor;
   ctx.lineWidth = lineWidth;
@@ -918,12 +976,14 @@ Maze.prototype.createTexturedCube = function ({
         ctx.stroke();
       }
 
-      // Right corner - draw when right face is exposed, OR at T-junction inner corners
-      // T-junction inner corner: wall to right (rightPixel=1), no wall above (topPixel=0),
-      // but wall at diagonal top-right (topRightPixel=1)
-      const rightExposed = !rightPixel;
-      const tJunctionInnerCorner = rightPixel && !topPixel && topRightPixel;
-      if (rightExposed || tJunctionInnerCorner) {
+      // Right corner - draw only at the TOP of a vertical wall section or at inner corners
+      // If topPixel=1 (wall above), this edge is interior to a vertical wall, don't draw
+      // Inner corner cases still need the diagonal checks for L-corners and T-junctions
+      const rightExposed = !rightPixel && !topPixel;
+      const innerLCorner = rightPixel && ((topPixel && !topRightPixel) || (bottomPixel && !bottomRightPixel));
+      const tJunctionTop = rightPixel && !topPixel && topRightPixel;
+      const tJunctionBottom = rightPixel && !bottomPixel && bottomRightPixel;
+      if (rightExposed || innerLCorner || tJunctionTop || tJunctionBottom) {
         if (debugStrokeColors) ctx.strokeStyle = "#00FF00"; // GREEN
         ctx.beginPath();
         ctx.moveTo(topRight.x, topRight.y);
@@ -1031,6 +1091,9 @@ Maze.prototype.draw = function () {
   // Set maze color
   ctx.fillStyle = this.color;
 
+  // Reset cube numbering for debug pattern
+  this.wallCubeNumber = 0;
+
   const rowCount = this.matrix.length;
   const gateEntry = getEntryNode(this.entryNodes, "start", true);
   const gateExit = getEntryNode(this.entryNodes, "end", true);
@@ -1079,10 +1142,14 @@ Maze.prototype.draw = function () {
       const topPixel = i > 0 ? parseInt(this.matrix[i - 1].charAt(j), 10) : 0;
       const bottomPixel =
         i < rowCount - 1 ? parseInt(this.matrix[i + 1].charAt(j), 10) : 0;
-      // Diagonal neighbor for detecting T-junction inner corners
+      // Diagonal neighbors for detecting T-junction inner corners
       const topRightPixel =
         i > 0 && j < rowLength - 1
           ? parseInt(this.matrix[i - 1].charAt(j + 1), 10)
+          : 0;
+      const bottomRightPixel =
+        i < rowCount - 1 && j < rowLength - 1
+          ? parseInt(this.matrix[i + 1].charAt(j + 1), 10)
           : 0;
 
       // Calculate the isometric tile coordinates
@@ -1122,6 +1189,7 @@ Maze.prototype.draw = function () {
             topPixel,
             bottomPixel,
             topRightPixel,
+            bottomRightPixel,
           });
         } else {
           // Fallback to programmatic cube drawing
@@ -1144,7 +1212,20 @@ Maze.prototype.draw = function () {
             topPixel,
             bottomPixel,
             topRightPixel,
+            bottomRightPixel,
           });
+        }
+
+        // Draw cube number for debug test pattern
+        if (this.debugTestPattern) {
+          this.wallCubeNumber = (this.wallCubeNumber || 0) + 1;
+          ctx.fillStyle = "#000000";
+          ctx.font = `bold ${Math.max(6, tileWidth * 0.25)}px sans-serif`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          // Position number on top face of cube
+          const labelY = isoY + tileHeight * 0.5;
+          ctx.fillText(this.wallCubeNumber.toString(), isoX, labelY);
         }
       } else {
         // Draw pathway tile if available
