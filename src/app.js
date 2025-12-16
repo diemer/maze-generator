@@ -275,10 +275,16 @@ function downloadImage(e) {
             download.setAttribute("download", "maze.svg");
         }
     } else {
-        const image = document.getElementById("maze").toDataURL("image/png");
-        image.replace("image/png", "image/octet-stream");
-        download.setAttribute("href", image);
-        download.setAttribute("download", "maze.png");
+        try {
+            const image = document.getElementById("maze").toDataURL("image/png");
+            download.setAttribute("href", image);
+            download.setAttribute("download", "maze.png");
+        } catch (err) {
+            // Canvas is tainted by cross-origin images
+            e.preventDefault();
+            alert("Cannot export PNG: canvas contains cross-origin images. Try running from a local server or use SVG export instead.");
+            console.error("toDataURL failed:", err);
+        }
     }
 }
 
