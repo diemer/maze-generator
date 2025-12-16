@@ -60,7 +60,26 @@ function initMaze() {
     let tileset = null;
     const wallLeftUrl = tileWallLeft ? tileWallLeft.value.trim() : "";
     const wallRightUrl = tileWallRight ? tileWallRight.value.trim() : "";
-    const pathwayUrl = tilePathway ? tilePathway.value.trim() : "";
+    const pathwayValue = tilePathway ? tilePathway.value.trim() : "";
+
+    // Check if pathway is multi-select (comma-separated values)
+    const pathwayPicker = tilePathway ? tilePathway.closest('.asset-picker') : null;
+    const isPathwayMulti = pathwayPicker && pathwayPicker.dataset.multi === 'true';
+    let pathwayTiles = null;
+
+    if (pathwayValue) {
+        if (isPathwayMulti && pathwayValue.includes(',')) {
+            // Parse as array, keeping "blank" as-is
+            pathwayTiles = pathwayValue.split(',').map(v => v.trim()).filter(v => v);
+        } else if (isPathwayMulti) {
+            // Single value but multi-select enabled - use as array
+            pathwayTiles = [pathwayValue];
+        } else {
+            // Single select mode - use as string
+            pathwayTiles = pathwayValue;
+        }
+    }
+
     // Directional start URLs
     const startNUrl = tileStartN ? tileStartN.value.trim() : "";
     const startSUrl = tileStartS ? tileStartS.value.trim() : "";
@@ -75,7 +94,7 @@ function initMaze() {
     const hasAnyTile =
         wallLeftUrl ||
         wallRightUrl ||
-        pathwayUrl ||
+        pathwayTiles ||
         startNUrl ||
         startSUrl ||
         startEUrl ||
@@ -89,7 +108,7 @@ function initMaze() {
         tileset = {};
         if (wallLeftUrl) tileset.wallLeft = wallLeftUrl;
         if (wallRightUrl) tileset.wallRight = wallRightUrl;
-        if (pathwayUrl) tileset.pathway = pathwayUrl;
+        if (pathwayTiles) tileset.pathway = pathwayTiles;
         // Directional start tiles
         if (startNUrl) tileset.startN = startNUrl;
         if (startSUrl) tileset.startS = startSUrl;

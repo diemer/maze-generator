@@ -59,6 +59,9 @@ function Maze(args) {
   this.solveColor = settings["solveColor"];
   this.tileset = settings["tileset"];
   this.tileImages = {}; // Will hold loaded Image objects
+  this.floorTileMap = {}; // Maps grid positions to tile indices for deterministic random selection
+  this.decorations = settings["decorations"] || {}; // Grid position -> {tileUrl, category}
+  this.decorationImages = {}; // URL -> loaded Image object
   this.showStroke = settings["showStroke"] !== false;
   this.strokeTop = settings["strokeTop"] !== false;
   this.strokeBottom = settings["strokeBottom"] !== false;
@@ -95,8 +98,38 @@ Maze.prototype.loadTileset = function () {
     const promises = [];
 
     tileTypes.forEach((type) => {
-      if (this.tileset[type]) {
-        const promise = new Promise((res, rej) => {
+      const tileValue = this.tileset[type];
+      if (!tileValue) return;
+
+      // Handle array of tile URLs (for random selection)
+      if (Array.isArray(tileValue)) {
+        const arrayPromises = tileValue.map((url, idx) => {
+          return new Promise((res) => {
+            // null, empty string, or "blank" = solid color (no image)
+            if (!url || url === 'blank' || url === '') {
+              res({ index: idx, image: null });
+              return;
+            }
+            const img = new Image();
+            img.onload = () => res({ index: idx, image: img });
+            img.onerror = () => {
+              console.warn(`Failed to load tile: ${type}[${idx}]`);
+              res({ index: idx, image: null });
+            };
+            img.src = url;
+          });
+        });
+
+        const arrayPromise = Promise.all(arrayPromises).then((results) => {
+          // Sort by index to maintain order, then extract images
+          this.tileImages[type] = results
+            .sort((a, b) => a.index - b.index)
+            .map(r => r.image);
+        });
+        promises.push(arrayPromise);
+      } else {
+        // Single URL (backward compatible)
+        const promise = new Promise((res) => {
           const img = new Image();
           img.onload = () => {
             this.tileImages[type] = img;
@@ -106,7 +139,7 @@ Maze.prototype.loadTileset = function () {
             console.warn(`Failed to load tile: ${type}`);
             res(); // Don't reject, just skip this tile
           };
-          img.src = this.tileset[type];
+          img.src = tileValue;
         });
         promises.push(promise);
       }
@@ -114,6 +147,89 @@ Maze.prototype.loadTileset = function () {
 
     Promise.all(promises).then(resolve).catch(reject);
   });
+};
+
+// Load decoration images (called when decorations are placed)
+Maze.prototype.loadDecorations = function () {
+  return new Promise((resolve) => {
+    // Get unique URLs from all decorations
+    const uniqueUrls = [...new Set(
+      Object.values(this.decorations)
+        .map(d => d.tileUrl)
+        .filter(url => url && !this.decorationImages[url])
+    )];
+
+    if (uniqueUrls.length === 0) {
+      resolve();
+      return;
+    }
+
+    const promises = uniqueUrls.map(url => {
+      return new Promise((res) => {
+        const img = new Image();
+        img.onload = () => {
+          this.decorationImages[url] = img;
+          res();
+        };
+        img.onerror = () => {
+          console.warn(`Failed to load decoration: ${url}`);
+          res();
+        };
+        img.src = url;
+      });
+    });
+
+    Promise.all(promises).then(resolve);
+  });
+};
+
+// Set a decoration at a grid position
+Maze.prototype.setDecoration = function (gridX, gridY, tileUrl, category) {
+  const key = `${gridX},${gridY}`;
+
+  // Validate it's a floor cell (not a wall)
+  if (this.matrix[gridY]) {
+    const pixel = parseInt(this.matrix[gridY].charAt(gridX), 10);
+    if (pixel === 1) {
+      console.warn(`Cannot place decoration on wall at (${gridX}, ${gridY})`);
+      return false;
+    }
+  }
+
+  if (tileUrl) {
+    this.decorations[key] = { tileUrl, category: category || 'misc' };
+  } else {
+    delete this.decorations[key];
+  }
+  return true;
+};
+
+// Get decoration at a grid position
+Maze.prototype.getDecoration = function (gridX, gridY) {
+  return this.decorations[`${gridX},${gridY}`] || null;
+};
+
+// Clear all decorations
+Maze.prototype.clearDecorations = function () {
+  this.decorations = {};
+  this.decorationImages = {};
+};
+
+// Export decorations as JSON string
+Maze.prototype.exportDecorations = function () {
+  return JSON.stringify(this.decorations, null, 2);
+};
+
+// Import decorations from JSON string
+Maze.prototype.importDecorations = function (jsonString) {
+  try {
+    const parsed = JSON.parse(jsonString);
+    this.decorations = parsed;
+    return true;
+  } catch (e) {
+    console.warn('Failed to parse decorations JSON:', e);
+    return false;
+  }
 };
 
 // Determine the direction of a gate relative to its entry point
@@ -127,6 +243,9 @@ Maze.prototype.getGateDirection = function (entryX, entryY, gateX, gateY) {
 };
 
 Maze.prototype.generate = function () {
+  // Reset floor tile map for fresh randomization
+  this.floorTileMap = {};
+
   // Use debug test pattern if enabled
   if (this.debugTestPattern) {
     this.generateDebugTestPattern();
@@ -1155,6 +1274,22 @@ Maze.prototype.draw = function () {
   const startNode = getEntryNode(this.entryNodes, "start", false);
   const endNode = getEntryNode(this.entryNodes, "end", false);
 
+  // Check if pathway is an array (for random tile selection)
+  const pathwayIsArray = Array.isArray(this.tileImages.pathway);
+  const pathwayTiles = pathwayIsArray ? this.tileImages.pathway : null;
+
+  // Helper to get a floor tile for a given position
+  const getFloorTile = (gridX, gridY) => {
+    if (pathwayIsArray && pathwayTiles.length > 0) {
+      const key = `${gridX},${gridY}`;
+      if (this.floorTileMap[key] === undefined) {
+        this.floorTileMap[key] = Math.floor(Math.random() * pathwayTiles.length);
+      }
+      return pathwayTiles[this.floorTileMap[key]]; // May be null for "blank" tiles
+    }
+    return this.tileImages.pathway || null;
+  };
+
   // PASS 1: Draw all floor/pathway tiles first
   for (let i = 0; i < rowCount; i++) {
     const rowLength = this.matrix[i].length;
@@ -1176,9 +1311,11 @@ Maze.prototype.draw = function () {
       // When tightSpacing is enabled, expand tiles slightly to eliminate stroke-sized gaps
       const tightPadding = this.tightSpacing ? this.strokeWidth * 0.5 : 0;
 
-      // Draw pathway tile if available
-      if (this.tileImages.pathway) {
-        const img = this.tileImages.pathway;
+      // Get floor tile for this position (may be from array or single image)
+      const img = getFloorTile(j, i);
+
+      // Draw pathway tile if available (null = blank/solid color, skip drawing)
+      if (img) {
         const tileAspect = img.naturalHeight / img.naturalWidth;
         const drawWidth = tileWidth + tightPadding * 2;
         const drawHeight = drawWidth * tileAspect;
@@ -1191,19 +1328,53 @@ Maze.prototype.draw = function () {
   }
 
   // Draw end gate floor tile in PASS 1 (so walls render on top)
-  if (gateExit && this.entryNodes.end && this.tileImages.pathway) {
+  if (gateExit && this.entryNodes.end) {
+    const floorImg = getFloorTile(gateExit.x, gateExit.y);
+    if (floorImg) {
+      const tightPadding = this.tightSpacing ? this.strokeWidth * 0.5 : 0;
+      const floorIsoX = (gateExit.x - gateExit.y) * tileWidth * 0.5 + offsetX;
+      const floorIsoY = (gateExit.x + gateExit.y) * tileHeight * 0.5 + offsetY;
+      const tileAspect = floorImg.naturalHeight / floorImg.naturalWidth;
+      const drawWidth = tileWidth + tightPadding * 2;
+      const drawHeight = drawWidth * tileAspect;
+      const drawX = floorIsoX - drawWidth * 0.5;
+      // Bottom-align floor tile to cube base
+      const cubeBottomY = floorIsoY + tileHeight + cubeHeight;
+      const drawY = cubeBottomY - drawHeight;
+      ctx.drawImage(floorImg, drawX, drawY, drawWidth, drawHeight);
+    }
+  }
+
+  // PASS 1.5: Draw decorative tiles on floor cells (on top of floors, under walls)
+  const decorationEntries = Object.entries(this.decorations);
+  if (decorationEntries.length > 0) {
     const tightPadding = this.tightSpacing ? this.strokeWidth * 0.5 : 0;
-    const floorImg = this.tileImages.pathway;
-    const floorIsoX = (gateExit.x - gateExit.y) * tileWidth * 0.5 + offsetX;
-    const floorIsoY = (gateExit.x + gateExit.y) * tileHeight * 0.5 + offsetY;
-    const tileAspect = floorImg.naturalHeight / floorImg.naturalWidth;
-    const drawWidth = tileWidth + tightPadding * 2;
-    const drawHeight = drawWidth * tileAspect;
-    const drawX = floorIsoX - drawWidth * 0.5;
-    // Bottom-align floor tile to cube base
-    const cubeBottomY = floorIsoY + tileHeight + cubeHeight;
-    const drawY = cubeBottomY - drawHeight;
-    ctx.drawImage(floorImg, drawX, drawY, drawWidth, drawHeight);
+
+    for (const [key, decoration] of decorationEntries) {
+      const [j, i] = key.split(',').map(Number);
+
+      // Skip if out of bounds
+      if (i < 0 || i >= rowCount || j < 0 || j >= this.matrix[i]?.length) continue;
+
+      // Skip if this is a wall cell
+      const pixel = parseInt(this.matrix[i]?.charAt(j), 10);
+      if (pixel === 1) continue;
+
+      const img = this.decorationImages[decoration.tileUrl];
+      if (!img) continue;
+
+      const isoX = (j - i) * tileWidth * 0.5 + offsetX;
+      const isoY = (j + i) * tileHeight * 0.5 + offsetY;
+
+      const tileAspect = img.naturalHeight / img.naturalWidth;
+      const drawWidth = tileWidth + tightPadding * 2;
+      const drawHeight = drawWidth * tileAspect;
+      const drawX = isoX - drawWidth * 0.5;
+      // Bottom-align decoration to floor level
+      const drawY = isoY + tileHeight - drawHeight;
+
+      ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+    }
   }
 
   // Helper to check if a position is a gate (should be treated as empty for neighbor calculations)

@@ -165,4 +165,50 @@ describe('IsoGeometry', () => {
       expect(IsoGeometry.ratioToAngle(1)).toBeCloseTo(45, 5);
     });
   });
+
+  describe('screenToGrid', () => {
+    it('should return origin for screen coordinates at offset', () => {
+      const result = IsoGeometry.screenToGrid(100, 50, 10, 5, 100, 50, 1);
+      expect(result.gridX).toBe(0);
+      expect(result.gridY).toBe(0);
+    });
+
+    it('should be inverse of projectToIso', () => {
+      // Project grid (3, 2) to screen
+      const projected = IsoGeometry.projectToIso(3, 2, 10, 5, 100, 50);
+      // Convert back to grid
+      const gridCoords = IsoGeometry.screenToGrid(
+        projected.isoX, projected.isoY, 10, 5, 100, 50, 1
+      );
+      expect(gridCoords.gridX).toBe(3);
+      expect(gridCoords.gridY).toBe(2);
+    });
+
+    it('should handle scale factor', () => {
+      // At scale 2, screen coordinates are doubled
+      const projected = IsoGeometry.projectToIso(3, 2, 10, 5, 100, 50);
+      const scaledX = projected.isoX * 2;
+      const scaledY = projected.isoY * 2;
+      const gridCoords = IsoGeometry.screenToGrid(scaledX, scaledY, 10, 5, 100, 50, 2);
+      expect(gridCoords.gridX).toBe(3);
+      expect(gridCoords.gridY).toBe(2);
+    });
+
+    it('should round to nearest grid position', () => {
+      // Slightly off-center should round to nearest
+      const result = IsoGeometry.screenToGrid(102, 51, 10, 5, 100, 50, 1);
+      expect(result.gridX).toBe(0);
+      expect(result.gridY).toBe(0);
+    });
+
+    it('should work with different tile dimensions', () => {
+      // Use 20x10 tiles
+      const projected = IsoGeometry.projectToIso(5, 3, 20, 10, 200, 100);
+      const gridCoords = IsoGeometry.screenToGrid(
+        projected.isoX, projected.isoY, 20, 10, 200, 100, 1
+      );
+      expect(gridCoords.gridX).toBe(5);
+      expect(gridCoords.gridY).toBe(3);
+    });
+  });
 });

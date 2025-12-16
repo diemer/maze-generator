@@ -225,6 +225,188 @@
       max-height: 44px;
       object-fit: contain;
     }
+
+    /* Decoration Palette */
+    .decoration-palette {
+      margin-top: 1em;
+      padding: 1em;
+      background: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      max-width: 500px;
+    }
+
+    .decoration-palette h4 {
+      margin: 0 0 0.5em 0;
+    }
+
+    .decoration-palette .palette-hint {
+      font-size: 0.85em;
+      color: #666;
+      margin: 0 0 1em 0;
+    }
+
+    .palette-category {
+      margin-bottom: 1em;
+    }
+
+    .palette-category h5 {
+      margin: 0 0 0.5em 0;
+      font-size: 0.9em;
+      color: #555;
+    }
+
+    .palette-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .palette-item {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: 2px solid transparent;
+      border-radius: 4px;
+      background: #fff;
+      transition: border-color 0.15s, background-color 0.15s;
+    }
+
+    .palette-item:hover {
+      border-color: #aaa;
+      background: #f0f0f0;
+    }
+
+    .palette-item.selected {
+      border-color: #3377ff;
+      background: #e8f0ff;
+    }
+
+    .palette-item img {
+      max-width: 36px;
+      max-height: 36px;
+      object-fit: contain;
+    }
+
+    .palette-actions {
+      display: flex;
+      gap: 0.5em;
+      margin-top: 1em;
+      padding-top: 1em;
+      border-top: 1px solid #ddd;
+    }
+
+    .palette-actions button {
+      padding: 6px 12px;
+      font-size: 0.85em;
+      cursor: pointer;
+      background: #eee;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+
+    .palette-actions button:hover {
+      background: #ddd;
+    }
+
+    /* Multi-select tile picker */
+    .add-blank-btn {
+      padding: 2px 8px;
+      font-size: 0.85em;
+      cursor: pointer;
+      background: #e8f0ff;
+      border: 1px solid #3377ff;
+      border-radius: 3px;
+      color: #3377ff;
+    }
+
+    .add-blank-btn:hover {
+      background: #d0e0ff;
+    }
+
+    .selected-tiles {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 0.5em;
+      min-height: 0;
+    }
+
+    .selected-tiles:empty {
+      display: none;
+    }
+
+    .tile-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 4px 2px 2px;
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      font-size: 0.85em;
+    }
+
+    .tile-chip img {
+      width: 24px;
+      height: 24px;
+      object-fit: contain;
+    }
+
+    .tile-chip .blank-indicator {
+      width: 24px;
+      height: 24px;
+      background: linear-gradient(45deg, #ddd 25%, #fff 25%, #fff 50%, #ddd 50%, #ddd 75%, #fff 75%);
+      background-size: 8px 8px;
+      border: 1px solid #ccc;
+    }
+
+    .tile-chip .remove-chip {
+      width: 16px;
+      height: 16px;
+      padding: 0;
+      border: none;
+      background: #e0e0e0;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 10px;
+      line-height: 16px;
+      text-align: center;
+    }
+
+    .tile-chip .remove-chip:hover {
+      background: #ff6666;
+      color: white;
+    }
+
+    .palette-export {
+      display: flex;
+      gap: 0.5em;
+      margin-top: 0.5em;
+    }
+
+    .palette-export button {
+      padding: 4px 8px;
+      font-size: 0.8em;
+      cursor: pointer;
+      background: #f8f8f8;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+
+    .palette-export button:hover {
+      background: #e8e8e8;
+    }
+
+    .hover-info {
+      margin-top: 0.5em;
+      font-size: 0.8em;
+      color: #666;
+      min-height: 1.2em;
+    }
   </style>
 </head>
 
@@ -412,15 +594,16 @@
       </div>
       <div class="asset-grid"></div>
     </div>
-    <div class="asset-picker">
-      <label for="tile-pathway">Pathway tile:</label>
+    <div class="asset-picker" data-multi="true">
+      <label for="tile-pathway">Pathway tiles:</label>
       <div class="asset-picker-controls">
         <input id="tile-pathway" type="text" name="tile-pathway" value="src/assets/isobricks2.png"
-          placeholder="URL or select..." />
+          placeholder="URL or select multiple..." />
         <button type="button" class="picker-toggle">Browse</button>
-        <button type="button" class="clear-btn">Clear</button>
-        <div class="selected-preview"></div>
+        <button type="button" class="add-blank-btn">+ Blank</button>
+        <button type="button" class="clear-btn">Clear All</button>
       </div>
+      <div class="selected-tiles"></div>
       <div class="asset-grid"></div>
     </div>
     <p class="desc" style="margin-top: 1em">
@@ -542,12 +725,41 @@
     createMazeButton.classList.toggle("hide");
   </script>
   <canvas id="maze"></canvas>
+
+  <!-- Decoration Palette -->
+  <div class="decoration-palette">
+    <h4>Decorations</h4>
+    <p class="palette-hint">Select a decoration, then click on a floor tile to place it</p>
+    <div class="palette-category" data-category="furniture">
+      <h5>Furniture</h5>
+      <div class="palette-items"></div>
+    </div>
+    <div class="palette-category" data-category="lighting">
+      <h5>Lighting</h5>
+      <div class="palette-items"></div>
+    </div>
+    <div class="palette-category" data-category="hazards">
+      <h5>Hazards</h5>
+      <div class="palette-items"></div>
+    </div>
+    <div class="palette-actions">
+      <button type="button" id="deselect-tool">Deselect Tool</button>
+      <button type="button" id="clear-decorations">Clear All</button>
+    </div>
+    <div class="palette-export">
+      <button type="button" id="export-decorations">Export JSON</button>
+      <button type="button" id="import-decorations">Import JSON</button>
+    </div>
+    <div class="hover-info" id="hover-info"></div>
+  </div>
+
   <script type="text/javascript" src="src/globals.js"></script>
   <script type="text/javascript" src="src/utils.js"></script>
   <script type="text/javascript" src="src/entries.js"></script>
   <script type="text/javascript" src="src/iso-geometry.js"></script>
   <script type="text/javascript" src="src/stroke-logic.js"></script>
   <script type="text/javascript" src="src/maze-iso.js"></script>
+  <script type="text/javascript" src="src/tile-placement.js"></script>
   <script type="text/javascript" src="src/solver.js"></script>
   <script type="text/javascript" src="src/app.js"></script>
   <script type="text/javascript" src="src/human-colours-en-gb.js"></script>

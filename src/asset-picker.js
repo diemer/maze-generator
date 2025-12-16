@@ -485,6 +485,27 @@ function initAssetPickers() {
     const toggle = picker.querySelector('.picker-toggle');
     const grid = picker.querySelector('.asset-grid');
     const preview = picker.querySelector('.selected-preview');
+    const isMulti = picker.dataset.multi === 'true';
+    const selectedTilesContainer = picker.querySelector('.selected-tiles');
+    const addBlankBtn = picker.querySelector('.add-blank-btn');
+
+    // For multi-select mode, track selected tiles
+    let selectedTiles = [];
+
+    // Initialize from input value
+    if (isMulti && input.value.trim()) {
+      // Parse comma-separated values or single value
+      const values = input.value.split(',').map(v => v.trim()).filter(v => v);
+      selectedTiles = values;
+      updateMultiSelectDisplay(selectedTilesContainer, selectedTiles, removeFromSelection);
+    }
+
+    function removeFromSelection(index) {
+      selectedTiles.splice(index, 1);
+      input.value = selectedTiles.join(',');
+      updateMultiSelectDisplay(selectedTilesContainer, selectedTiles, removeFromSelection);
+      refreshMazeTileset();
+    }
 
     // Populate grid with assets
     TILE_ASSETS.forEach(asset => {
@@ -492,10 +513,20 @@ function initAssetPickers() {
       item.className = 'asset-item';
       item.innerHTML = `<img src="${asset}" alt="${asset.split('/').pop()}" title="${asset.split('/').pop()}">`;
       item.addEventListener('click', () => {
-        input.value = asset;
-        updatePreview(preview, asset);
-        grid.classList.remove('show');
-        refreshMazeTileset(); // Live update
+        if (isMulti) {
+          // Multi-select: add to array if not already present
+          if (!selectedTiles.includes(asset)) {
+            selectedTiles.push(asset);
+            input.value = selectedTiles.join(',');
+            updateMultiSelectDisplay(selectedTilesContainer, selectedTiles, removeFromSelection);
+          }
+        } else {
+          // Single select: replace value
+          input.value = asset;
+          updatePreview(preview, asset);
+          grid.classList.remove('show');
+        }
+        refreshMazeTileset();
       });
       grid.appendChild(item);
     });
@@ -506,13 +537,20 @@ function initAssetPickers() {
       grid.classList.toggle('show');
     });
 
-    // Update preview on input change
-    input.addEventListener('input', () => {
-      updatePreview(preview, input.value);
-    });
+    // Update preview on input change (single-select only)
+    if (!isMulti) {
+      input.addEventListener('input', () => {
+        updatePreview(preview, input.value);
+      });
+    }
 
     // Live update on blur (after typing a URL)
     input.addEventListener('change', () => {
+      if (isMulti) {
+        // Re-parse the input value
+        selectedTiles = input.value.split(',').map(v => v.trim()).filter(v => v);
+        updateMultiSelectDisplay(selectedTilesContainer, selectedTiles, removeFromSelection);
+      }
       refreshMazeTileset();
     });
 
@@ -523,16 +561,59 @@ function initAssetPickers() {
       }
     });
 
+    // Add blank button (multi-select only)
+    if (addBlankBtn) {
+      addBlankBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        selectedTiles.push('blank');
+        input.value = selectedTiles.join(',');
+        updateMultiSelectDisplay(selectedTilesContainer, selectedTiles, removeFromSelection);
+        refreshMazeTileset();
+      });
+    }
+
     // Add clear button functionality
     const clearBtn = picker.querySelector('.clear-btn');
     if (clearBtn) {
       clearBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        input.value = '';
-        updatePreview(preview, '');
-        refreshMazeTileset(); // Live update
+        if (isMulti) {
+          selectedTiles = [];
+          input.value = '';
+          updateMultiSelectDisplay(selectedTilesContainer, selectedTiles, removeFromSelection);
+        } else {
+          input.value = '';
+          updatePreview(preview, '');
+        }
+        refreshMazeTileset();
       });
     }
+  });
+}
+
+// Update the multi-select display with tile chips
+function updateMultiSelectDisplay(container, tiles, onRemove) {
+  if (!container) return;
+
+  container.innerHTML = tiles.map((tile, idx) => {
+    if (tile === 'blank' || tile === '') {
+      return `<span class="tile-chip" data-idx="${idx}">
+        <span class="blank-indicator"></span>
+        <button type="button" class="remove-chip">&times;</button>
+      </span>`;
+    }
+    return `<span class="tile-chip" data-idx="${idx}">
+      <img src="${tile}" alt="tile">
+      <button type="button" class="remove-chip">&times;</button>
+    </span>`;
+  }).join('');
+
+  // Add remove handlers
+  container.querySelectorAll('.remove-chip').forEach((btn, idx) => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      onRemove(idx);
+    });
   });
 }
 
@@ -570,7 +651,26 @@ function refreshMazeTileset() {
 
   const wallLeftUrl = tileWallLeft ? tileWallLeft.value.trim() : '';
   const wallRightUrl = tileWallRight ? tileWallRight.value.trim() : '';
-  const pathwayUrl = tilePathway ? tilePathway.value.trim() : '';
+  const pathwayValue = tilePathway ? tilePathway.value.trim() : '';
+
+  // Check if pathway is multi-select (comma-separated values)
+  const pathwayPicker = tilePathway ? tilePathway.closest('.asset-picker') : null;
+  const isPathwayMulti = pathwayPicker && pathwayPicker.dataset.multi === 'true';
+  let pathwayTiles = null;
+
+  if (pathwayValue) {
+    if (isPathwayMulti && pathwayValue.includes(',')) {
+      // Parse as array, keeping "blank" as-is
+      pathwayTiles = pathwayValue.split(',').map(v => v.trim()).filter(v => v);
+    } else if (isPathwayMulti) {
+      // Single value but multi-select enabled - still use as array for consistency
+      pathwayTiles = [pathwayValue];
+    } else {
+      // Single select mode - use as string
+      pathwayTiles = pathwayValue;
+    }
+  }
+
   // Directional start URLs
   const startNUrl = tileStartN ? tileStartN.value.trim() : '';
   const startSUrl = tileStartS ? tileStartS.value.trim() : '';
@@ -584,7 +684,7 @@ function refreshMazeTileset() {
 
   // Update tileset on existing maze
   let tileset = null;
-  const hasAnyTile = wallLeftUrl || wallRightUrl || pathwayUrl ||
+  const hasAnyTile = wallLeftUrl || wallRightUrl || pathwayTiles ||
     startNUrl || startSUrl || startEUrl || startWUrl ||
     endNUrl || endSUrl || endEUrl || endWUrl;
 
@@ -592,7 +692,7 @@ function refreshMazeTileset() {
     tileset = {};
     if (wallLeftUrl) tileset.wallLeft = wallLeftUrl;
     if (wallRightUrl) tileset.wallRight = wallRightUrl;
-    if (pathwayUrl) tileset.pathway = pathwayUrl;
+    if (pathwayTiles) tileset.pathway = pathwayTiles;
     // Directional start tiles
     if (startNUrl) tileset.startN = startNUrl;
     if (startSUrl) tileset.startS = startSUrl;
@@ -711,4 +811,9 @@ document.addEventListener('DOMContentLoaded', function() {
   initIsoRatio();
   initEndMarkerOffset();
   initPreviews();
+
+  // Initialize tile placement for decorations
+  if (typeof TilePlacement !== 'undefined') {
+    TilePlacement.init();
+  }
 });

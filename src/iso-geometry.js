@@ -117,6 +117,45 @@
     return Math.tan(angleDegrees * (Math.PI / 180));
   }
 
+  /**
+   * Convert screen/canvas coordinates to grid position (inverse projection)
+   * This is the inverse of projectToIso()
+   *
+   * @param {number} screenX - X position on canvas
+   * @param {number} screenY - Y position on canvas
+   * @param {number} tileWidth - Width of tile in pixels
+   * @param {number} tileHeight - Height of tile in pixels
+   * @param {number} offsetX - X offset used in projection
+   * @param {number} offsetY - Y offset used in projection
+   * @param {number} scale - Display scale factor (default 1)
+   * @returns {{gridX: number, gridY: number}}
+   */
+  function screenToGrid(screenX, screenY, tileWidth, tileHeight, offsetX, offsetY, scale) {
+    scale = scale || 1;
+
+    // Account for display scale
+    var x = screenX / scale;
+    var y = screenY / scale;
+
+    // Reverse the isometric projection formulas:
+    // isoX = (gridX - gridY) * tileWidth * 0.5 + offsetX
+    // isoY = (gridX + gridY) * tileHeight * 0.5 + offsetY
+    //
+    // Let A = (x - offsetX) / (tileWidth * 0.5) = gridX - gridY
+    // Let B = (y - offsetY) / (tileHeight * 0.5) = gridX + gridY
+    //
+    // gridX = (A + B) / 2
+    // gridY = (B - A) / 2
+
+    var A = (x - offsetX) / (tileWidth * 0.5);
+    var B = (y - offsetY) / (tileHeight * 0.5);
+
+    return {
+      gridX: Math.round((A + B) / 2),
+      gridY: Math.round((B - A) / 2)
+    };
+  }
+
   // Public API
   return {
     projectToIso: projectToIso,
@@ -124,7 +163,8 @@
     getCubeVertices: getCubeVertices,
     getCanvasDimensions: getCanvasDimensions,
     ratioToAngle: ratioToAngle,
-    angleToRatio: angleToRatio
+    angleToRatio: angleToRatio,
+    screenToGrid: screenToGrid
   };
 
 }));
