@@ -181,6 +181,7 @@ function refreshMazeTileset() {
   const strokeWallCornersCheckbox = document.getElementById('stroke-wall-corners');
   const debugStrokeColorsCheckbox = document.getElementById('debug-stroke-colors');
   const debugTestPatternCheckbox = document.getElementById('debug-test-pattern');
+  const isoRatioSelect = document.getElementById('iso-ratio');
 
   mazeNodes.tileset = tileset;
   mazeNodes.tileImages = {}; // Clear cached images
@@ -194,6 +195,7 @@ function refreshMazeTileset() {
   mazeNodes.wallHeight = wallHeightInput ? parseFloat(wallHeightInput.value) || 1.0 : 1.0;
   mazeNodes.strokeWidth = strokeWidthInput ? parseFloat(strokeWidthInput.value) || 2 : 2;
   mazeNodes.wallBgColor = wallBgColorInput ? wallBgColorInput.value.trim() : '';
+  mazeNodes.isoRatio = isoRatioSelect ? parseFloat(isoRatioSelect.value) || 0.5 : 0.5;
 
   // Reload tileset and redraw
   mazeNodes.loadTileset().then(function() {
@@ -234,9 +236,18 @@ function initWallBgColor() {
   }
 }
 
+// Initialize isometric ratio listener
+function initIsoRatio() {
+  const isoRatioSelect = document.getElementById('iso-ratio');
+  if (isoRatioSelect) {
+    isoRatioSelect.addEventListener('change', refreshMazeTileset);
+  }
+}
+
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', function() {
   initAssetPickers();
   initStrokeToggle();
   initWallBgColor();
+  initIsoRatio();
 });

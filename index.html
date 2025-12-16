@@ -255,6 +255,17 @@
     </p>
 
     <p>
+      <label for="iso-ratio">Isometric angle:</label>
+      <select id="iso-ratio" name="iso-ratio">
+        <option value="0.5" selected>2:1 Pixel art (~27°)</option>
+        <option value="0.577">True isometric (~30°)</option>
+        <option value="0.25">Flat (4:1, ~14°)</option>
+        <option value="0.75">Steep (4:3, ~37°)</option>
+        <option value="1.0">Square (1:1, 45°)</option>
+      </select>
+    </p>
+
+    <p>
       <label for="path-width">Path width:</label>
       <input id="path-width" type="number" name="" value="3" min="1" max="5" step="1" />
     </p>
@@ -451,6 +462,8 @@
   <script type="text/javascript" src="src/globals.js"></script>
   <script type="text/javascript" src="src/utils.js"></script>
   <script type="text/javascript" src="src/entries.js"></script>
+  <script type="text/javascript" src="src/iso-geometry.js"></script>
+  <script type="text/javascript" src="src/stroke-logic.js"></script>
   <script type="text/javascript" src="src/maze-iso.js"></script>
   <script type="text/javascript" src="src/solver.js"></script>
   <script type="text/javascript" src="src/app.js"></script>

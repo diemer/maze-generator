@@ -82,6 +82,8 @@ function initMaze() {
     const strokeWidth = getInputFloatVal('stroke-width', 2);
     const wallBgColorInput = document.getElementById('wall-bg-color');
     const wallBgColor = wallBgColorInput ? wallBgColorInput.value.trim() : '';
+    const isoRatioSelect = document.getElementById('iso-ratio');
+    const isoRatio = isoRatioSelect ? parseFloat(isoRatioSelect.value) : 0.5;
 
     const settings = {
         width: getInputIntVal('width', 20),
@@ -102,6 +104,7 @@ function initMaze() {
         wallHeight: wallHeight,
         strokeWidth: strokeWidth,
         wallBgColor: wallBgColor,
+        isoRatio: isoRatio,
         entryType: '',
         bias: '',
         color: '#000000',

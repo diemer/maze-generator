@@ -25,6 +25,7 @@ function Maze(args) {
     wallBgColor: "", // Optional background color for wall faces (behind transparent textures)
     debugStrokeColors: false, // Show different colors for each stroke type (for debugging)
     debugTestPattern: false, // Use a static test pattern instead of random maze
+    isoRatio: 0.5, // Isometric ratio (height/width): 0.5=2:1 pixel art, 0.577=true iso (~30°)
 
     // Maximum 300 walls can be removed
     maxWallsRemove: 300,
@@ -64,6 +65,7 @@ function Maze(args) {
   this.wallBgColor = settings["wallBgColor"] || "";
   this.debugStrokeColors = settings["debugStrokeColors"] === true;
   this.debugTestPattern = settings["debugTestPattern"] === true;
+  this.isoRatio = parseFloat(settings["isoRatio"]) || 0.5;
   this.maxMaze = parseInt(settings["maxMaze"], 10);
   this.maxCanvas = parseInt(settings["maxCanvas"], 10);
   this.maxCanvasDimension = parseInt(settings["maxCanvasDimension"], 10);
@@ -1064,7 +1066,7 @@ Maze.prototype.draw = function () {
 
   const scale = this.displayScale;
   const tileWidth = this.wallSize; // Base tile width
-  const tileHeight = this.wallSize / 2; // Base tile height for isometric view
+  const tileHeight = this.wallSize * this.isoRatio; // Base tile height (configurable ratio)
 
   // Use actual matrix dimensions (may be transformed)
   const matrixCols = this.matrix[0].length;
@@ -1271,7 +1273,7 @@ Maze.prototype.generateSVG = function () {
 
   const scale = this.displayScale;
   const tileWidth = this.wallSize;
-  const tileHeight = this.wallSize / 2;
+  const tileHeight = this.wallSize * this.isoRatio;
 
   // Use actual matrix dimensions (may be transformed)
   const matrixCols = this.matrix[0].length;
@@ -1279,7 +1281,7 @@ Maze.prototype.generateSVG = function () {
 
   const isoWidth = matrixCols * tileWidth * 0.5;
   const isoHeight = matrixRows * tileHeight * 0.5;
-  const cubeHeight = tileHeight;
+  const cubeHeight = tileHeight * this.wallHeight;
 
   const svgWidth = (isoWidth * 2) * scale;
   const svgHeight = (isoHeight * 2 + tileHeight + cubeHeight) * scale;
