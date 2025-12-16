@@ -153,6 +153,7 @@ Maze.prototype.generateDebugTestPattern = function () {
   // - Cubes 29-31: T-junction (┤ shape)
   // - Cubes 32-35: Cross/+ junction
   // - Cubes 36-39: 2x2 block
+  // - Row 14-16: Exit configurations (wall with gate openings)
 
   this.matrix = [
     //         1         2
@@ -171,10 +172,17 @@ Maze.prototype.generateDebugTestPattern = function () {
     "000001100000000000000000000", // row 11: 2x2 block top
     "000001100000000000000000000", // row 12: 2x2 block bottom
     "000000000000000000000000000", // row 13
+    "111111111110111111111111111", // row 14: wall with start gate (col 10 is gate)
+    "100000000000000000000000001", // row 15: side walls with pathway
+    "111111111111111111110111111", // row 16: wall with end gate (col 20 is gate)
   ];
 
-  // Clear entry nodes for test pattern
-  this.entryNodes = {};
+  // Set up entry nodes to demonstrate gate openings
+  // The gate coordinates point to wall cells that will be skipped (creating openings)
+  this.entryNodes = {
+    start: { x: 11, y: 15, gate: { x: 10, y: 14 } }, // Start point with gate in top wall
+    end: { x: 19, y: 15, gate: { x: 20, y: 16 } }    // End point with gate in bottom wall
+  };
 };
 
 Maze.prototype.transformMatrix = function () {
@@ -1182,6 +1190,12 @@ Maze.prototype.draw = function () {
     }
   }
 
+  // Helper to check if a position is a gate (should be treated as empty for neighbor calculations)
+  const isGate = (x, y) => {
+    return (gateEntry && x === gateEntry.x && y === gateEntry.y) ||
+           (gateExit && x === gateExit.x && y === gateExit.y);
+  };
+
   // PASS 2: Draw all wall tiles on top
   for (let i = 0; i < rowCount; i++) {
     const rowLength = this.matrix[i].length;
@@ -1194,13 +1208,13 @@ Maze.prototype.draw = function () {
       const pixel = parseInt(this.matrix[i].charAt(j), 10);
       if (!pixel) continue; // Skip floors in this pass
 
-      // Get neighbor pixel values
-      const leftPixel = j > 0 ? parseInt(this.matrix[i].charAt(j - 1), 10) : 0;
-      const rightPixel = j < rowLength - 1 ? parseInt(this.matrix[i].charAt(j + 1), 10) : 0;
-      const topPixel = i > 0 ? parseInt(this.matrix[i - 1].charAt(j), 10) : 0;
-      const bottomPixel = i < rowCount - 1 ? parseInt(this.matrix[i + 1].charAt(j), 10) : 0;
-      const topRightPixel = i > 0 && j < rowLength - 1 ? parseInt(this.matrix[i - 1].charAt(j + 1), 10) : 0;
-      const bottomRightPixel = i < rowCount - 1 && j < rowLength - 1 ? parseInt(this.matrix[i + 1].charAt(j + 1), 10) : 0;
+      // Get neighbor pixel values, treating gate positions as empty (0)
+      const leftPixel = j > 0 ? (isGate(j - 1, i) ? 0 : parseInt(this.matrix[i].charAt(j - 1), 10)) : 0;
+      const rightPixel = j < rowLength - 1 ? (isGate(j + 1, i) ? 0 : parseInt(this.matrix[i].charAt(j + 1), 10)) : 0;
+      const topPixel = i > 0 ? (isGate(j, i - 1) ? 0 : parseInt(this.matrix[i - 1].charAt(j), 10)) : 0;
+      const bottomPixel = i < rowCount - 1 ? (isGate(j, i + 1) ? 0 : parseInt(this.matrix[i + 1].charAt(j), 10)) : 0;
+      const topRightPixel = i > 0 && j < rowLength - 1 ? (isGate(j + 1, i - 1) ? 0 : parseInt(this.matrix[i - 1].charAt(j + 1), 10)) : 0;
+      const bottomRightPixel = i < rowCount - 1 && j < rowLength - 1 ? (isGate(j + 1, i + 1) ? 0 : parseInt(this.matrix[i + 1].charAt(j + 1), 10)) : 0;
 
       const isoX = (j - i) * tileWidth * 0.5 + offsetX;
       const isoY = (j + i) * tileHeight * 0.5 + offsetY;
