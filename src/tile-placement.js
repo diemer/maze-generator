@@ -194,16 +194,19 @@
     // Restore clean canvas first
     if (savedCanvasData) {
       ctx.putImageData(savedCanvasData, 0, 0);
+    } else {
+      // No saved state yet, can't draw preview
+      return;
     }
 
     // Calculate position (same as decoration rendering in maze-iso.js)
     var tileWidth = mazeNodes.wallSize;
     var tileHeight = mazeNodes.wallSize * mazeNodes.isoRatio;
-    var cubeHeight = tileHeight * mazeNodes.wallHeight;
+    var cubeHeight = tileHeight * (mazeNodes.wallHeight || 1);
     var matrixCols = mazeNodes.matrix[0].length;
     var offsetX = matrixCols * tileWidth * 0.5;
     var offsetY = tileHeight;
-    var scale = mazeNodes.displayScale;
+    var scale = mazeNodes.displayScale || 1;
 
     var j = hoveredCell.x;
     var i = hoveredCell.y;
@@ -211,7 +214,7 @@
     var isoX = (j - i) * tileWidth * 0.5 + offsetX;
     var isoY = (j + i) * tileHeight * 0.5 + offsetY;
 
-    var tightPadding = mazeNodes.tightSpacing ? mazeNodes.strokeWidth * 0.5 : 0;
+    var tightPadding = mazeNodes.tightSpacing ? (mazeNodes.strokeWidth || 2) * 0.5 : 0;
     var tileAspect = previewImage.naturalHeight / previewImage.naturalWidth;
     var drawWidth = tileWidth + tightPadding * 2;
     var drawHeight = drawWidth * tileAspect;
@@ -219,16 +222,12 @@
     var floorBottomY = isoY + tileHeight + cubeHeight;
     var drawY = floorBottomY - drawHeight;
 
-    // Apply scale
-    ctx.save();
-    ctx.scale(scale, scale);
-
-    // Draw with transparency to indicate preview
+    // Draw with transparency - scale coordinates directly since putImageData resets transform
     ctx.globalAlpha = 0.6;
-    ctx.drawImage(previewImage, drawX, drawY, drawWidth, drawHeight);
+    ctx.drawImage(previewImage,
+      drawX * scale, drawY * scale,
+      drawWidth * scale, drawHeight * scale);
     ctx.globalAlpha = 1.0;
-
-    ctx.restore();
   }
 
   /**
