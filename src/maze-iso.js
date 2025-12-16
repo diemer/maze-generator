@@ -29,6 +29,7 @@ function Maze(args) {
     debugTestPattern: false, // Use a static test pattern instead of random maze
     isoRatio: 0.5, // Isometric ratio (height/width): 0.5=2:1 pixel art, 0.577=true iso (~30°)
     tightSpacing: false, // Remove stroke-based spacing for seamless tileset rendering
+    endMarkerOffset: 0, // Vertical offset for end marker tile (positive = down)
 
     // Maximum 300 walls can be removed
     maxWallsRemove: 300,
@@ -70,6 +71,7 @@ function Maze(args) {
   this.debugTestPattern = settings["debugTestPattern"] === true;
   this.isoRatio = parseFloat(settings["isoRatio"]) || 0.5;
   this.tightSpacing = settings["tightSpacing"] === true;
+  this.endMarkerOffset = parseFloat(settings["endMarkerOffset"]) || 0;
   this.maxMaze = parseInt(settings["maxMaze"], 10);
   this.maxCanvas = parseInt(settings["maxCanvas"], 10);
   this.maxCanvasDimension = parseInt(settings["maxCanvasDimension"], 10);
@@ -1188,6 +1190,22 @@ Maze.prototype.draw = function () {
     }
   }
 
+  // Draw end gate floor tile in PASS 1 (so walls render on top)
+  if (gateExit && this.entryNodes.end && this.tileImages.pathway) {
+    const tightPadding = this.tightSpacing ? this.strokeWidth * 0.5 : 0;
+    const floorImg = this.tileImages.pathway;
+    const floorIsoX = (gateExit.x - gateExit.y) * tileWidth * 0.5 + offsetX;
+    const floorIsoY = (gateExit.x + gateExit.y) * tileHeight * 0.5 + offsetY;
+    const tileAspect = floorImg.naturalHeight / floorImg.naturalWidth;
+    const drawWidth = tileWidth + tightPadding * 2;
+    const drawHeight = drawWidth * tileAspect;
+    const drawX = floorIsoX - drawWidth * 0.5;
+    // Bottom-align floor tile to cube base
+    const cubeBottomY = floorIsoY + tileHeight + cubeHeight;
+    const drawY = cubeBottomY - drawHeight;
+    ctx.drawImage(floorImg, drawX, drawY, drawWidth, drawHeight);
+  }
+
   // Helper to check if a position is a gate (should be treated as empty for neighbor calculations)
   const isGate = (x, y) => {
     return (gateEntry && x === gateEntry.x && y === gateEntry.y) ||
@@ -1195,7 +1213,8 @@ Maze.prototype.draw = function () {
   };
 
   // Helper to draw a gate tile at the given position
-  // Gate tiles are bottom-aligned to match the base of wall cubes
+  // Start gates: draw the marker tile at gate position
+  // End gates: draw floor at gate position, marker tile one step further out
   const drawGateTile = (gateX, gateY, isStart) => {
     const entryData = isStart ? this.entryNodes.start : this.entryNodes.end;
     if (!entryData) return;
@@ -1205,20 +1224,47 @@ Maze.prototype.draw = function () {
       : (isStart ? 'N' : 'S');
     const tileKey = (isStart ? 'start' : 'end') + dir;
     const img = this.tileImages[tileKey] || this.tileImages[isStart ? 'start' : 'end'];
+    const tightPadding = this.tightSpacing ? this.strokeWidth * 0.5 : 0;
 
-    if (img) {
-      const gateIsoX = (gateX - gateY) * tileWidth * 0.5 + offsetX;
-      const gateIsoY = (gateX + gateY) * tileHeight * 0.5 + offsetY;
-      const tightPadding = this.tightSpacing ? this.strokeWidth * 0.5 : 0;
-      const tileAspect = img.naturalHeight / img.naturalWidth;
-      const drawWidth = tileWidth + tightPadding * 2;
-      const drawHeight = drawWidth * tileAspect;
-      const drawX = gateIsoX - drawWidth * 0.5;
-      // Bottom-align: position so tile bottom matches the base of wall cubes
-      // Wall cube bottom is at: gateIsoY + tileHeight + cubeHeight
-      const cubeBottomY = gateIsoY + tileHeight + cubeHeight;
-      const drawY = cubeBottomY - drawHeight;
-      ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+    if (!isStart) {
+      // End gate: marker tile one step outward from gate (floor drawn in PASS 1)
+      // Calculate outward offset based on gate direction
+      let outX = 0, outY = 0;
+      if (dir === 'N') outY = -1;
+      else if (dir === 'S') outY = 1;
+      else if (dir === 'E') outX = 1;
+      else if (dir === 'W') outX = -1;
+
+      // Marker tile: one step outward from gate position
+      const markerX = gateX + outX;
+      const markerY = gateY + outY;
+
+      // Draw end marker tile at offset position, shifted down to align with floor level
+      if (img) {
+        const markerIsoX = (markerX - markerY) * tileWidth * 0.5 + offsetX;
+        const markerIsoY = (markerX + markerY) * tileHeight * 0.5 + offsetY;
+        const tileAspect = img.naturalHeight / img.naturalWidth;
+        const drawWidth = tileWidth + tightPadding * 2;
+        const drawHeight = drawWidth * tileAspect;
+        const drawX = markerIsoX - drawWidth * 0.5;
+        const cubeBottomY = markerIsoY + tileHeight + cubeHeight;
+        const drawY = cubeBottomY - drawHeight + cubeHeight + this.endMarkerOffset; // Shift down one cubeHeight + offset
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+      }
+    } else {
+      // Start gate: draw marker tile at gate position
+      if (img) {
+        const gateIsoX = (gateX - gateY) * tileWidth * 0.5 + offsetX;
+        const gateIsoY = (gateX + gateY) * tileHeight * 0.5 + offsetY;
+        const tileAspect = img.naturalHeight / img.naturalWidth;
+        const drawWidth = tileWidth + tightPadding * 2;
+        const drawHeight = drawWidth * tileAspect;
+        const drawX = gateIsoX - drawWidth * 0.5;
+        // Bottom-align: position so tile bottom matches the base of wall cubes
+        const cubeBottomY = gateIsoY + tileHeight + cubeHeight;
+        const drawY = cubeBottomY - drawHeight;
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+      }
     }
   };
 

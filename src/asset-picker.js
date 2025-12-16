@@ -631,6 +631,8 @@ function refreshMazeTileset() {
   mazeNodes.strokeWidth = strokeWidthInput ? parseFloat(strokeWidthInput.value) || 2 : 2;
   mazeNodes.wallBgColor = wallBgColorInput ? wallBgColorInput.value.trim() : '';
   mazeNodes.isoRatio = isoRatioSelect ? parseFloat(isoRatioSelect.value) || 0.5 : 0.5;
+  const endMarkerOffsetInput = document.getElementById('end-marker-offset');
+  mazeNodes.endMarkerOffset = endMarkerOffsetInput ? parseFloat(endMarkerOffsetInput.value) || 0 : 0;
 
   // Reload tileset and redraw
   mazeNodes.loadTileset().then(function() {
@@ -680,6 +682,15 @@ function initIsoRatio() {
   }
 }
 
+// Initialize end marker offset listener
+function initEndMarkerOffset() {
+  const endMarkerOffsetInput = document.getElementById('end-marker-offset');
+  if (endMarkerOffsetInput) {
+    endMarkerOffsetInput.addEventListener('change', refreshMazeTileset);
+    endMarkerOffsetInput.addEventListener('input', refreshMazeTileset);
+  }
+}
+
 // Initialize previews for inputs with existing values
 function initPreviews() {
   const pickers = document.querySelectorAll('.asset-picker');
@@ -698,5 +709,6 @@ document.addEventListener('DOMContentLoaded', function() {
   initStrokeToggle();
   initWallBgColor();
   initIsoRatio();
+  initEndMarkerOffset();
   initPreviews();
 });

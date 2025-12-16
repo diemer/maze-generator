@@ -427,6 +427,12 @@
       Start/End markers (directional). Use N/S/E/W variants based on gate
       direction.
     </p>
+    <p>
+      <label for="end-marker-offset">End marker offset:</label>
+      <input id="end-marker-offset" type="number" name="end-marker-offset" value="-3.25" min="-20" max="20"
+        step=".25" />
+      <span style="font-size: smaller; color: #666">(Vertical adjustment, positive = down)</span>
+    </p>
     <div class="asset-picker">
       <label for="tile-start-n">Start (North):</label>
       <div class="asset-picker-controls">
@@ -474,7 +480,7 @@
     <div class="asset-picker">
       <label for="tile-end-n">End (North):</label>
       <div class="asset-picker-controls">
-        <input id="tile-end-n" type="text" name="tile-end-n" value="src/assets/isostair3.png"
+        <input id="tile-end-n" type="text" name="tile-end-n" value="src/assets/isostair.png"
           placeholder="URL or select..." />
         <button type="button" class="picker-toggle">Browse</button>
         <button type="button" class="clear-btn">Clear</button>
@@ -485,7 +491,7 @@
     <div class="asset-picker">
       <label for="tile-end-s">End (South):</label>
       <div class="asset-picker-controls">
-        <input id="tile-end-s" type="text" name="tile-end-s" value="src/assets/isostair.png"
+        <input id="tile-end-s" type="text" name="tile-end-s" value="src/assets/isostair3.png"
           placeholder="URL or select..." />
         <button type="button" class="picker-toggle">Browse</button>
         <button type="button" class="clear-btn">Clear</button>
@@ -496,7 +502,7 @@
     <div class="asset-picker">
       <label for="tile-end-e">End (East):</label>
       <div class="asset-picker-controls">
-        <input id="tile-end-e" type="text" name="tile-end-e" value="src/assets/isostair4.png"
+        <input id="tile-end-e" type="text" name="tile-end-e" value="src/assets/isostair2.png"
           placeholder="URL or select..." />
         <button type="button" class="picker-toggle">Browse</button>
         <button type="button" class="clear-btn">Clear</button>
@@ -507,7 +513,7 @@
     <div class="asset-picker">
       <label for="tile-end-w">End (West):</label>
       <div class="asset-picker-controls">
-        <input id="tile-end-w" type="text" name="tile-end-w" value="src/assets/isostair2.png"
+        <input id="tile-end-w" type="text" name="tile-end-w" value="src/assets/isostair4.png"
           placeholder="URL or select..." />
         <button type="button" class="picker-toggle">Browse</button>
         <button type="button" class="clear-btn">Clear</button>
