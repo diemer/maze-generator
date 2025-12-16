@@ -1235,23 +1235,33 @@ Maze.prototype.draw = function () {
         // Draw pathway tile if available
         if (this.tileImages.pathway) {
           const img = this.tileImages.pathway;
+          // Preserve tile's aspect ratio - scale height based on tile's natural ratio
+          const tileAspect = img.naturalHeight / img.naturalWidth;
+          const drawWidth = tileWidth;
+          const drawHeight = tileWidth * tileAspect;
           const drawX = isoX - tileWidth * 0.5;
           const drawY = isoY;
-          ctx.drawImage(img, drawX, drawY, tileWidth, tileHeight);
+          ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
         }
 
         // Draw start/end markers
         if (isStart && this.tileImages.start) {
           const img = this.tileImages.start;
+          const tileAspect = img.naturalHeight / img.naturalWidth;
+          const drawWidth = tileWidth;
+          const drawHeight = tileWidth * tileAspect;
           const drawX = isoX - tileWidth * 0.5;
           const drawY = isoY;
-          ctx.drawImage(img, drawX, drawY, tileWidth, tileHeight);
+          ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
         }
         if (isEnd && this.tileImages.end) {
           const img = this.tileImages.end;
+          const tileAspect = img.naturalHeight / img.naturalWidth;
+          const drawWidth = tileWidth;
+          const drawHeight = tileWidth * tileAspect;
           const drawX = isoX - tileWidth * 0.5;
           const drawY = isoY;
-          ctx.drawImage(img, drawX, drawY, tileWidth, tileHeight);
+          ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
         }
         // Draw the isometric tile
         // ctx.beginPath();
