@@ -1123,174 +1123,149 @@ Maze.prototype.draw = function () {
   const offsetY = tileHeight; // Add vertical margin
 
   console.log(this.matrix);
+
+  // Helper to get start/end nodes (cache outside loops)
+  const startNode = getEntryNode(this.entryNodes, "start", false);
+  const endNode = getEntryNode(this.entryNodes, "end", false);
+
+  // PASS 1: Draw all floor/pathway tiles first
   for (let i = 0; i < rowCount; i++) {
     const rowLength = this.matrix[i].length;
     for (let j = 0; j < rowLength; j++) {
       if (gateEntry && gateExit) {
-        if (j === gateEntry.x && i === gateEntry.y) {
-          continue;
-        }
-        if (j === gateExit.x && i === gateExit.y) {
-          continue;
-        }
+        if (j === gateEntry.x && i === gateEntry.y) continue;
+        if (j === gateExit.x && i === gateExit.y) continue;
       }
 
-      // Logic from above to determine wallness or pathness
-      // let hasAbove = nodes.hasOwnProperty(i - this.width);
-      // let above = hasAbove && stringVal(nodes[i - this.width], 4);
-      // let hasNext = nodes.hasOwnProperty(i + 1);
-      // let next = hasNext && stringVal(nodes[i + 1], 1);
-      //
-      // if (stringVal(nodes[i], 4)) {
-      //   row1 += "01";
-      //   row2 += "01";
-      // } else if (next || above) {
-      //   row1 += "01";
-      //   row2 += "00";
-      // } else {
-      //   row1 += "00";
-      //   row2 += "00";
-      // }
-      //
-
-      // Get the pixel value
       const pixel = parseInt(this.matrix[i].charAt(j), 10);
-      // Get neighbor pixel values
-      const leftPixel = j > 0 ? parseInt(this.matrix[i].charAt(j - 1), 10) : 0;
-      const rightPixel =
-        j < rowLength - 1 ? parseInt(this.matrix[i].charAt(j + 1), 10) : 0;
-      const topPixel = i > 0 ? parseInt(this.matrix[i - 1].charAt(j), 10) : 0;
-      const bottomPixel =
-        i < rowCount - 1 ? parseInt(this.matrix[i + 1].charAt(j), 10) : 0;
-      // Diagonal neighbors for detecting T-junction inner corners
-      const topRightPixel =
-        i > 0 && j < rowLength - 1
-          ? parseInt(this.matrix[i - 1].charAt(j + 1), 10)
-          : 0;
-      const bottomRightPixel =
-        i < rowCount - 1 && j < rowLength - 1
-          ? parseInt(this.matrix[i + 1].charAt(j + 1), 10)
-          : 0;
+      if (pixel) continue; // Skip walls in this pass
 
-      // Calculate the isometric tile coordinates
       const isoX = (j - i) * tileWidth * 0.5 + offsetX;
       const isoY = (j + i) * tileHeight * 0.5 + offsetY;
 
-      // Check if this is a start or end position
-      const startNode = getEntryNode(this.entryNodes, "start", false);
-      const endNode = getEntryNode(this.entryNodes, "end", false);
       const isStart = startNode && j === startNode.x && i === startNode.y;
       const isEnd = endNode && j === endNode.x && i === endNode.y;
 
-      if (pixel) {
-        // Draw wall tile
-        if (this.tileImages.wallLeft || this.tileImages.wallRight) {
-          // Use textured cube with directional wall images
-          this.createTexturedCube({
-            ctx,
-            isoX,
-            isoY,
-            tileWidth,
-            tileHeight,
-            height: cubeHeight,
-            leftImage: this.tileImages.wallLeft || null,
-            rightImage: this.tileImages.wallRight || null,
-            topColor: "#ffffff",
-            showStroke: this.showStroke,
-            strokeTop: this.strokeTop,
-            strokeBottom: this.strokeBottom,
-            strokeCorners: this.strokeCorners,
-            strokeWallCorners: this.strokeWallCorners,
-            debugStrokeColors: this.debugStrokeColors,
-            lineWidth: this.strokeWidth,
-            wallBgColor: this.wallBgColor,
-            tightSpacing: this.tightSpacing,
-            leftPixel,
-            rightPixel,
-            topPixel,
-            bottomPixel,
-            topRightPixel,
-            bottomRightPixel,
-          });
-        } else {
-          // Fallback to programmatic cube drawing
-          this.createBorderCube({
-            ctx,
-            isoX,
-            isoY,
-            tileWidth,
-            tileHeight,
-            height: cubeHeight,
-            showStroke: this.showStroke,
-            strokeTop: this.strokeTop,
-            strokeBottom: this.strokeBottom,
-            strokeCorners: this.strokeCorners,
-            strokeWallCorners: this.strokeWallCorners,
-            debugStrokeColors: this.debugStrokeColors,
-            lineWidth: this.strokeWidth,
-            leftPixel,
-            rightPixel,
-            topPixel,
-            bottomPixel,
-            topRightPixel,
-            bottomRightPixel,
-          });
-        }
+      // When tightSpacing is enabled, expand tiles slightly to eliminate stroke-sized gaps
+      const tightPadding = this.tightSpacing ? this.strokeWidth * 0.5 : 0;
 
-        // Draw cube number for debug test pattern
-        if (this.debugTestPattern) {
-          this.wallCubeNumber = (this.wallCubeNumber || 0) + 1;
-          ctx.fillStyle = "#000000";
-          ctx.font = `bold ${Math.max(6, tileWidth * 0.25)}px sans-serif`;
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          // Position number on top face of cube
-          const labelY = isoY + tileHeight * 0.5;
-          ctx.fillText(this.wallCubeNumber.toString(), isoX, labelY);
-        }
+      // Draw pathway tile if available
+      if (this.tileImages.pathway) {
+        const img = this.tileImages.pathway;
+        const tileAspect = img.naturalHeight / img.naturalWidth;
+        const drawWidth = tileWidth + tightPadding * 2;
+        const drawHeight = drawWidth * tileAspect;
+        const drawX = isoX - drawWidth * 0.5;
+        const drawY = isoY - tightPadding * tileAspect;
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+      }
+
+      // Draw start/end markers
+      if (isStart && this.tileImages.start) {
+        const img = this.tileImages.start;
+        const tileAspect = img.naturalHeight / img.naturalWidth;
+        const drawWidth = tileWidth + tightPadding * 2;
+        const drawHeight = drawWidth * tileAspect;
+        const drawX = isoX - drawWidth * 0.5;
+        const drawY = isoY - tightPadding * tileAspect;
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+      }
+      if (isEnd && this.tileImages.end) {
+        const img = this.tileImages.end;
+        const tileAspect = img.naturalHeight / img.naturalWidth;
+        const drawWidth = tileWidth + tightPadding * 2;
+        const drawHeight = drawWidth * tileAspect;
+        const drawX = isoX - drawWidth * 0.5;
+        const drawY = isoY - tightPadding * tileAspect;
+        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+      }
+    }
+  }
+
+  // PASS 2: Draw all wall tiles on top
+  for (let i = 0; i < rowCount; i++) {
+    const rowLength = this.matrix[i].length;
+    for (let j = 0; j < rowLength; j++) {
+      if (gateEntry && gateExit) {
+        if (j === gateEntry.x && i === gateEntry.y) continue;
+        if (j === gateExit.x && i === gateExit.y) continue;
+      }
+
+      const pixel = parseInt(this.matrix[i].charAt(j), 10);
+      if (!pixel) continue; // Skip floors in this pass
+
+      // Get neighbor pixel values
+      const leftPixel = j > 0 ? parseInt(this.matrix[i].charAt(j - 1), 10) : 0;
+      const rightPixel = j < rowLength - 1 ? parseInt(this.matrix[i].charAt(j + 1), 10) : 0;
+      const topPixel = i > 0 ? parseInt(this.matrix[i - 1].charAt(j), 10) : 0;
+      const bottomPixel = i < rowCount - 1 ? parseInt(this.matrix[i + 1].charAt(j), 10) : 0;
+      const topRightPixel = i > 0 && j < rowLength - 1 ? parseInt(this.matrix[i - 1].charAt(j + 1), 10) : 0;
+      const bottomRightPixel = i < rowCount - 1 && j < rowLength - 1 ? parseInt(this.matrix[i + 1].charAt(j + 1), 10) : 0;
+
+      const isoX = (j - i) * tileWidth * 0.5 + offsetX;
+      const isoY = (j + i) * tileHeight * 0.5 + offsetY;
+
+      // Draw wall tile
+      if (this.tileImages.wallLeft || this.tileImages.wallRight) {
+        this.createTexturedCube({
+          ctx,
+          isoX,
+          isoY,
+          tileWidth,
+          tileHeight,
+          height: cubeHeight,
+          leftImage: this.tileImages.wallLeft || null,
+          rightImage: this.tileImages.wallRight || null,
+          topColor: "#ffffff",
+          showStroke: this.showStroke,
+          strokeTop: this.strokeTop,
+          strokeBottom: this.strokeBottom,
+          strokeCorners: this.strokeCorners,
+          strokeWallCorners: this.strokeWallCorners,
+          debugStrokeColors: this.debugStrokeColors,
+          lineWidth: this.strokeWidth,
+          wallBgColor: this.wallBgColor,
+          tightSpacing: this.tightSpacing,
+          leftPixel,
+          rightPixel,
+          topPixel,
+          bottomPixel,
+          topRightPixel,
+          bottomRightPixel,
+        });
       } else {
-        // When tightSpacing is enabled, expand tiles slightly to eliminate stroke-sized gaps
-        const tightPadding = this.tightSpacing ? this.strokeWidth * 0.5 : 0;
+        this.createBorderCube({
+          ctx,
+          isoX,
+          isoY,
+          tileWidth,
+          tileHeight,
+          height: cubeHeight,
+          showStroke: this.showStroke,
+          strokeTop: this.strokeTop,
+          strokeBottom: this.strokeBottom,
+          strokeCorners: this.strokeCorners,
+          strokeWallCorners: this.strokeWallCorners,
+          debugStrokeColors: this.debugStrokeColors,
+          lineWidth: this.strokeWidth,
+          leftPixel,
+          rightPixel,
+          topPixel,
+          bottomPixel,
+          topRightPixel,
+          bottomRightPixel,
+        });
+      }
 
-        // Draw pathway tile if available
-        if (this.tileImages.pathway) {
-          const img = this.tileImages.pathway;
-          // Preserve tile's aspect ratio - scale height based on tile's natural ratio
-          const tileAspect = img.naturalHeight / img.naturalWidth;
-          const drawWidth = tileWidth + tightPadding * 2;
-          const drawHeight = drawWidth * tileAspect;
-          const drawX = isoX - drawWidth * 0.5;
-          const drawY = isoY - tightPadding * tileAspect;
-          ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
-        }
-
-        // Draw start/end markers
-        if (isStart && this.tileImages.start) {
-          const img = this.tileImages.start;
-          const tileAspect = img.naturalHeight / img.naturalWidth;
-          const drawWidth = tileWidth + tightPadding * 2;
-          const drawHeight = drawWidth * tileAspect;
-          const drawX = isoX - drawWidth * 0.5;
-          const drawY = isoY - tightPadding * tileAspect;
-          ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
-        }
-        if (isEnd && this.tileImages.end) {
-          const img = this.tileImages.end;
-          const tileAspect = img.naturalHeight / img.naturalWidth;
-          const drawWidth = tileWidth + tightPadding * 2;
-          const drawHeight = drawWidth * tileAspect;
-          const drawX = isoX - drawWidth * 0.5;
-          const drawY = isoY - tightPadding * tileAspect;
-          ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
-        }
-        // Draw the isometric tile
-        // ctx.beginPath();
-        // ctx.moveTo(isoX, isoY);
-        // ctx.lineTo(isoX + tileWidth * 0.5, isoY + tileHeight * 0.5);
-        // ctx.lineTo(isoX, isoY + tileHeight);
-        // ctx.lineTo(isoX - tileWidth * 0.5, isoY + tileHeight * 0.5);
-        // ctx.closePath();
-        // ctx.fill();
+      // Draw cube number for debug test pattern
+      if (this.debugTestPattern) {
+        this.wallCubeNumber = (this.wallCubeNumber || 0) + 1;
+        ctx.fillStyle = "#000000";
+        ctx.font = `bold ${Math.max(6, tileWidth * 0.25)}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        const labelY = isoY + tileHeight * 0.5;
+        ctx.fillText(this.wallCubeNumber.toString(), isoX, labelY);
       }
     }
   }
