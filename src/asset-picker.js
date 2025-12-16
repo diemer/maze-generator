@@ -733,6 +733,8 @@ function refreshMazeTileset() {
   mazeNodes.isoRatio = isoRatioSelect ? parseFloat(isoRatioSelect.value) || 0.5 : 0.5;
   const endMarkerOffsetInput = document.getElementById('end-marker-offset');
   mazeNodes.endMarkerOffset = endMarkerOffsetInput ? parseFloat(endMarkerOffsetInput.value) || 0 : 0;
+  const endMarkerOffsetXInput = document.getElementById('end-marker-offset-x');
+  mazeNodes.endMarkerOffsetX = endMarkerOffsetXInput ? parseFloat(endMarkerOffsetXInput.value) || 0 : 0;
 
   // Reload tileset and redraw
   mazeNodes.loadTileset().then(function() {
@@ -782,12 +784,17 @@ function initIsoRatio() {
   }
 }
 
-// Initialize end marker offset listener
+// Initialize end marker offset listeners
 function initEndMarkerOffset() {
   const endMarkerOffsetInput = document.getElementById('end-marker-offset');
   if (endMarkerOffsetInput) {
     endMarkerOffsetInput.addEventListener('change', refreshMazeTileset);
     endMarkerOffsetInput.addEventListener('input', refreshMazeTileset);
+  }
+  const endMarkerOffsetXInput = document.getElementById('end-marker-offset-x');
+  if (endMarkerOffsetXInput) {
+    endMarkerOffsetXInput.addEventListener('change', refreshMazeTileset);
+    endMarkerOffsetXInput.addEventListener('input', refreshMazeTileset);
   }
 }
 

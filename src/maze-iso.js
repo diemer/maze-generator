@@ -30,6 +30,7 @@ function Maze(args) {
     isoRatio: 0.5, // Isometric ratio (height/width): 0.5=2:1 pixel art, 0.577=true iso (~30°)
     tightSpacing: false, // Remove stroke-based spacing for seamless tileset rendering
     endMarkerOffset: 0, // Vertical offset for end marker tile (positive = down)
+    endMarkerOffsetX: 0, // Horizontal offset for end marker tile (positive = right in screen space)
 
     // Maximum 300 walls can be removed
     maxWallsRemove: 300,
@@ -75,6 +76,7 @@ function Maze(args) {
   this.isoRatio = parseFloat(settings["isoRatio"]) || 0.5;
   this.tightSpacing = settings["tightSpacing"] === true;
   this.endMarkerOffset = parseFloat(settings["endMarkerOffset"]) || 0;
+  this.endMarkerOffsetX = parseFloat(settings["endMarkerOffsetX"]) || 0;
   this.maxMaze = parseInt(settings["maxMaze"], 10);
   this.maxCanvas = parseInt(settings["maxCanvas"], 10);
   this.maxCanvasDimension = parseInt(settings["maxCanvasDimension"], 10);
@@ -1431,7 +1433,7 @@ Maze.prototype.draw = function () {
         const tileAspect = img.naturalHeight / img.naturalWidth;
         const drawWidth = tileWidth + tightPadding * 2;
         const drawHeight = drawWidth * tileAspect;
-        const drawX = markerIsoX - drawWidth * 0.5;
+        const drawX = markerIsoX - drawWidth * 0.5 + this.endMarkerOffsetX; // Apply horizontal offset
         const cubeBottomY = markerIsoY + tileHeight + cubeHeight;
         const drawY = cubeBottomY - drawHeight + cubeHeight + this.endMarkerOffset; // Shift down one cubeHeight + offset
         ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);

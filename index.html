@@ -428,6 +428,51 @@
       color: #e65100;
       border: 1px solid #ffcc80;
     }
+
+    /* Layer toggle for decoration placement */
+    .layer-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.75em;
+      margin-bottom: 1em;
+      padding: 0.5em;
+      background: #fff;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+    }
+
+    .layer-toggle > label:first-child {
+      font-weight: 500;
+      font-size: 0.9em;
+      color: #333;
+    }
+
+    .layer-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 3px;
+    }
+
+    .layer-option:hover {
+      background: #f0f0f0;
+    }
+
+    .layer-option input[type="radio"] {
+      margin: 0;
+    }
+
+    .layer-desc {
+      font-size: 0.75em;
+      color: #888;
+    }
+
+    #undo-decoration:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 
@@ -632,10 +677,16 @@
       direction.
     </p>
     <p>
-      <label for="end-marker-offset">End marker offset:</label>
+      <label for="end-marker-offset">End marker Y offset:</label>
       <input id="end-marker-offset" type="number" name="end-marker-offset" value="-3.25" min="-20" max="20"
         step=".25" />
-      <span style="font-size: smaller; color: #666">(Vertical adjustment, positive = down)</span>
+      <span style="font-size: smaller; color: #666">(Vertical, positive = down)</span>
+    </p>
+    <p>
+      <label for="end-marker-offset-x">End marker X offset:</label>
+      <input id="end-marker-offset-x" type="number" name="end-marker-offset-x" value="0" min="-20" max="20"
+        step=".25" />
+      <span style="font-size: smaller; color: #666">(Horizontal, positive = right)</span>
     </p>
     <div class="asset-picker">
       <label for="tile-start-n">Start (North):</label>
@@ -751,19 +802,33 @@
   <div class="decoration-palette">
     <h4>Decorations</h4>
     <p class="palette-hint">Select a decoration, then click on a floor tile to place it</p>
+    <div class="layer-toggle">
+      <label>Place on layer:</label>
+      <label class="layer-option">
+        <input type="radio" name="decoration-layer" id="layer-floor" value="floor" checked>
+        <span class="layer-badge floor">floor</span>
+        <span class="layer-desc">(under walls)</span>
+      </label>
+      <label class="layer-option">
+        <input type="radio" name="decoration-layer" id="layer-overlay" value="overlay">
+        <span class="layer-badge overlay">overlay</span>
+        <span class="layer-desc">(above walls)</span>
+      </label>
+    </div>
     <div class="palette-category" data-category="furniture">
-      <h5>Furniture <span class="layer-badge floor">floor</span></h5>
+      <h5>Furniture</h5>
       <div class="palette-items"></div>
     </div>
     <div class="palette-category" data-category="lighting">
-      <h5>Lighting <span class="layer-badge overlay">overlay</span></h5>
+      <h5>Lighting</h5>
       <div class="palette-items"></div>
     </div>
     <div class="palette-category" data-category="hazards">
-      <h5>Hazards <span class="layer-badge floor">floor</span></h5>
+      <h5>Hazards</h5>
       <div class="palette-items"></div>
     </div>
     <div class="palette-actions">
+      <button type="button" id="undo-decoration" disabled>Undo</button>
       <button type="button" id="deselect-tool">Deselect Tool</button>
       <button type="button" id="clear-decorations">Clear All</button>
     </div>

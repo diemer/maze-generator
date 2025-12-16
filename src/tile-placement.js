@@ -10,6 +10,11 @@
   var selectedDecorationTile = null;
   var selectedLayer = 'floor'; // 'floor' (under walls) or 'overlay' (above walls)
 
+  // Undo stack for decoration placements
+  // Each entry: { key: "x,y", previous: null | {tileUrl, category, layer} }
+  var undoStack = [];
+  var MAX_UNDO_STACK = 50;
+
   // Decoration categories with available tiles and their default layers
   var DECORATION_CATEGORIES = {
     furniture: {
@@ -145,8 +150,7 @@
       var layerInfo = info.decorationLayer ? ' [' + info.decorationLayer + ']' : '';
       el.textContent = 'Cell (' + info.x + ', ' + info.y + '): ' + filename + layerInfo + ' (click to remove)';
     } else {
-      var placingLayer = tileLayerMap[selectedDecorationTile] || selectedLayer;
-      el.textContent = 'Cell (' + info.x + ', ' + info.y + '): Empty (place on ' + placingLayer + ' layer)';
+      el.textContent = 'Cell (' + info.x + ', ' + info.y + '): Empty (place on ' + selectedLayer + ' layer)';
     }
   }
 
@@ -197,20 +201,77 @@
 
     // Get existing decoration at this position
     var existing = mazeNodes.getDecoration(gridX, gridY);
+    var key = gridX + ',' + gridY;
+
+    // Store previous state for undo
+    var previousState = existing ? {
+      tileUrl: existing.tileUrl,
+      category: existing.category,
+      layer: existing.layer
+    } : null;
 
     if (existing && existing.tileUrl === selectedDecorationTile) {
       // Same tile - remove it (toggle off)
       mazeNodes.setDecoration(gridX, gridY, null);
     } else {
-      // Place new decoration with layer
-      var layer = tileLayerMap[selectedDecorationTile] || selectedLayer;
-      mazeNodes.setDecoration(gridX, gridY, selectedDecorationTile, 'misc', layer);
+      // Place new decoration with user-selected layer
+      mazeNodes.setDecoration(gridX, gridY, selectedDecorationTile, 'misc', selectedLayer);
     }
+
+    // Track in undo stack
+    undoStack.push({ key: key, previous: previousState });
+    if (undoStack.length > MAX_UNDO_STACK) {
+      undoStack.shift(); // Remove oldest entry
+    }
+    updateUndoButton();
 
     // Reload decoration images and redraw
     mazeNodes.loadDecorations().then(function() {
       mazeNodes.draw();
     });
+  }
+
+  /**
+   * Undo the last decoration placement
+   */
+  function undoLastPlacement() {
+    if (undoStack.length === 0) return;
+    if (typeof mazeNodes === 'undefined' || !mazeNodes.setDecoration) return;
+
+    var lastAction = undoStack.pop();
+    var coords = lastAction.key.split(',').map(Number);
+    var gridX = coords[0];
+    var gridY = coords[1];
+
+    if (lastAction.previous) {
+      // Restore previous decoration
+      mazeNodes.setDecoration(
+        gridX, gridY,
+        lastAction.previous.tileUrl,
+        lastAction.previous.category,
+        lastAction.previous.layer
+      );
+    } else {
+      // Remove decoration (there was nothing before)
+      mazeNodes.setDecoration(gridX, gridY, null);
+    }
+
+    updateUndoButton();
+
+    mazeNodes.loadDecorations().then(function() {
+      mazeNodes.draw();
+    });
+  }
+
+  /**
+   * Update undo button state
+   */
+  function updateUndoButton() {
+    var btn = document.getElementById('undo-decoration');
+    if (btn) {
+      btn.disabled = undoStack.length === 0;
+      btn.textContent = 'Undo' + (undoStack.length > 0 ? ' (' + undoStack.length + ')' : '');
+    }
   }
 
   /**
@@ -264,6 +325,24 @@
   }
 
   /**
+   * Set the selected layer
+   */
+  function setSelectedLayer(layer) {
+    selectedLayer = layer;
+    updateLayerToggle();
+  }
+
+  /**
+   * Update layer toggle UI to reflect current selection
+   */
+  function updateLayerToggle() {
+    var floorRadio = document.getElementById('layer-floor');
+    var overlayRadio = document.getElementById('layer-overlay');
+    if (floorRadio) floorRadio.checked = (selectedLayer === 'floor');
+    if (overlayRadio) overlayRadio.checked = (selectedLayer === 'overlay');
+  }
+
+  /**
    * Initialize the decoration palette UI
    */
   function initDecorationPalette() {
@@ -279,14 +358,14 @@
       if (!container) return;
 
       tiles.forEach(function(tileUrl) {
-        // Map tile to its default layer
+        // Map tile to its default layer (for reference only)
         tileLayerMap[tileUrl] = categoryLayer;
 
         var item = document.createElement('div');
         item.className = 'palette-item';
         item.dataset.tile = tileUrl;
         item.dataset.layer = categoryLayer;
-        item.title = tileUrl.split('/').pop() + ' (' + categoryLayer + ' layer)';
+        item.title = tileUrl.split('/').pop();
 
         var img = document.createElement('img');
         img.src = tileUrl;
@@ -295,12 +374,26 @@
 
         item.addEventListener('click', function() {
           setSelectedDecoration(tileUrl);
-          selectedLayer = categoryLayer;
+          // Don't automatically change layer - user controls it with the toggle
         });
 
         container.appendChild(item);
       });
     });
+
+    // Layer toggle radio buttons
+    var floorRadio = document.getElementById('layer-floor');
+    var overlayRadio = document.getElementById('layer-overlay');
+    if (floorRadio) {
+      floorRadio.addEventListener('change', function() {
+        if (this.checked) setSelectedLayer('floor');
+      });
+    }
+    if (overlayRadio) {
+      overlayRadio.addEventListener('change', function() {
+        if (this.checked) setSelectedLayer('overlay');
+      });
+    }
 
     // Clear all decorations button
     var clearBtn = document.getElementById('clear-decorations');
@@ -308,9 +401,18 @@
       clearBtn.addEventListener('click', function() {
         if (typeof mazeNodes !== 'undefined' && mazeNodes.clearDecorations) {
           mazeNodes.clearDecorations();
+          undoStack = []; // Clear undo stack
+          updateUndoButton();
           mazeNodes.draw();
         }
       });
+    }
+
+    // Undo button
+    var undoBtn = document.getElementById('undo-decoration');
+    if (undoBtn) {
+      undoBtn.addEventListener('click', undoLastPlacement);
+      updateUndoButton();
     }
 
     // Deselect tool button
@@ -385,6 +487,10 @@
     setSelectedDecoration: setSelectedDecoration,
     clearSelectedDecoration: clearSelectedDecoration,
     getSelectedDecoration: getSelectedDecoration,
+    setSelectedLayer: setSelectedLayer,
+    getSelectedLayer: function() { return selectedLayer; },
+    undo: undoLastPlacement,
+    getUndoCount: function() { return undoStack.length; },
     DECORATION_CATEGORIES: DECORATION_CATEGORIES
   };
 

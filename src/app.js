@@ -160,6 +160,7 @@ function initMaze() {
     const isoRatioSelect = document.getElementById("iso-ratio");
     const isoRatio = isoRatioSelect ? parseFloat(isoRatioSelect.value) : 0.5;
     const endMarkerOffset = getInputFloatVal("end-marker-offset", -3.25);
+    const endMarkerOffsetX = getInputFloatVal("end-marker-offset-x", 0);
 
     const settings = {
         width: getInputIntVal("width", 20),
@@ -183,6 +184,7 @@ function initMaze() {
         wallBgColor: wallBgColor,
         isoRatio: isoRatio,
         endMarkerOffset: endMarkerOffset,
+        endMarkerOffsetX: endMarkerOffsetX,
         entryType: "",
         bias: "",
         color: "#000000",
