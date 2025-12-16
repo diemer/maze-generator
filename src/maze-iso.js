@@ -761,13 +761,14 @@ Maze.prototype.createBorderCube = function ({
       }
 
       // Right corner - draw only at the TOP of a vertical wall section or at inner corners
-      // If topPixel=1 (wall above), this edge is interior to a vertical wall, don't draw
-      // Inner corner cases still need the diagonal checks for L-corners and T-junctions
+      // If topPixel=1 (wall above), this edge is interior to a vertical wall, UNLESS
+      // the wall above has horizontal extension (topRightPixel=1), making it a T/+ junction
       const rightExposed = !rightPixel && !topPixel;
+      const innerCornerTop = !rightPixel && topPixel && topRightPixel;
       const innerLCorner = rightPixel && ((topPixel && !topRightPixel) || (bottomPixel && !bottomRightPixel));
       const tJunctionTop = rightPixel && !topPixel && topRightPixel;
       const tJunctionBottom = rightPixel && !bottomPixel && bottomRightPixel;
-      if (rightExposed || innerLCorner || tJunctionTop || tJunctionBottom) {
+      if (rightExposed || innerCornerTop || innerLCorner || tJunctionTop || tJunctionBottom) {
         if (debugStrokeColors) ctx.strokeStyle = "#00FF00"; // GREEN
         ctx.beginPath();
         ctx.moveTo(topRight.x, topRight.y);
@@ -977,13 +978,14 @@ Maze.prototype.createTexturedCube = function ({
       }
 
       // Right corner - draw only at the TOP of a vertical wall section or at inner corners
-      // If topPixel=1 (wall above), this edge is interior to a vertical wall, don't draw
-      // Inner corner cases still need the diagonal checks for L-corners and T-junctions
+      // If topPixel=1 (wall above), this edge is interior to a vertical wall, UNLESS
+      // the wall above has horizontal extension (topRightPixel=1), making it a T/+ junction
       const rightExposed = !rightPixel && !topPixel;
+      const innerCornerTop = !rightPixel && topPixel && topRightPixel;
       const innerLCorner = rightPixel && ((topPixel && !topRightPixel) || (bottomPixel && !bottomRightPixel));
       const tJunctionTop = rightPixel && !topPixel && topRightPixel;
       const tJunctionBottom = rightPixel && !bottomPixel && bottomRightPixel;
-      if (rightExposed || innerLCorner || tJunctionTop || tJunctionBottom) {
+      if (rightExposed || innerCornerTop || innerLCorner || tJunctionTop || tJunctionBottom) {
         if (debugStrokeColors) ctx.strokeStyle = "#00FF00"; // GREEN
         ctx.beginPath();
         ctx.moveTo(topRight.x, topRight.y);
