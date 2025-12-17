@@ -287,7 +287,9 @@
       border: 2px solid transparent;
       border-radius: 4px;
       background: #fff;
-      transition: border-color 0.15s, background-color 0.15s;
+      transition:
+        border-color 0.15s,
+        background-color 0.15s;
     }
 
     .palette-item:hover {
@@ -379,7 +381,13 @@
     .tile-chip .blank-indicator {
       width: 24px;
       height: 24px;
-      background: linear-gradient(45deg, #ddd 25%, #fff 25%, #fff 50%, #ddd 50%, #ddd 75%, #fff 75%);
+      background: linear-gradient(45deg,
+          #ddd 25%,
+          #fff 25%,
+          #fff 50%,
+          #ddd 50%,
+          #ddd 75%,
+          #fff 75%);
       background-size: 8px 8px;
       border: 1px solid #ccc;
     }
@@ -465,7 +473,7 @@
       border: 1px solid #ddd;
     }
 
-    .wall-tools > label {
+    .wall-tools>label {
       font-weight: 500;
       font-size: 0.9em;
       color: #333;
@@ -516,7 +524,7 @@
       border: 1px solid #ddd;
     }
 
-    .layer-toggle > label:first-child {
+    .layer-toggle>label:first-child {
       font-weight: 500;
       font-size: 0.9em;
       color: #333;
@@ -716,7 +724,7 @@
     <div class="asset-picker">
       <label for="tile-wall-left">Wall left face:</label>
       <div class="asset-picker-controls">
-        <input id="tile-wall-left" type="text" name="tile-wall-left" value="src/assets/isobrickswall2.png"
+        <input id="tile-wall-left" type="text" name="tile-wall-left" value="src/assets/isobrickswall-left.png"
           placeholder="URL or select..." />
         <button type="button" class="picker-toggle">Browse</button>
         <button type="button" class="clear-btn">Clear</button>
@@ -727,7 +735,7 @@
     <div class="asset-picker">
       <label for="tile-wall-right">Wall right face:</label>
       <div class="asset-picker-controls">
-        <input id="tile-wall-right" type="text" name="tile-wall-right" value="src/assets/isobrickswall.png"
+        <input id="tile-wall-right" type="text" name="tile-wall-right" value="src/assets/isobrickswall-right.png"
           placeholder="URL or select..." />
         <button type="button" class="picker-toggle">Browse</button>
         <button type="button" class="clear-btn">Clear</button>
@@ -753,7 +761,9 @@
     </p>
     <p>
       <label>End marker preset:</label>
-      <button type="button" id="preset-stairs" class="preset-btn">Stairs</button>
+      <button type="button" id="preset-stairs" class="preset-btn">
+        Stairs
+      </button>
       <button type="button" id="preset-door" class="preset-btn">Door</button>
     </p>
     <p>
@@ -882,21 +892,27 @@
   <div class="decoration-palette">
     <h4>Decorations</h4>
     <div class="hover-info" id="hover-info"></div>
-    <p class="palette-hint">Select a decoration, then click on a floor tile to place it</p>
+    <p class="palette-hint">
+      Select a decoration, then click on a floor tile to place it
+    </p>
     <div class="wall-tools">
       <label>Wall Tools:</label>
-      <button type="button" id="wall-tool-add" class="wall-tool-btn">Add Wall</button>
-      <button type="button" id="wall-tool-remove" class="wall-tool-btn">Remove Wall</button>
+      <button type="button" id="wall-tool-add" class="wall-tool-btn">
+        Add Wall
+      </button>
+      <button type="button" id="wall-tool-remove" class="wall-tool-btn">
+        Remove Wall
+      </button>
     </div>
     <div class="layer-toggle">
       <label>Place on layer:</label>
       <label class="layer-option">
-        <input type="radio" name="decoration-layer" id="layer-floor" value="floor" checked>
+        <input type="radio" name="decoration-layer" id="layer-floor" value="floor" checked />
         <span class="layer-badge floor">floor</span>
         <span class="layer-desc">(under walls)</span>
       </label>
       <label class="layer-option">
-        <input type="radio" name="decoration-layer" id="layer-overlay" value="overlay">
+        <input type="radio" name="decoration-layer" id="layer-overlay" value="overlay" />
         <span class="layer-badge overlay">overlay</span>
         <span class="layer-desc">(above walls)</span>
       </label>
