@@ -162,6 +162,21 @@
       background: #ddd;
     }
 
+    .preset-btn {
+      padding: 4px 12px;
+      font-size: 0.9em;
+      cursor: pointer;
+      background: #fff;
+      border: 1px solid #666;
+      border-radius: 3px;
+      margin-right: 0.5em;
+    }
+
+    .preset-btn:hover {
+      background: #e8e8e8;
+      border-color: #444;
+    }
+
     .selected-preview {
       display: inline-block;
       width: 32px;
@@ -299,17 +314,22 @@
       border-top: 1px solid #ddd;
     }
 
-    .palette-actions button {
+    .palette-actions button,
+    .palette-export button {
       padding: 6px 12px;
       font-size: 0.85em;
       cursor: pointer;
-      background: #eee;
-      border: 1px solid #ccc;
+      background: #fff;
+      border: 1px solid #666;
       border-radius: 3px;
+      color: #333;
+      font-weight: 500;
     }
 
-    .palette-actions button:hover {
-      background: #ddd;
+    .palette-actions button:hover,
+    .palette-export button:hover {
+      background: #e8e8e8;
+      border-color: #444;
     }
 
     /* Multi-select tile picker */
@@ -402,10 +422,14 @@
     }
 
     .hover-info {
-      margin-top: 0.5em;
-      font-size: 0.8em;
-      color: #666;
-      min-height: 1.2em;
+      min-height: 1.5em;
+      padding: 0.5em;
+      margin-bottom: 0.5em;
+      font-size: 0.85em;
+      background: #e3f2fd;
+      border: 1px solid #90caf9;
+      border-radius: 4px;
+      color: #1565c0;
     }
 
     .layer-badge {
@@ -427,6 +451,57 @@
       background: #fff3e0;
       color: #e65100;
       border: 1px solid #ffcc80;
+    }
+
+    /* Wall tools */
+    .wall-tools {
+      display: flex;
+      align-items: center;
+      gap: 0.75em;
+      margin-bottom: 1em;
+      padding: 0.5em;
+      background: #fff;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+    }
+
+    .wall-tools > label {
+      font-weight: 500;
+      font-size: 0.9em;
+      color: #333;
+    }
+
+    .wall-tool-btn {
+      padding: 4px 10px;
+      font-size: 0.85em;
+      border: 1px solid #666;
+      border-radius: 3px;
+      background: #fff;
+      color: #333;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .wall-tool-btn:hover {
+      background: #e8e8e8;
+      border-color: #444;
+    }
+
+    .wall-tool-btn.selected {
+      background: #1976d2;
+      color: white;
+      border-color: #1565c0;
+    }
+
+    #wall-tool-add.selected {
+      background: #388e3c;
+      border-color: #2e7d32;
+    }
+
+    #wall-tool-remove.selected {
+      background: #d32f2f;
+      border-color: #c62828;
     }
 
     /* Layer toggle for decoration placement */
@@ -677,6 +752,11 @@
       direction.
     </p>
     <p>
+      <label>End marker preset:</label>
+      <button type="button" id="preset-stairs" class="preset-btn">Stairs</button>
+      <button type="button" id="preset-door" class="preset-btn">Door</button>
+    </p>
+    <p>
       <label for="end-marker-offset">End marker Y offset:</label>
       <input id="end-marker-offset" type="number" name="end-marker-offset" value="-3.25" min="-20" max="20"
         step=".25" />
@@ -801,7 +881,13 @@
   <!-- Decoration Palette -->
   <div class="decoration-palette">
     <h4>Decorations</h4>
+    <div class="hover-info" id="hover-info"></div>
     <p class="palette-hint">Select a decoration, then click on a floor tile to place it</p>
+    <div class="wall-tools">
+      <label>Wall Tools:</label>
+      <button type="button" id="wall-tool-add" class="wall-tool-btn">Add Wall</button>
+      <button type="button" id="wall-tool-remove" class="wall-tool-btn">Remove Wall</button>
+    </div>
     <div class="layer-toggle">
       <label>Place on layer:</label>
       <label class="layer-option">
@@ -836,7 +922,6 @@
       <button type="button" id="export-decorations">Export JSON</button>
       <button type="button" id="import-decorations">Import JSON</button>
     </div>
-    <div class="hover-info" id="hover-info"></div>
   </div>
 
   <script type="text/javascript" src="src/globals.js"></script>

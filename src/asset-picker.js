@@ -802,6 +802,77 @@ function initEndMarkerOffset() {
   }
 }
 
+// Initialize end marker presets
+function initEndMarkerPresets() {
+  const presetStairs = document.getElementById('preset-stairs');
+  const presetDoor = document.getElementById('preset-door');
+
+  if (presetStairs) {
+    presetStairs.addEventListener('click', function() {
+      // Set offsets
+      const offsetY = document.getElementById('end-marker-offset');
+      const offsetX = document.getElementById('end-marker-offset-x');
+      if (offsetY) offsetY.value = '-3.25';
+      if (offsetX) offsetX.value = '-0.25';
+
+      // Set stair images
+      const endN = document.getElementById('tile-end-n');
+      const endS = document.getElementById('tile-end-s');
+      const endE = document.getElementById('tile-end-e');
+      const endW = document.getElementById('tile-end-w');
+      if (endN) endN.value = 'src/assets/isostair.png';
+      if (endS) endS.value = 'src/assets/isostair3.png';
+      if (endE) endE.value = 'src/assets/isostair2.png';
+      if (endW) endW.value = 'src/assets/isostair4.png';
+
+      // Update previews
+      updateAllEndMarkerPreviews();
+      refreshMazeTileset();
+    });
+  }
+
+  if (presetDoor) {
+    presetDoor.addEventListener('click', function() {
+      // Set offsets
+      const offsetY = document.getElementById('end-marker-offset');
+      const offsetX = document.getElementById('end-marker-offset-x');
+      if (offsetY) offsetY.value = '0';
+      if (offsetX) offsetX.value = '0';
+
+      // Set door/archway images
+      const endN = document.getElementById('tile-end-n');
+      const endS = document.getElementById('tile-end-s');
+      const endE = document.getElementById('tile-end-e');
+      const endW = document.getElementById('tile-end-w');
+      if (endN) endN.value = 'src/assets/stoneWallArchway_N.png';
+      if (endS) endS.value = 'src/assets/stoneWallArchway_S.png';
+      if (endE) endE.value = 'src/assets/stoneWallArchway_E.png';
+      if (endW) endW.value = 'src/assets/stoneWallArchway_W.png';
+
+      // Update previews
+      updateAllEndMarkerPreviews();
+      refreshMazeTileset();
+    });
+  }
+}
+
+// Update previews for all end marker inputs
+function updateAllEndMarkerPreviews() {
+  const endIds = ['tile-end-n', 'tile-end-s', 'tile-end-e', 'tile-end-w'];
+  endIds.forEach(id => {
+    const input = document.getElementById(id);
+    if (input) {
+      const picker = input.closest('.asset-picker');
+      if (picker) {
+        const preview = picker.querySelector('.selected-preview');
+        if (preview) {
+          updatePreview(preview, input.value.trim());
+        }
+      }
+    }
+  });
+}
+
 // Initialize previews for inputs with existing values
 function initPreviews() {
   const pickers = document.querySelectorAll('.asset-picker');
@@ -821,6 +892,7 @@ document.addEventListener('DOMContentLoaded', function() {
   initWallBgColor();
   initIsoRatio();
   initEndMarkerOffset();
+  initEndMarkerPresets();
   initPreviews();
 
   // Initialize tile placement for decorations

@@ -958,6 +958,7 @@ Maze.prototype.createTexturedCube = function ({
   tileWidth,
   tileHeight,
   height = tileHeight,
+  wallHeight = 1, // Number of tile units tall (for texture tiling)
   leftImage = null,
   rightImage = null,
   topColor = "#ffffff",
@@ -1023,10 +1024,16 @@ Maze.prototype.createTexturedCube = function ({
     ctx.clip();
     // Expand image slightly when tightSpacing to eliminate gaps
     const leftDrawX = topLeft.x - tightPad;
-    const leftDrawY = topLeft.y - tightPad;
     const leftDrawW = tileWidth * 0.5 + tightPad * 2;
-    const leftDrawH = height + tightPad * 2;
-    ctx.drawImage(leftImage, leftDrawX, leftDrawY, leftDrawW, leftDrawH);
+
+    // Tile vertically if wall is taller than 1 unit
+    const tilesCount = Math.ceil(wallHeight);
+    const singleTileH = height / wallHeight;
+    for (let t = 0; t < tilesCount; t++) {
+      const leftDrawY = topLeft.y - tightPad + t * singleTileH;
+      const leftDrawH = singleTileH + (t === 0 ? tightPad : 0) + (t === tilesCount - 1 ? tightPad : 0);
+      ctx.drawImage(leftImage, leftDrawX, leftDrawY, leftDrawW, leftDrawH);
+    }
     ctx.restore();
   } else {
     ctx.fillStyle = wallBgColor || "#aaa";
@@ -1051,10 +1058,16 @@ Maze.prototype.createTexturedCube = function ({
     ctx.clip();
     // Expand image slightly when tightSpacing to eliminate gaps
     const rightDrawX = isoX - tightPad;
-    const rightDrawY = topRight.y - tightPad;
     const rightDrawW = tileWidth * 0.5 + tightPad * 2;
-    const rightDrawH = height + tightPad * 2;
-    ctx.drawImage(rightImage, rightDrawX, rightDrawY, rightDrawW, rightDrawH);
+
+    // Tile vertically if wall is taller than 1 unit
+    const tilesCountR = Math.ceil(wallHeight);
+    const singleTileHR = height / wallHeight;
+    for (let t = 0; t < tilesCountR; t++) {
+      const rightDrawY = topRight.y - tightPad + t * singleTileHR;
+      const rightDrawH = singleTileHR + (t === 0 ? tightPad : 0) + (t === tilesCountR - 1 ? tightPad : 0);
+      ctx.drawImage(rightImage, rightDrawX, rightDrawY, rightDrawW, rightDrawH);
+    }
     ctx.restore();
   } else {
     ctx.fillStyle = wallBgColor || "#888";
@@ -1496,6 +1509,7 @@ Maze.prototype.draw = function () {
           tileWidth,
           tileHeight,
           height: cubeHeight,
+          wallHeight: this.wallHeight,
           leftImage: this.tileImages.wallLeft || null,
           rightImage: this.tileImages.wallRight || null,
           topColor: "#ffffff",

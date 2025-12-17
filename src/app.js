@@ -63,14 +63,20 @@ function initMaze() {
     const pathwayValue = tilePathway ? tilePathway.value.trim() : "";
 
     // Check if pathway is multi-select (comma-separated values)
-    const pathwayPicker = tilePathway ? tilePathway.closest('.asset-picker') : null;
-    const isPathwayMulti = pathwayPicker && pathwayPicker.dataset.multi === 'true';
+    const pathwayPicker = tilePathway
+        ? tilePathway.closest(".asset-picker")
+        : null;
+    const isPathwayMulti =
+        pathwayPicker && pathwayPicker.dataset.multi === "true";
     let pathwayTiles = null;
 
     if (pathwayValue) {
-        if (isPathwayMulti && pathwayValue.includes(',')) {
+        if (isPathwayMulti && pathwayValue.includes(",")) {
             // Parse as array, keeping "blank" as-is
-            pathwayTiles = pathwayValue.split(',').map(v => v.trim()).filter(v => v);
+            pathwayTiles = pathwayValue
+                .split(",")
+                .map((v) => v.trim())
+                .filter((v) => v);
         } else if (isPathwayMulti) {
             // Single value but multi-select enabled - use as array
             pathwayTiles = [pathwayValue];
@@ -159,8 +165,8 @@ function initMaze() {
     const wallBgColor = wallBgColorInput ? wallBgColorInput.value.trim() : "";
     const isoRatioSelect = document.getElementById("iso-ratio");
     const isoRatio = isoRatioSelect ? parseFloat(isoRatioSelect.value) : 0.5;
-    const endMarkerOffset = getInputFloatVal("end-marker-offset", -3.25);
-    const endMarkerOffsetX = getInputFloatVal("end-marker-offset-x", 0);
+    const endMarkerOffset = getInputFloatVal("end-marker-offset", -3);
+    const endMarkerOffsetX = getInputFloatVal("end-marker-offset-x", -0.25);
 
     const settings = {
         width: getInputIntVal("width", 20),
@@ -239,7 +245,10 @@ function initMaze() {
         maze.draw();
 
         // Save canvas state for decoration preview overlay
-        if (typeof TilePlacement !== 'undefined' && TilePlacement.saveCanvasState) {
+        if (
+            typeof TilePlacement !== "undefined" &&
+            TilePlacement.saveCanvasState
+        ) {
             TilePlacement.saveCanvasState();
         }
 
@@ -276,13 +285,17 @@ function downloadImage(e) {
         }
     } else {
         try {
-            const image = document.getElementById("maze").toDataURL("image/png");
+            const image = document
+                .getElementById("maze")
+                .toDataURL("image/png");
             download.setAttribute("href", image);
             download.setAttribute("download", "maze.png");
         } catch (err) {
             // Canvas is tainted by cross-origin images
             e.preventDefault();
-            alert("Cannot export PNG: canvas contains cross-origin images. Try running from a local server or use SVG export instead.");
+            alert(
+                "Cannot export PNG: canvas contains cross-origin images. Try running from a local server or use SVG export instead.",
+            );
             console.error("toDataURL failed:", err);
         }
     }
@@ -311,4 +324,3 @@ function initSolve() {
 
     mazeNodes = {};
 }
-
