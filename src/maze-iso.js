@@ -61,6 +61,7 @@ function Maze(args) {
   this.tileset = settings["tileset"];
   this.tileImages = {}; // Will hold loaded Image objects
   this.floorTileMap = {}; // Maps grid positions to tile indices for deterministic random selection
+  this.blankFloorTiles = {}; // Grid positions that should be blank (no floor texture)
   this.decorations = settings["decorations"] || {}; // Grid position -> {tileUrl, category}
   this.decorationImages = {}; // URL -> loaded Image object
   this.showStroke = settings["showStroke"] !== false;
@@ -220,6 +221,27 @@ Maze.prototype.getDecoration = function (gridX, gridY) {
 Maze.prototype.clearDecorations = function () {
   this.decorations = {};
   this.decorationImages = {};
+};
+
+// Check if a floor tile is blank
+Maze.prototype.isFloorBlank = function (gridX, gridY) {
+  const key = `${gridX},${gridY}`;
+  return !!this.blankFloorTiles[key];
+};
+
+// Set a floor tile to blank or restore it
+Maze.prototype.setFloorBlank = function (gridX, gridY, isBlank) {
+  const key = `${gridX},${gridY}`;
+  if (isBlank) {
+    this.blankFloorTiles[key] = true;
+  } else {
+    delete this.blankFloorTiles[key];
+  }
+};
+
+// Clear all blank floor tiles
+Maze.prototype.clearBlankFloors = function () {
+  this.blankFloorTiles = {};
 };
 
 // Export decorations as JSON string
@@ -1288,8 +1310,6 @@ Maze.prototype.draw = function () {
   const offsetX = isoWidth; // Center the maze horizontally
   const offsetY = tileHeight; // Add vertical margin
 
-  console.log(this.matrix);
-
   // Helper to get start/end nodes (cache outside loops)
   const startNode = getEntryNode(this.entryNodes, "start", false);
   const endNode = getEntryNode(this.entryNodes, "end", false);
@@ -1321,6 +1341,9 @@ Maze.prototype.draw = function () {
 
       const pixel = parseInt(this.matrix[i].charAt(j), 10);
       if (pixel) continue; // Skip walls in this pass
+
+      // Skip blank floor tiles (cleared by user)
+      if (this.isFloorBlank(j, i)) continue;
 
       const isoX = (j - i) * tileWidth * 0.5 + offsetX;
       const isoY = (j + i) * tileHeight * 0.5 + offsetY;

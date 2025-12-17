@@ -13,6 +13,9 @@
   // Wall tool mode: 'add', 'remove', or null (decoration mode)
   var selectedWallTool = null;
 
+  // Floor tool mode: 'clear' or null
+  var selectedFloorTool = null;
+
   // Undo stack for placements (decorations and walls)
   // Each entry: { type: 'decoration'|'wall', key: "x,y", previous: ... }
   var undoStack = [];
@@ -141,8 +144,8 @@
    * Handle mouse move on the maze canvas
    */
   function handleCanvasMouseMove(e) {
-    // Need either decoration or wall tool selected
-    if (!selectedDecorationTile && !selectedWallTool) {
+    // Need either decoration, wall, or floor tool selected
+    if (!selectedDecorationTile && !selectedWallTool && !selectedFloorTool) {
       hoveredCell = null;
       clearPreview();
       updateHoverInfo(null);
@@ -250,6 +253,21 @@
           hoveredCell = null;
           drawPreview();
         }
+      } else if (selectedFloorTool === "clear") {
+        // Track which floor cell would be cleared
+        var floorToClear = isFloor ? { x: coords.gridX, y: coords.gridY } : null;
+
+        // Only redraw if hovered cell changed
+        if (
+          !hoveredWallCell ||
+          !floorToClear ||
+          hoveredWallCell.x !== floorToClear.x ||
+          hoveredWallCell.y !== floorToClear.y
+        ) {
+          hoveredWallCell = floorToClear;
+          hoveredCell = null;
+          drawPreview();
+        }
       } else {
         hoveredCell = null;
         hoveredWallCell = null;
@@ -327,8 +345,8 @@
     var offsetY = tileHeight;
     var scale = mazeNodes.displayScale || 1;
 
-    // Draw wall tool highlight (remove = red, add = green)
-    if (hoveredWallCell && selectedWallTool) {
+    // Draw wall tool or floor tool highlight
+    if (hoveredWallCell && (selectedWallTool || selectedFloorTool)) {
       var j = hoveredWallCell.x;
       var i = hoveredWallCell.y;
 
@@ -336,8 +354,18 @@
       var isoY = (j + i) * tileHeight * 0.5 + offsetY;
 
       // Choose color based on tool
-      var fillColor = selectedWallTool === "remove" ? "#ff0000" : "#00cc00";
-      var strokeColor = selectedWallTool === "remove" ? "#cc0000" : "#009900";
+      var fillColor;
+      var strokeColor;
+      if (selectedFloorTool === "clear") {
+        fillColor = "#888888";
+        strokeColor = "#555555";
+      } else if (selectedWallTool === "remove") {
+        fillColor = "#ff0000";
+        strokeColor = "#cc0000";
+      } else {
+        fillColor = "#00cc00";
+        strokeColor = "#009900";
+      }
 
       // Draw a diamond at the base
       ctx.save();
@@ -507,6 +535,22 @@
       return;
     }
 
+    // Floor tool mode
+    if (selectedFloorTool === "clear") {
+      if (info.isWall) {
+        el.textContent = cellPrefix + "Wall (cannot clear)";
+      } else {
+        var isBlank =
+          mazeNodes.isFloorBlank && mazeNodes.isFloorBlank(info.x, info.y);
+        if (isBlank) {
+          el.textContent = cellPrefix + "Blank floor (click to restore)";
+        } else {
+          el.textContent = cellPrefix + "Floor (click to clear)";
+        }
+      }
+      return;
+    }
+
     // Decoration tool mode
     if (!info.isFloor) {
       el.textContent = cellPrefix + "Wall (cannot place decoration)";
@@ -526,14 +570,8 @@
    * Handle click on the maze canvas
    */
   function handleCanvasClick(e) {
-    console.log(
-      "handleCanvasClick called, selectedWallTool:",
-      selectedWallTool,
-      "selectedDecorationTile:",
-      selectedDecorationTile,
-    );
     // Check if any tool is selected
-    if (!selectedDecorationTile && !selectedWallTool) return;
+    if (!selectedDecorationTile && !selectedWallTool && !selectedFloorTool) return;
 
     // Check if maze exists
     if (
@@ -585,6 +623,12 @@
       return;
     }
 
+    // Handle floor tool
+    if (selectedFloorTool) {
+      handleFloorEdit(gridX, gridY, pixel, key);
+      return;
+    }
+
     // Handle decoration tool
     if (selectedDecorationTile) {
       handleDecorationEdit(gridX, gridY, pixel, key);
@@ -632,14 +676,6 @@
    * Handle wall add/remove
    */
   function handleWallEdit(gridX, gridY, currentPixel, key) {
-    console.log("handleWallEdit called:", {
-      gridX,
-      gridY,
-      currentPixel,
-      key,
-      selectedWallTool,
-    });
-
     // For remove tool, try to find the actual wall cell if we clicked on its upper portion
     if (selectedWallTool === "remove" && currentPixel !== 1) {
       var wallCell = findWallCellAtClick(gridX, gridY);
@@ -648,7 +684,6 @@
         gridY = wallCell.gridY;
         currentPixel = 1;
         key = gridX + "," + gridY;
-        console.log("Adjusted to wall cell:", { gridX, gridY });
       }
     }
 
@@ -696,14 +731,50 @@
   }
 
   /**
+   * Handle floor clear/restore
+   */
+  function handleFloorEdit(gridX, gridY, currentPixel, key) {
+    // Can only clear floor tiles (not walls)
+    if (currentPixel !== 0) {
+      return;
+    }
+
+    if (selectedFloorTool === "clear") {
+      // Check if already blank
+      var isBlank = mazeNodes.isFloorBlank && mazeNodes.isFloorBlank(gridX, gridY);
+
+      // Track for undo
+      undoStack.push({
+        type: "floor",
+        key: key,
+        previous: { isBlank: isBlank },
+      });
+
+      if (isBlank) {
+        // Toggle: restore the floor
+        mazeNodes.setFloorBlank(gridX, gridY, false);
+      } else {
+        // Clear the floor (make it blank)
+        mazeNodes.setFloorBlank(gridX, gridY, true);
+      }
+
+      if (undoStack.length > MAX_UNDO_STACK) {
+        undoStack.shift();
+      }
+      updateUndoButton();
+
+      // Redraw
+      mazeNodes.draw();
+      saveCanvasState();
+    }
+  }
+
+  /**
    * Handle decoration placement
    */
   function handleDecorationEdit(gridX, gridY, pixel, key) {
     // Can only place on floor
     if (pixel !== 0) {
-      console.log(
-        "Cannot place decoration on wall at (" + gridX + ", " + gridY + ")",
-      );
       return;
     }
 
@@ -751,14 +822,11 @@
    */
   function setMatrixCell(row, col, value) {
     if (!mazeNodes.matrix[row]) {
-      console.log("setMatrixCell: row not found", row);
       return;
     }
     var rowStr = mazeNodes.matrix[row];
-    console.log("setMatrixCell: before", { row, col, value, rowStr });
     mazeNodes.matrix[row] =
       rowStr.substring(0, col) + value + rowStr.substring(col + 1);
-    console.log("setMatrixCell: after", mazeNodes.matrix[row]);
   }
 
   /**
@@ -784,6 +852,13 @@
           var d = lastAction.previous.decoration;
           mazeNodes.setDecoration(gridX, gridY, d.tileUrl, d.category, d.layer);
         }
+      }
+    } else if (lastAction.type === "floor") {
+      // Undo floor blank/restore
+      if (lastAction.previous.isBlank) {
+        mazeNodes.setFloorBlank(gridX, gridY, true);
+      } else {
+        mazeNodes.setFloorBlank(gridX, gridY, false);
       }
     } else {
       // Undo decoration change
@@ -825,9 +900,10 @@
    */
   function setSelectedDecoration(tileUrl) {
     selectedDecorationTile = tileUrl;
-    // Clear wall tool when decoration is selected
+    // Clear other tools when decoration is selected
     selectedWallTool = null;
-    updateWallToolSelection();
+    selectedFloorTool = null;
+    updateToolSelection();
     loadPreviewImage(tileUrl);
     updatePaletteSelection();
     updateCursor();
@@ -851,10 +927,10 @@
    * @param {string|null} tool - 'add', 'remove', or null to deselect
    */
   function setSelectedWallTool(tool) {
-    console.log("setSelectedWallTool called with:", tool);
     selectedWallTool = tool;
-    // Clear decoration selection when wall tool is selected
+    // Clear other tools when wall tool is selected
     if (tool) {
+      selectedFloorTool = null;
       selectedDecorationTile = null;
       previewImage = null;
       previewImageUrl = null;
@@ -862,9 +938,8 @@
       clearPreview();
       updatePaletteSelection();
     }
-    updateWallToolSelection();
+    updateToolSelection();
     updateCursor();
-    console.log("selectedWallTool is now:", selectedWallTool);
   }
 
   /**
@@ -872,19 +947,51 @@
    */
   function clearSelectedWallTool() {
     selectedWallTool = null;
-    updateWallToolSelection();
+    updateToolSelection();
     updateCursor();
   }
 
   /**
-   * Update wall tool button selection state
+   * Set the selected floor tool
+   * @param {string|null} tool - 'clear' or null to deselect
    */
-  function updateWallToolSelection() {
+  function setSelectedFloorTool(tool) {
+    selectedFloorTool = tool;
+    // Clear other tools when floor tool is selected
+    if (tool) {
+      selectedWallTool = null;
+      selectedDecorationTile = null;
+      previewImage = null;
+      previewImageUrl = null;
+      hoveredCell = null;
+      clearPreview();
+      updatePaletteSelection();
+    }
+    updateToolSelection();
+    updateCursor();
+  }
+
+  /**
+   * Clear the selected floor tool
+   */
+  function clearSelectedFloorTool() {
+    selectedFloorTool = null;
+    updateToolSelection();
+    updateCursor();
+  }
+
+  /**
+   * Update tool button selection state (wall and floor tools)
+   */
+  function updateToolSelection() {
     var addBtn = document.getElementById("wall-tool-add");
     var removeBtn = document.getElementById("wall-tool-remove");
+    var clearFloorBtn = document.getElementById("floor-tool-clear");
     if (addBtn) addBtn.classList.toggle("selected", selectedWallTool === "add");
     if (removeBtn)
       removeBtn.classList.toggle("selected", selectedWallTool === "remove");
+    if (clearFloorBtn)
+      clearFloorBtn.classList.toggle("selected", selectedFloorTool === "clear");
   }
 
   /**
@@ -907,6 +1014,8 @@
       canvas.style.cursor = "cell";
     } else if (selectedWallTool === "remove") {
       canvas.style.cursor = "not-allowed";
+    } else if (selectedFloorTool === "clear") {
+      canvas.style.cursor = "crosshair";
     } else {
       canvas.style.cursor = "default";
     }
@@ -1020,19 +1129,15 @@
       deselectBtn.addEventListener("click", function () {
         clearSelectedDecoration();
         clearSelectedWallTool();
+        clearSelectedFloorTool();
       });
     }
 
     // Wall tool buttons
     var wallAddBtn = document.getElementById("wall-tool-add");
     var wallRemoveBtn = document.getElementById("wall-tool-remove");
-    console.log("Wall tool buttons found:", {
-      wallAddBtn: !!wallAddBtn,
-      wallRemoveBtn: !!wallRemoveBtn,
-    });
     if (wallAddBtn) {
       wallAddBtn.addEventListener("click", function () {
-        console.log("Add wall button clicked");
         if (selectedWallTool === "add") {
           clearSelectedWallTool();
         } else {
@@ -1042,11 +1147,22 @@
     }
     if (wallRemoveBtn) {
       wallRemoveBtn.addEventListener("click", function () {
-        console.log("Remove wall button clicked");
         if (selectedWallTool === "remove") {
           clearSelectedWallTool();
         } else {
           setSelectedWallTool("remove");
+        }
+      });
+    }
+
+    // Floor tool button
+    var floorClearBtn = document.getElementById("floor-tool-clear");
+    if (floorClearBtn) {
+      floorClearBtn.addEventListener("click", function () {
+        if (selectedFloorTool === "clear") {
+          clearSelectedFloorTool();
+        } else {
+          setSelectedFloorTool("clear");
         }
       });
     }
@@ -1126,6 +1242,11 @@
     clearSelectedWallTool: clearSelectedWallTool,
     getSelectedWallTool: function () {
       return selectedWallTool;
+    },
+    setSelectedFloorTool: setSelectedFloorTool,
+    clearSelectedFloorTool: clearSelectedFloorTool,
+    getSelectedFloorTool: function () {
+      return selectedFloorTool;
     },
     undo: undoLastPlacement,
     getUndoCount: function () {
