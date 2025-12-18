@@ -1177,24 +1177,24 @@
 
     if (exportBtn) {
       exportBtn.addEventListener("click", function () {
-        if (typeof mazeNodes === "undefined" || !mazeNodes.exportDecorations) {
+        if (typeof mazeNodes === "undefined" || !mazeNodes.exportMaze) {
           alert("No maze generated yet");
           return;
         }
 
-        var json = mazeNodes.exportDecorations();
-        var decorationCount = Object.keys(mazeNodes.decorations).length;
-
-        if (decorationCount === 0) {
-          alert("No decorations to export");
-          return;
-        }
+        var json = mazeNodes.exportMaze();
+        var decorationCount = Object.keys(mazeNodes.decorations || {}).length;
+        var blankCount = Object.keys(mazeNodes.blankFloorTiles || {}).length;
+        var rows = (mazeNodes.matrix || []).length;
 
         // Copy to clipboard
         if (navigator.clipboard) {
           navigator.clipboard.writeText(json).then(function () {
             alert(
-              "Exported " + decorationCount + " decoration(s) to clipboard",
+              "Maze exported to clipboard!\n" +
+                rows + " rows, " +
+                decorationCount + " decoration(s), " +
+                blankCount + " cleared floor(s)"
             );
           });
         } else {
@@ -1206,20 +1206,25 @@
 
     if (importBtn) {
       importBtn.addEventListener("click", function () {
-        if (typeof mazeNodes === "undefined" || !mazeNodes.importDecorations) {
+        if (typeof mazeNodes === "undefined" || !mazeNodes.importMaze) {
           alert("No maze generated yet");
           return;
         }
 
-        var json = prompt("Paste decorations JSON:");
+        var json = prompt("Paste maze JSON:");
         if (!json) return;
 
-        if (mazeNodes.importDecorations(json)) {
+        if (mazeNodes.importMaze(json)) {
           mazeNodes.loadDecorations().then(function () {
             mazeNodes.draw();
-            saveCanvasState(); // Save for preview overlay
-            var count = Object.keys(mazeNodes.decorations).length;
-            alert("Imported " + count + " decoration(s)");
+            saveCanvasState();
+            var decorationCount = Object.keys(mazeNodes.decorations || {}).length;
+            var rows = (mazeNodes.matrix || []).length;
+            alert(
+              "Maze imported!\n" +
+                rows + " rows, " +
+                decorationCount + " decoration(s)"
+            );
           });
         } else {
           alert("Failed to parse JSON. Please check the format.");

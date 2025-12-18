@@ -598,6 +598,258 @@
       padding-bottom: 1em;
     }
 
+    /* Settings panel tabs */
+    .settings-tabs {
+      display: flex;
+      border-bottom: 1px solid #ddd;
+      margin: -1em -1em 1em -1em;
+      padding: 0 1em;
+      background: #f5f5f5;
+    }
+
+    .settings-tab {
+      padding: 0.75em 1.25em;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 0.95em;
+      color: #666;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .settings-tab:hover {
+      color: #333;
+    }
+
+    .settings-tab.active {
+      color: #3377ff;
+      border-bottom-color: #3377ff;
+      font-weight: 500;
+    }
+
+    .settings-tab-content {
+      display: none;
+    }
+
+    .settings-tab-content.active {
+      display: block;
+    }
+
+    /* Map browser styles */
+    .map-browser {
+      padding: 0.5em 0;
+    }
+
+    .save-map-section {
+      margin-bottom: 1.5em;
+      padding-bottom: 1em;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .save-map-section label {
+      display: block;
+      margin-bottom: 0.5em;
+      font-weight: 500;
+    }
+
+    .save-map-row {
+      display: flex;
+      gap: 0.5em;
+    }
+
+    .save-map-row input {
+      flex: 1;
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .saved-maps-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75em;
+      max-height: calc(100vh - 250px);
+      overflow-y: auto;
+    }
+
+    .saved-map-item {
+      display: flex;
+      gap: 0.75em;
+      padding: 0.5em;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .saved-map-item:hover {
+      border-color: #3377ff;
+      background: #f8faff;
+    }
+
+    .saved-map-thumbnail {
+      width: 80px;
+      height: 60px;
+      background: #f0f0f0;
+      border-radius: 3px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .saved-map-thumbnail img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .saved-map-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .saved-map-name {
+      font-weight: 500;
+      margin-bottom: 0.25em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .saved-map-meta {
+      font-size: 0.8em;
+      color: #666;
+    }
+
+    .saved-map-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25em;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .saved-map-item:hover .saved-map-actions {
+      opacity: 1;
+    }
+
+    .saved-map-actions button {
+      padding: 2px 8px;
+      font-size: 0.75em;
+      background: #f5f5f5;
+      border: 1px solid #999;
+      border-radius: 3px;
+      cursor: pointer;
+      color: #333;
+    }
+
+    .saved-map-actions button:hover {
+      background: #e8e8e8;
+      border-color: #666;
+    }
+
+    .saved-map-actions button.delete-btn:hover {
+      background: #ffe0e0;
+      border-color: #f88;
+      color: #c00;
+    }
+
+    .no-saved-maps {
+      text-align: center;
+      color: #888;
+      padding: 2em 1em;
+      font-style: italic;
+    }
+
+    /* Drag and drop styles */
+    .saved-map-item {
+      cursor: grab;
+    }
+
+    .saved-map-item.dragging {
+      opacity: 0.5;
+      cursor: grabbing;
+    }
+
+    .saved-map-item.drag-over {
+      border-color: #3377ff;
+      border-style: dashed;
+      background: #e8f0ff;
+    }
+
+    .drag-handle {
+      display: flex;
+      align-items: center;
+      padding: 0 0.5em;
+      color: #999;
+      cursor: grab;
+    }
+
+    .drag-handle:hover {
+      color: #666;
+    }
+
+    .drag-handle svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* FAB - Generate New Maze button */
+    .fab-generate {
+      position: fixed;
+      bottom: 80px;
+      right: 1em;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #4caf50;
+      color: white;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      z-index: 1001;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .fab-generate:hover {
+      background: #43a047;
+      transform: scale(1.1);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+    }
+
+    .fab-generate:active {
+      transform: scale(0.95);
+    }
+
+    .fab-generate svg {
+      width: 28px;
+      height: 28px;
+      fill: currentColor;
+    }
+
+    .fab-generate .fab-tooltip {
+      position: absolute;
+      right: 100%;
+      margin-right: 10px;
+      padding: 6px 12px;
+      background: #333;
+      color: white;
+      font-size: 0.85em;
+      border-radius: 4px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .fab-generate:hover .fab-tooltip {
+      opacity: 1;
+    }
+
     .maze-area {
       position: relative;
       min-height: 100vh;
@@ -743,6 +995,12 @@
   </button>
 
   <div class="settings-panel hidden" id="settings-panel">
+    <div class="settings-tabs">
+      <button type="button" class="settings-tab active" data-tab="maps">Saved Maps</button>
+      <button type="button" class="settings-tab" data-tab="settings">Settings</button>
+    </div>
+
+    <div class="settings-tab-content" data-tab-content="settings">
     <div class="controls">
       <p>
         <label for="wall-size">Wall thickness:</label>
@@ -1036,6 +1294,23 @@
         <a href="" class="hide" id="download">Download Maze</a>
       </div>
     </div>
+    </div><!-- End settings tab content -->
+
+    <div class="settings-tab-content active" data-tab-content="maps">
+      <div class="map-browser">
+        <div class="save-map-section">
+          <label for="save-map-name">Save Current Map</label>
+          <div class="save-map-row">
+            <input type="text" id="save-map-name" placeholder="Enter map name...">
+            <button type="button" id="save-map-btn">Save</button>
+          </div>
+        </div>
+        <h4>Saved Maps</h4>
+        <div class="saved-maps-list" id="saved-maps-list">
+          <div class="no-saved-maps">No saved maps yet</div>
+        </div>
+      </div>
+    </div><!-- End maps tab content -->
   </div>
   <!-- End settings-panel -->
 
@@ -1111,12 +1386,20 @@
         <button type="button" id="clear-decorations">Clear All</button>
       </div>
       <div class="palette-export">
-        <button type="button" id="export-decorations">Export JSON</button>
-        <button type="button" id="import-decorations">Import JSON</button>
+        <button type="button" id="export-decorations">Export Maze</button>
+        <button type="button" id="import-decorations">Import Maze</button>
       </div>
     </div>
     <!-- End palette-content -->
   </div>
+
+  <!-- FAB - Generate New Maze -->
+  <button type="button" class="fab-generate" id="fab-generate" title="Generate New Maze">
+    <span class="fab-tooltip">New Maze</span>
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+    </svg>
+  </button>
 
   <script type="text/javascript" src="src/globals.js"></script>
   <script type="text/javascript" src="src/utils.js"></script>
@@ -1185,6 +1468,312 @@
             }
           });
         }
+      }
+
+      // Settings panel tabs
+      var tabs = document.querySelectorAll('.settings-tab');
+      var tabContents = document.querySelectorAll('.settings-tab-content');
+
+      tabs.forEach(function(tab) {
+        tab.addEventListener('click', function() {
+          var targetTab = this.getAttribute('data-tab');
+
+          // Update tab buttons
+          tabs.forEach(function(t) { t.classList.remove('active'); });
+          this.classList.add('active');
+
+          // Update tab content
+          tabContents.forEach(function(content) {
+            content.classList.remove('active');
+            if (content.getAttribute('data-tab-content') === targetTab) {
+              content.classList.add('active');
+            }
+          });
+
+          // Refresh saved maps list when switching to maps tab
+          if (targetTab === 'maps') {
+            renderSavedMapsList();
+          }
+        });
+      });
+
+      // Local Storage Map Management
+      var STORAGE_KEY = 'maze-generator-saved-maps';
+
+      function generateMapName() {
+        var now = new Date();
+        var date = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        var time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        return 'Maze ' + date + ' ' + time;
+      }
+
+      function getSavedMaps() {
+        try {
+          var data = localStorage.getItem(STORAGE_KEY);
+          return data ? JSON.parse(data) : [];
+        } catch (e) {
+          console.warn('Failed to load saved maps:', e);
+          return [];
+        }
+      }
+
+      function saveMapsToStorage(maps) {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(maps));
+        } catch (e) {
+          console.warn('Failed to save maps:', e);
+          alert('Failed to save map. Local storage may be full.');
+        }
+      }
+
+      function generateThumbnail() {
+        var canvas = document.getElementById('maze');
+        if (!canvas) return null;
+
+        // Create a smaller thumbnail
+        var thumbCanvas = document.createElement('canvas');
+        var maxSize = 160;
+        var scale = Math.min(maxSize / canvas.width, maxSize / canvas.height);
+        thumbCanvas.width = canvas.width * scale;
+        thumbCanvas.height = canvas.height * scale;
+
+        var ctx = thumbCanvas.getContext('2d');
+        ctx.drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
+
+        return thumbCanvas.toDataURL('image/jpeg', 0.7);
+      }
+
+      function saveCurrentMap(name) {
+        if (typeof mazeNodes === 'undefined' || !mazeNodes.exportMaze) {
+          alert('No maze to save');
+          return;
+        }
+
+        var maps = getSavedMaps();
+        var mapData = {
+          id: Date.now().toString(),
+          name: name || generateMapName(),
+          data: mazeNodes.exportMaze(),
+          thumbnail: generateThumbnail(),
+          timestamp: Date.now()
+        };
+
+        maps.unshift(mapData); // Add to beginning
+        saveMapsToStorage(maps);
+        renderSavedMapsList();
+
+        return mapData;
+      }
+
+      function loadMap(mapId) {
+        var maps = getSavedMaps();
+        var map = maps.find(function(m) { return m.id === mapId; });
+
+        if (!map) {
+          alert('Map not found');
+          return;
+        }
+
+        if (typeof mazeNodes === 'undefined' || !mazeNodes.importMaze) {
+          alert('Maze not initialized');
+          return;
+        }
+
+        if (mazeNodes.importMaze(map.data)) {
+          mazeNodes.loadDecorations().then(function() {
+            mazeNodes.draw();
+            if (typeof TilePlacement !== 'undefined' && TilePlacement.saveCanvasState) {
+              TilePlacement.saveCanvasState();
+            }
+          });
+        } else {
+          alert('Failed to load map');
+        }
+      }
+
+      function deleteMap(mapId) {
+        if (!confirm('Delete this map?')) return;
+
+        var maps = getSavedMaps();
+        maps = maps.filter(function(m) { return m.id !== mapId; });
+        saveMapsToStorage(maps);
+        renderSavedMapsList();
+      }
+
+      function renameMap(mapId) {
+        var maps = getSavedMaps();
+        var map = maps.find(function(m) { return m.id === mapId; });
+        if (!map) return;
+
+        var newName = prompt('Enter new name:', map.name);
+        if (newName && newName.trim()) {
+          map.name = newName.trim();
+          saveMapsToStorage(maps);
+          renderSavedMapsList();
+        }
+      }
+
+      var draggedItem = null;
+
+      function renderSavedMapsList() {
+        var container = document.getElementById('saved-maps-list');
+        if (!container) return;
+
+        var maps = getSavedMaps();
+
+        if (maps.length === 0) {
+          container.innerHTML = '<div class="no-saved-maps">No saved maps yet</div>';
+          return;
+        }
+
+        var dragHandleSvg = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 6a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0 7.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0 7.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm6-15a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0 7.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0 7.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>';
+
+        container.innerHTML = maps.map(function(map) {
+          var date = new Date(map.timestamp);
+          var dateStr = date.toLocaleDateString('en-US', {
+            month: 'short', day: 'numeric', year: 'numeric'
+          });
+
+          return '<div class="saved-map-item" data-map-id="' + map.id + '" draggable="true">' +
+            '<div class="drag-handle">' + dragHandleSvg + '</div>' +
+            '<div class="saved-map-thumbnail">' +
+            (map.thumbnail ? '<img src="' + map.thumbnail + '" alt="">' : '') +
+            '</div>' +
+            '<div class="saved-map-info">' +
+            '<div class="saved-map-name">' + escapeHtml(map.name) + '</div>' +
+            '<div class="saved-map-meta">' + dateStr + '</div>' +
+            '</div>' +
+            '<div class="saved-map-actions">' +
+            '<button type="button" class="rename-btn" data-map-id="' + map.id + '">Rename</button>' +
+            '<button type="button" class="delete-btn" data-map-id="' + map.id + '">Delete</button>' +
+            '</div>' +
+            '</div>';
+        }).join('');
+
+        // Add click handlers
+        container.querySelectorAll('.saved-map-item').forEach(function(item) {
+          item.addEventListener('click', function(e) {
+            if (e.target.classList.contains('rename-btn') ||
+                e.target.classList.contains('delete-btn') ||
+                e.target.closest('.drag-handle')) {
+              return; // Handle separately
+            }
+            var mapId = this.getAttribute('data-map-id');
+            loadMap(mapId);
+          });
+
+          // Drag and drop handlers
+          item.addEventListener('dragstart', function(e) {
+            draggedItem = this;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', this.getAttribute('data-map-id'));
+          });
+
+          item.addEventListener('dragend', function() {
+            this.classList.remove('dragging');
+            draggedItem = null;
+            container.querySelectorAll('.saved-map-item').forEach(function(i) {
+              i.classList.remove('drag-over');
+            });
+          });
+
+          item.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (draggedItem && draggedItem !== this) {
+              this.classList.add('drag-over');
+            }
+          });
+
+          item.addEventListener('dragleave', function() {
+            this.classList.remove('drag-over');
+          });
+
+          item.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+
+            if (!draggedItem || draggedItem === this) return;
+
+            var draggedId = draggedItem.getAttribute('data-map-id');
+            var targetId = this.getAttribute('data-map-id');
+
+            reorderMaps(draggedId, targetId);
+          });
+        });
+
+        container.querySelectorAll('.rename-btn').forEach(function(btn) {
+          btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            renameMap(this.getAttribute('data-map-id'));
+          });
+        });
+
+        container.querySelectorAll('.delete-btn').forEach(function(btn) {
+          btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            deleteMap(this.getAttribute('data-map-id'));
+          });
+        });
+      }
+
+      function reorderMaps(draggedId, targetId) {
+        var maps = getSavedMaps();
+        var draggedIndex = maps.findIndex(function(m) { return m.id === draggedId; });
+        var targetIndex = maps.findIndex(function(m) { return m.id === targetId; });
+
+        if (draggedIndex === -1 || targetIndex === -1) return;
+
+        // Remove dragged item and insert at target position
+        var draggedMap = maps.splice(draggedIndex, 1)[0];
+        maps.splice(targetIndex, 0, draggedMap);
+
+        saveMapsToStorage(maps);
+        renderSavedMapsList();
+      }
+
+      function escapeHtml(text) {
+        var div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      // Save map button
+      var saveMapBtn = document.getElementById('save-map-btn');
+      var saveMapNameInput = document.getElementById('save-map-name');
+
+      if (saveMapBtn) {
+        saveMapBtn.addEventListener('click', function() {
+          var name = saveMapNameInput ? saveMapNameInput.value.trim() : '';
+          var saved = saveCurrentMap(name);
+          if (saved && saveMapNameInput) {
+            saveMapNameInput.value = '';
+            alert('Map saved as "' + saved.name + '"');
+          }
+        });
+      }
+
+      // Auto-generate name placeholder on focus
+      if (saveMapNameInput) {
+        saveMapNameInput.addEventListener('focus', function() {
+          if (!this.value) {
+            this.placeholder = generateMapName();
+          }
+        });
+      }
+
+      // Initial render of saved maps
+      renderSavedMapsList();
+
+      // FAB - Generate New Maze button
+      var fabGenerate = document.getElementById('fab-generate');
+      if (fabGenerate) {
+        fabGenerate.addEventListener('click', function() {
+          if (typeof initMaze === 'function') {
+            initMaze();
+          }
+        });
       }
     })();
   </script>

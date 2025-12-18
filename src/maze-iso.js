@@ -244,22 +244,52 @@ Maze.prototype.clearBlankFloors = function () {
   this.blankFloorTiles = {};
 };
 
-// Export decorations as JSON string
-Maze.prototype.exportDecorations = function () {
-  return JSON.stringify(this.decorations, null, 2);
+// Export full maze state as JSON string
+Maze.prototype.exportMaze = function () {
+  const data = {
+    version: 1,
+    matrix: this.matrix,
+    decorations: this.decorations,
+    blankFloorTiles: this.blankFloorTiles,
+    floorTileMap: this.floorTileMap
+  };
+  return JSON.stringify(data, null, 2);
 };
 
-// Import decorations from JSON string
-Maze.prototype.importDecorations = function (jsonString) {
+// Import full maze state from JSON string
+Maze.prototype.importMaze = function (jsonString) {
   try {
     const parsed = JSON.parse(jsonString);
-    this.decorations = parsed;
+
+    // Handle old format (just decorations object)
+    if (!parsed.version && !parsed.matrix) {
+      this.decorations = parsed;
+      return true;
+    }
+
+    // New format with full maze state
+    if (parsed.matrix) {
+      this.matrix = parsed.matrix;
+    }
+    if (parsed.decorations) {
+      this.decorations = parsed.decorations;
+    }
+    if (parsed.blankFloorTiles) {
+      this.blankFloorTiles = parsed.blankFloorTiles;
+    }
+    if (parsed.floorTileMap) {
+      this.floorTileMap = parsed.floorTileMap;
+    }
     return true;
   } catch (e) {
-    console.warn('Failed to parse decorations JSON:', e);
+    console.warn('Failed to parse maze JSON:', e);
     return false;
   }
 };
+
+// Legacy alias for backwards compatibility
+Maze.prototype.exportDecorations = Maze.prototype.exportMaze;
+Maze.prototype.importDecorations = Maze.prototype.importMaze;
 
 // Determine the direction of a gate relative to its entry point
 // Returns 'N', 'S', 'E', or 'W'
