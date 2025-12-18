@@ -27,6 +27,7 @@ function Maze(args) {
     wallBgColor: "", // Optional background color for wall faces (behind transparent textures)
     debugStrokeColors: false, // Show different colors for each stroke type (for debugging)
     debugTestPattern: false, // Use a static test pattern instead of random maze
+    showBlockNumbers: false, // Show grid coordinates on walls and pathways (for debugging)
     isoRatio: 0.5, // Isometric ratio (height/width): 0.5=2:1 pixel art, 0.577=true iso (~30°)
     tightSpacing: false, // Remove stroke-based spacing for seamless tileset rendering
     endMarkerOffset: 0, // Vertical offset for end marker tile (positive = down)
@@ -76,6 +77,7 @@ function Maze(args) {
   this.wallBgColor = settings["wallBgColor"] || "";
   this.debugStrokeColors = settings["debugStrokeColors"] === true;
   this.debugTestPattern = settings["debugTestPattern"] === true;
+  this.showBlockNumbers = settings["showBlockNumbers"] === true;
   this.isoRatio = parseFloat(settings["isoRatio"]) || 0.5;
   this.tightSpacing = settings["tightSpacing"] === true;
   this.endMarkerOffset = parseFloat(settings["endMarkerOffset"]) || 0;
@@ -1551,6 +1553,18 @@ Maze.prototype.draw = function () {
         ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
       }
 
+      // Draw block number on pathway (aligned to bottom of floor tile)
+      if (this.showBlockNumbers) {
+        const fontSize = Math.max(6, tileWidth * 0.2);
+        ctx.fillStyle = "#000000";
+        ctx.font = `${fontSize}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        // Position at bottom of the floor tile (above where cube base would be)
+        const labelY = isoY + tileHeight + cubeHeight - 2;
+        ctx.fillText(`${j},${i}`, isoX, labelY);
+      }
+
     }
   }
 
@@ -1760,7 +1774,7 @@ Maze.prototype.draw = function () {
         });
       }
 
-      // Draw cube number for debug test pattern
+      // Draw cube number for debug test pattern (sequential numbering)
       if (this.debugTestPattern) {
         this.wallCubeNumber = (this.wallCubeNumber || 0) + 1;
         ctx.fillStyle = "#000000";
@@ -1769,6 +1783,18 @@ Maze.prototype.draw = function () {
         ctx.textBaseline = "middle";
         const labelY = isoY + tileHeight * 0.5;
         ctx.fillText(this.wallCubeNumber.toString(), isoX, labelY);
+      }
+
+      // Draw block number on wall (grid coordinates on top face)
+      if (this.showBlockNumbers) {
+        const fontSize = Math.max(6, tileWidth * 0.2);
+        ctx.fillStyle = "#000000";
+        ctx.font = `${fontSize}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        // Position at center of top face
+        const labelY = isoY + tileHeight * 0.5;
+        ctx.fillText(`${j},${i}`, isoX, labelY);
       }
     }
   }

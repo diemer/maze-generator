@@ -139,6 +139,8 @@ function initMaze() {
     );
     const debugTestPatternCheckbox =
         document.getElementById("debug-test-pattern");
+    const showBlockNumbersCheckbox =
+        document.getElementById("show-block-numbers");
     const tightSpacingCheckbox = document.getElementById("tight-spacing");
     const strokeTop = strokeTopCheckbox ? strokeTopCheckbox.checked : true;
     const strokeBottom = strokeBottomCheckbox
@@ -155,6 +157,9 @@ function initMaze() {
         : false;
     const debugTestPattern = debugTestPatternCheckbox
         ? debugTestPatternCheckbox.checked
+        : false;
+    const showBlockNumbers = showBlockNumbersCheckbox
+        ? showBlockNumbersCheckbox.checked
         : false;
     const tightSpacing = tightSpacingCheckbox
         ? tightSpacingCheckbox.checked
@@ -184,6 +189,7 @@ function initMaze() {
         strokeWallCorners: strokeWallCorners,
         debugStrokeColors: debugStrokeColors,
         debugTestPattern: debugTestPattern,
+        showBlockNumbers: showBlockNumbers,
         tightSpacing: tightSpacing,
         wallHeight: wallHeight,
         strokeWidth: strokeWidth,
