@@ -1464,7 +1464,9 @@ Maze.prototype.draw = function () {
 
   // Adjust canvas size to fit the isometric maze (scaled)
   // Only add stroke margin if strokes are enabled and tight spacing is off
+  // strokeMargin accounts for stroke extending beyond tile edges on all sides
   const strokeMargin = (this.showStroke && !this.tightSpacing) ? this.strokeWidth : 0;
+  const halfStrokeMargin = strokeMargin * 0.5;
   canvas.width = (isoWidth * 2 + strokeMargin) * scale; // Total projected width
   // Height needs: grid area (isoHeight*2) + top offset (tileHeight) + bottom cube extension (tileHeight + cubeHeight)
   canvas.height = (isoHeight * 2 + tileHeight * 2 + cubeHeight + strokeMargin) * scale;
@@ -1488,8 +1490,9 @@ Maze.prototype.draw = function () {
   const gateExit = getEntryNode(this.entryNodes, "end", true);
 
   // Offset to center the maze on the canvas (use unscaled dimensions since ctx is scaled)
-  const offsetX = isoWidth; // Center the maze horizontally
-  const offsetY = tileHeight; // Add vertical margin
+  // Add halfStrokeMargin to ensure strokes at the edges don't get clipped
+  const offsetX = isoWidth + halfStrokeMargin; // Center the maze horizontally with stroke margin
+  const offsetY = tileHeight + halfStrokeMargin; // Add vertical margin with stroke margin
 
   // Helper to get start/end nodes (cache outside loops)
   const startNode = getEntryNode(this.entryNodes, "start", false);
@@ -1791,15 +1794,19 @@ Maze.prototype.generateSVG = function () {
   const isoHeight = matrixRows * tileHeight * 0.5;
   const cubeHeight = tileHeight * this.wallHeight;
 
-  const svgWidth = (isoWidth * 2) * scale;
-  const svgHeight = (isoHeight * 2 + tileHeight + cubeHeight) * scale;
+  // Add stroke margin to prevent edge clipping (consistent with draw())
+  const strokeMargin = (this.showStroke && !this.tightSpacing) ? this.strokeWidth : 0;
+  const halfStrokeMargin = strokeMargin * 0.5;
+
+  const svgWidth = (isoWidth * 2 + strokeMargin) * scale;
+  const svgHeight = (isoHeight * 2 + tileHeight * 2 + cubeHeight + strokeMargin) * scale;
 
   const rowCount = this.matrix.length;
   const gateEntry = getEntryNode(this.entryNodes, "start", true);
   const gateExit = getEntryNode(this.entryNodes, "end", true);
 
-  const offsetX = isoWidth;
-  const offsetY = tileHeight;
+  const offsetX = isoWidth + halfStrokeMargin;
+  const offsetY = tileHeight + halfStrokeMargin;
 
   let paths = [];
 
@@ -1843,8 +1850,10 @@ Maze.prototype.generateSVG = function () {
     }
   }
 
+  const viewBoxWidth = isoWidth * 2 + strokeMargin;
+  const viewBoxHeight = isoHeight * 2 + tileHeight * 2 + cubeHeight + strokeMargin;
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${isoWidth * 2} ${isoHeight * 2 + tileHeight + cubeHeight}">
+<svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${viewBoxWidth} ${viewBoxHeight}">
   <rect width="100%" height="100%" fill="${this.backgroundColor}"/>
   <g>
     ${paths.join('\n    ')}
