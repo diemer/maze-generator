@@ -247,11 +247,13 @@ Maze.prototype.clearBlankFloors = function () {
 // Export full maze state as JSON string
 Maze.prototype.exportMaze = function () {
   const data = {
-    version: 1,
+    version: 2,
     matrix: this.matrix,
     decorations: this.decorations,
     blankFloorTiles: this.blankFloorTiles,
-    floorTileMap: this.floorTileMap
+    floorTileMap: this.floorTileMap,
+    entryNodes: this.entryNodes,
+    entryType: this.entryType || null
   };
   return JSON.stringify(data, null, 2);
 };
@@ -280,6 +282,13 @@ Maze.prototype.importMaze = function (jsonString) {
     if (parsed.floorTileMap) {
       this.floorTileMap = parsed.floorTileMap;
     }
+    // Version 2+: entry information
+    if (parsed.entryNodes) {
+      this.entryNodes = parsed.entryNodes;
+    }
+    if (parsed.entryType) {
+      this.entryType = parsed.entryType;
+    }
     return true;
   } catch (e) {
     console.warn('Failed to parse maze JSON:', e);
@@ -306,67 +315,37 @@ Maze.prototype.setEntryType = function (entryType) {
   let access = entryType;
 
   // Handle random - pick any entry type
+  // Start always on visual top half (north/west walls), exit always on visual bottom half (east/south walls)
   if ("diagonal-random" === access) {
-    const options = ["diagonal", "diagonal-alt", "horizontal", "vertical", "left", "right", "top", "bottom"];
+    const options = ["diagonal", "diagonal-alt", "horizontal", "vertical"];
     access = options[Math.floor(Math.random() * options.length)];
   }
 
   if ("diagonal" === access) {
-    // NW to SE: start top-left (west wall), end bottom-right (east wall)
+    // Start on west wall (visual top-left), exit on east wall (visual bottom-right)
     entryNodes.start = { x: 1, y: 1, gate: { x: 0, y: 1 } };
     entryNodes.end = { x: x, y: y, gate: { x: x + 1, y: y } };
   }
 
   if ("diagonal-alt" === access) {
-    // NE to SW: start top-right (north wall), end bottom-left (south wall)
+    // Start on north wall (visual top-right), exit on south wall (visual bottom-left)
     entryNodes.start = { x: x, y: 1, gate: { x: x, y: 0 } };
     entryNodes.end = { x: 1, y: y, gate: { x: 1, y: y + 1 } };
   }
 
-  if ("horizontal" === access || "vertical" === access) {
-    let xy = "horizontal" === access ? y : x;
-    xy = (xy - 1) / 2;
-    let even = xy % 2 === 0;
-    xy = even ? xy + 1 : xy;
-
-    let start_x = "horizontal" === access ? 1 : xy;
-    let start_y = "horizontal" === access ? xy : 1;
-    let end_x = "horizontal" === access ? x : even ? start_x : start_x + 2;
-    let end_y = "horizontal" === access ? (even ? start_y : start_y + 2) : y;
-    let startgate =
-      "horizontal" === access ? { x: 0, y: start_y } : { x: start_x, y: 0 };
-    let endgate =
-      "horizontal" === access ? { x: x + 1, y: end_y } : { x: end_x, y: y + 1 };
-
-    entryNodes.start = { x: start_x, y: start_y, gate: startgate };
-    entryNodes.end = { x: end_x, y: end_y, gate: endgate };
-  }
-
-  // Same-side entries: start and end on the same wall
-  if ("left" === access) {
-    // Both on west wall (left side)
+  if ("horizontal" === access) {
+    // Start on west wall (visual top-left), exit on east wall (visual bottom-right)
     entryNodes.start = { x: 1, y: 1, gate: { x: 0, y: 1 } };
-    entryNodes.end = { x: 1, y: y, gate: { x: 0, y: y } };
-  }
-
-  if ("right" === access) {
-    // Both on east wall (right side)
-    entryNodes.start = { x: x, y: 1, gate: { x: x + 1, y: 1 } };
     entryNodes.end = { x: x, y: y, gate: { x: x + 1, y: y } };
   }
 
-  if ("top" === access) {
-    // Both on north wall (top side)
-    entryNodes.start = { x: 1, y: 1, gate: { x: 1, y: 0 } };
-    entryNodes.end = { x: x, y: 1, gate: { x: x, y: 0 } };
+  if ("vertical" === access) {
+    // Start on north wall (visual top-right), exit on south wall (visual bottom-left)
+    entryNodes.start = { x: x, y: 1, gate: { x: x, y: 0 } };
+    entryNodes.end = { x: 1, y: y, gate: { x: 1, y: y + 1 } };
   }
 
-  if ("bottom" === access) {
-    // Both on south wall (bottom side)
-    entryNodes.start = { x: 1, y: y, gate: { x: 1, y: y + 1 } };
-    entryNodes.end = { x: x, y: y, gate: { x: x, y: y + 1 } };
-  }
-
+  this.entryType = access; // Store the resolved entry type
   this.entryNodes = entryNodes;
   return entryNodes;
 };
@@ -706,65 +685,34 @@ Maze.prototype.getEntryNodes = function (access) {
   let entryNodes = {};
 
   // Handle random - pick any entry type
+  // Start always on visual top half (north/west walls), exit always on visual bottom half (east/south walls)
   if ("diagonal-random" === access) {
-    const options = ["diagonal", "diagonal-alt", "horizontal", "vertical", "left", "right", "top", "bottom"];
+    const options = ["diagonal", "diagonal-alt", "horizontal", "vertical"];
     access = options[Math.floor(Math.random() * options.length)];
   }
 
   if ("diagonal" === access) {
-    // NW to SE: start top-left (west wall), end bottom-right (east wall)
+    // Start on west wall (visual top-left), exit on east wall (visual bottom-right)
     entryNodes.start = { x: 1, y: 1, gate: { x: 0, y: 1 } };
     entryNodes.end = { x: x, y: y, gate: { x: x + 1, y: y } };
   }
 
   if ("diagonal-alt" === access) {
-    // NE to SW: start top-right (north wall), end bottom-left (south wall)
+    // Start on north wall (visual top-right), exit on south wall (visual bottom-left)
     entryNodes.start = { x: x, y: 1, gate: { x: x, y: 0 } };
     entryNodes.end = { x: 1, y: y, gate: { x: 1, y: y + 1 } };
   }
 
-  if ("horizontal" === access || "vertical" === access) {
-    let xy = "horizontal" === access ? y : x;
-    xy = (xy - 1) / 2;
-    let even = xy % 2 === 0;
-    xy = even ? xy + 1 : xy;
-
-    let start_x = "horizontal" === access ? 1 : xy;
-    let start_y = "horizontal" === access ? xy : 1;
-    let end_x = "horizontal" === access ? x : even ? start_x : start_x + 2;
-    let end_y = "horizontal" === access ? (even ? start_y : start_y + 2) : y;
-    let startgate =
-      "horizontal" === access ? { x: 0, y: start_y } : { x: start_x, y: 0 };
-    let endgate =
-      "horizontal" === access ? { x: x + 1, y: end_y } : { x: end_x, y: y + 1 };
-
-    entryNodes.start = { x: start_x, y: start_y, gate: startgate };
-    entryNodes.end = { x: end_x, y: end_y, gate: endgate };
-  }
-
-  // Same-side entries: start and end on the same wall
-  if ("left" === access) {
-    // Both on west wall (left side)
+  if ("horizontal" === access) {
+    // Start on west wall (visual top-left), exit on east wall (visual bottom-right)
     entryNodes.start = { x: 1, y: 1, gate: { x: 0, y: 1 } };
-    entryNodes.end = { x: 1, y: y, gate: { x: 0, y: y } };
-  }
-
-  if ("right" === access) {
-    // Both on east wall (right side)
-    entryNodes.start = { x: x, y: 1, gate: { x: x + 1, y: 1 } };
     entryNodes.end = { x: x, y: y, gate: { x: x + 1, y: y } };
   }
 
-  if ("top" === access) {
-    // Both on north wall (top side)
-    entryNodes.start = { x: 1, y: 1, gate: { x: 1, y: 0 } };
-    entryNodes.end = { x: x, y: 1, gate: { x: x, y: 0 } };
-  }
-
-  if ("bottom" === access) {
-    // Both on south wall (bottom side)
-    entryNodes.start = { x: 1, y: y, gate: { x: 1, y: y + 1 } };
-    entryNodes.end = { x: x, y: y, gate: { x: x, y: y + 1 } };
+  if ("vertical" === access) {
+    // Start on north wall (visual top-right), exit on south wall (visual bottom-left)
+    entryNodes.start = { x: x, y: 1, gate: { x: x, y: 0 } };
+    entryNodes.end = { x: 1, y: y, gate: { x: 1, y: y + 1 } };
   }
 
   return entryNodes;
