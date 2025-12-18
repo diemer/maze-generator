@@ -53,7 +53,9 @@ function Maze(args) {
   this.pathWidth = parseInt(settings["pathWidth"], 10) || 1;
   this.pathHeight = parseInt(settings["pathHeight"], 10) || 1;
   this.removeWalls = parseInt(settings["removeWalls"], 10);
-  this.entryNodes = this.getEntryNodes(settings["entryType"]);
+  this.flipStart = !!settings["flipStart"];
+  this.flipExit = !!settings["flipExit"];
+  this.entryNodes = this.getEntryNodes(settings["entryType"], this.flipStart, this.flipExit);
   this.bias = settings["bias"];
   this.color = settings["color"];
   this.backgroundColor = settings["backgroundColor"];
@@ -302,7 +304,8 @@ Maze.prototype.importDecorations = Maze.prototype.importMaze;
 
 // Update entry nodes without regenerating the maze
 // Uses current matrix dimensions instead of original width/height
-Maze.prototype.setEntryType = function (entryType) {
+// flipStart/flipExit move the gate to the other end of its wall
+Maze.prototype.setEntryType = function (entryType, flipStart, flipExit) {
   if (!this.matrix.length) return;
 
   // Calculate based on actual matrix dimensions
@@ -313,11 +316,13 @@ Maze.prototype.setEntryType = function (entryType) {
 
   let entryNodes = {};
   let access = entryType;
+  flipStart = !!flipStart;
+  flipExit = !!flipExit;
 
   // Handle random - pick any entry type
   // Start always on visual top half (north/west walls), exit always on visual bottom half (east/south walls)
   if ("diagonal-random" === access) {
-    const options = ["diagonal", "diagonal-alt", "horizontal", "vertical"];
+    const options = ["diagonal", "diagonal-alt", "horizontal", "vertical", "same-left", "same-right"];
     access = options[Math.floor(Math.random() * options.length)];
   }
 
@@ -343,6 +348,45 @@ Maze.prototype.setEntryType = function (entryType) {
     // Start on north wall (visual top-right), exit on south wall (visual bottom-left)
     entryNodes.start = { x: x, y: 1, gate: { x: x, y: 0 } };
     entryNodes.end = { x: 1, y: y, gate: { x: 1, y: y + 1 } };
+  }
+
+  if ("same-left" === access) {
+    // Both on left visual side: start on west wall (NW), exit on south wall (SW)
+    entryNodes.start = { x: 1, y: 1, gate: { x: 0, y: 1 } };
+    entryNodes.end = { x: 1, y: y, gate: { x: 1, y: y + 1 } };
+  }
+
+  if ("same-right" === access) {
+    // Both on right visual side: start on north wall (NE), exit on east wall (SE)
+    entryNodes.start = { x: x, y: 1, gate: { x: x, y: 0 } };
+    entryNodes.end = { x: x, y: y, gate: { x: x + 1, y: y } };
+  }
+
+  // Apply flip logic - move gate to other end of its wall
+  if (flipStart && entryNodes.start) {
+    const s = entryNodes.start;
+    if (s.gate.x === 0) {
+      // West wall: flip y position
+      s.y = s.y === 1 ? y : 1;
+      s.gate.y = s.y;
+    } else if (s.gate.y === 0) {
+      // North wall: flip x position
+      s.x = s.x === 1 ? x : 1;
+      s.gate.x = s.x;
+    }
+  }
+
+  if (flipExit && entryNodes.end) {
+    const e = entryNodes.end;
+    if (e.gate.x === x + 1) {
+      // East wall: flip y position
+      e.y = e.y === 1 ? y : 1;
+      e.gate.y = e.y;
+    } else if (e.gate.y === y + 1) {
+      // South wall: flip x position
+      e.x = e.x === 1 ? x : 1;
+      e.gate.x = e.x;
+    }
   }
 
   this.entryType = access; // Store the resolved entry type
@@ -678,16 +722,18 @@ Maze.prototype.getMatrix = function (nodes) {
   this.matrix.push("1".repeat(this.width * 2 + 1));
 };
 
-Maze.prototype.getEntryNodes = function (access) {
+Maze.prototype.getEntryNodes = function (access, flipStart, flipExit) {
   const y = this.height * 2 + 1 - 2;
   const x = this.width * 2 + 1 - 2;
 
   let entryNodes = {};
+  flipStart = !!flipStart;
+  flipExit = !!flipExit;
 
   // Handle random - pick any entry type
   // Start always on visual top half (north/west walls), exit always on visual bottom half (east/south walls)
   if ("diagonal-random" === access) {
-    const options = ["diagonal", "diagonal-alt", "horizontal", "vertical"];
+    const options = ["diagonal", "diagonal-alt", "horizontal", "vertical", "same-left", "same-right"];
     access = options[Math.floor(Math.random() * options.length)];
   }
 
@@ -713,6 +759,45 @@ Maze.prototype.getEntryNodes = function (access) {
     // Start on north wall (visual top-right), exit on south wall (visual bottom-left)
     entryNodes.start = { x: x, y: 1, gate: { x: x, y: 0 } };
     entryNodes.end = { x: 1, y: y, gate: { x: 1, y: y + 1 } };
+  }
+
+  if ("same-left" === access) {
+    // Both on left visual side: start on west wall (NW), exit on south wall (SW)
+    entryNodes.start = { x: 1, y: 1, gate: { x: 0, y: 1 } };
+    entryNodes.end = { x: 1, y: y, gate: { x: 1, y: y + 1 } };
+  }
+
+  if ("same-right" === access) {
+    // Both on right visual side: start on north wall (NE), exit on east wall (SE)
+    entryNodes.start = { x: x, y: 1, gate: { x: x, y: 0 } };
+    entryNodes.end = { x: x, y: y, gate: { x: x + 1, y: y } };
+  }
+
+  // Apply flip logic - move gate to other end of its wall
+  if (flipStart && entryNodes.start) {
+    const s = entryNodes.start;
+    if (s.gate.x === 0) {
+      // West wall: flip y position
+      s.y = s.y === 1 ? y : 1;
+      s.gate.y = s.y;
+    } else if (s.gate.y === 0) {
+      // North wall: flip x position
+      s.x = s.x === 1 ? x : 1;
+      s.gate.x = s.x;
+    }
+  }
+
+  if (flipExit && entryNodes.end) {
+    const e = entryNodes.end;
+    if (e.gate.x === x + 1) {
+      // East wall: flip y position
+      e.y = e.y === 1 ? y : 1;
+      e.gate.y = e.y;
+    } else if (e.gate.y === y + 1) {
+      // South wall: flip x position
+      e.x = e.x === 1 ? x : 1;
+      e.gate.x = e.x;
+    }
   }
 
   return entryNodes;

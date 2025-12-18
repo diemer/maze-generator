@@ -1064,7 +1064,19 @@
             </option>
             <option value="horizontal">exit on left</option>
             <option value="vertical">exit on bottom</option>
+            <option value="same-left">both on left side</option>
+            <option value="same-right">both on right side</option>
           </select>
+        </p>
+        <p>
+          <label for="flip-start">Flip start position:</label>
+          <input id="flip-start" type="checkbox" name="flip-start" />
+          <span style="font-size: smaller; color: #666">(move to other end of wall)</span>
+        </p>
+        <p>
+          <label for="flip-exit">Flip exit position:</label>
+          <input id="flip-exit" type="checkbox" name="flip-exit" />
+          <span style="font-size: smaller; color: #666">(move to other end of wall)</span>
         </p>
         <p>
           <label for="bias">Bias:</label>
@@ -1845,27 +1857,41 @@
         });
       }
 
-      // Live update entry positions when dropdown changes
+      // Live update entry positions when dropdown or flip checkboxes change
       var entrySelect = document.getElementById("entry");
-      if (entrySelect) {
-        entrySelect.addEventListener("change", function () {
+      var flipStartCheckbox = document.getElementById("flip-start");
+      var flipExitCheckbox = document.getElementById("flip-exit");
+
+      function updateEntryPositions() {
+        if (
+          typeof mazeNodes !== "undefined" &&
+          mazeNodes.setEntryType &&
+          mazeNodes.matrix &&
+          mazeNodes.matrix.length
+        ) {
+          var entryType = entrySelect ? entrySelect.value : "";
+          var flipStart = flipStartCheckbox ? flipStartCheckbox.checked : false;
+          var flipExit = flipExitCheckbox ? flipExitCheckbox.checked : false;
+          mazeNodes.setEntryType(entryType, flipStart, flipExit);
+          mazeNodes.draw();
+          // Update canvas state for decoration preview
           if (
-            typeof mazeNodes !== "undefined" &&
-            mazeNodes.setEntryType &&
-            mazeNodes.matrix &&
-            mazeNodes.matrix.length
+            typeof TilePlacement !== "undefined" &&
+            TilePlacement.saveCanvasState
           ) {
-            mazeNodes.setEntryType(this.value);
-            mazeNodes.draw();
-            // Update canvas state for decoration preview
-            if (
-              typeof TilePlacement !== "undefined" &&
-              TilePlacement.saveCanvasState
-            ) {
-              TilePlacement.saveCanvasState();
-            }
+            TilePlacement.saveCanvasState();
           }
-        });
+        }
+      }
+
+      if (entrySelect) {
+        entrySelect.addEventListener("change", updateEntryPositions);
+      }
+      if (flipStartCheckbox) {
+        flipStartCheckbox.addEventListener("change", updateEntryPositions);
+      }
+      if (flipExitCheckbox) {
+        flipExitCheckbox.addEventListener("change", updateEntryPositions);
       }
     })();
   </script>

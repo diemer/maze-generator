@@ -232,6 +232,11 @@ function initMaze() {
         settings["entryType"] = entry.options[entry.selectedIndex].value;
     }
 
+    const flipStartCheckbox = document.getElementById("flip-start");
+    const flipExitCheckbox = document.getElementById("flip-exit");
+    settings["flipStart"] = flipStartCheckbox ? flipStartCheckbox.checked : false;
+    settings["flipExit"] = flipExitCheckbox ? flipExitCheckbox.checked : false;
+
     const bias = document.getElementById("bias");
     if (bias) {
         settings["bias"] = bias.options[bias.selectedIndex].value;
