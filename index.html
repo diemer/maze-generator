@@ -1898,6 +1898,24 @@
       if (flipExitCheckbox) {
         flipExitCheckbox.addEventListener("change", updateEntryPositions);
       }
+
+      // Live toggle for show block numbers
+      var showBlockNumbersCheckbox = document.getElementById("show-block-numbers");
+      if (showBlockNumbersCheckbox) {
+        showBlockNumbersCheckbox.addEventListener("change", function () {
+          if (
+            typeof mazeNodes !== "undefined" &&
+            mazeNodes.matrix &&
+            mazeNodes.matrix.length
+          ) {
+            mazeNodes.showBlockNumbers = showBlockNumbersCheckbox.checked;
+            mazeNodes.draw();
+            if (typeof TilePlacement !== "undefined" && TilePlacement.saveCanvasState) {
+              TilePlacement.saveCanvasState();
+            }
+          }
+        });
+      }
     })();
   </script>
 </body>

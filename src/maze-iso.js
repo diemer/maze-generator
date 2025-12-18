@@ -1555,7 +1555,7 @@ Maze.prototype.draw = function () {
 
       // Draw block number on pathway (aligned to bottom of floor tile)
       if (this.showBlockNumbers) {
-        const fontSize = Math.max(4, tileWidth * 0.04);
+        const fontSize = Math.max(4, tileWidth * 0.02);
         ctx.fillStyle = "#000000";
         ctx.font = `${fontSize}px sans-serif`;
         ctx.textAlign = "center";
@@ -1787,7 +1787,7 @@ Maze.prototype.draw = function () {
 
       // Draw block number on wall (grid coordinates on top face)
       if (this.showBlockNumbers) {
-        const fontSize = Math.max(4, tileWidth * 0.04);
+        const fontSize = Math.max(4, tileWidth * 0.02);
         ctx.fillStyle = "#000000";
         ctx.font = `${fontSize}px sans-serif`;
         ctx.textAlign = "center";
