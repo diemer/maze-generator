@@ -39,7 +39,7 @@ download.setAttribute("download", "maze.png");
 
 function initMaze() {
     download.setAttribute("download", "maze.png");
-    download.innerHTML = "download maze";
+    download.innerHTML = "Download Maze";
 
     // Build tileset from input fields
     const tileWallLeft = document.getElementById("tile-wall-left");
@@ -308,7 +308,7 @@ function initSolve() {
     }
 
     download.setAttribute("download", "maze-solved.png");
-    download.innerHTML = "download solved maze";
+    download.innerHTML = "Download Solved Maze";
 
     if (typeof mazeNodes.matrix === "undefined" || !mazeNodes.matrix.length) {
         return;
