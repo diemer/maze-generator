@@ -616,7 +616,9 @@
       color: #666;
       border-bottom: 2px solid transparent;
       margin-bottom: -1px;
-      transition: color 0.2s, border-color 0.2s;
+      transition:
+        color 0.2s,
+        border-color 0.2s;
     }
 
     .settings-tab:hover {
@@ -681,7 +683,9 @@
       border: 1px solid #ddd;
       border-radius: 4px;
       cursor: pointer;
-      transition: border-color 0.2s, background 0.2s;
+      transition:
+        border-color 0.2s,
+        background 0.2s;
     }
 
     .saved-map-item:hover {
@@ -812,7 +816,10 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+      transition:
+        transform 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
     }
 
     .fab-generate:hover {
@@ -996,314 +1003,325 @@
 
   <div class="settings-panel hidden" id="settings-panel">
     <div class="settings-tabs">
-      <button type="button" class="settings-tab active" data-tab="maps">Saved Maps</button>
-      <button type="button" class="settings-tab" data-tab="settings">Settings</button>
+      <button type="button" class="settings-tab active" data-tab="maps">
+        Saved Maps
+      </button>
+      <button type="button" class="settings-tab" data-tab="settings">
+        Settings
+      </button>
     </div>
 
     <div class="settings-tab-content" data-tab-content="settings">
-    <div class="controls">
-      <p>
-        <label for="wall-size">Wall thickness:</label>
-        <input id="wall-size" type="number" name="" value="10" min="1" />
-      </p>
+      <div class="controls">
+        <p>
+          <label for="wall-size">Wall thickness:</label>
+          <input id="wall-size" type="number" name="" value="10" min="1" />
+        </p>
 
-      <p>
-        <label for="display-scale">Display scale:</label>
-        <input id="display-scale" type="number" name="" value="5" min="0.25" max="4" step="0.25" />
-      </p>
+        <p>
+          <label for="display-scale">Display scale:</label>
+          <input id="display-scale" type="number" name="" value="5" min="0.25" max="4" step="0.25" />
+        </p>
 
-      <p>
-        <label for="iso-ratio">Isometric angle:</label>
-        <select id="iso-ratio" name="iso-ratio">
-          <option value="0.5" selected>2:1 Pixel art (~27°)</option>
-          <option value="0.577">True isometric (~30°)</option>
-          <option value="0.25">Flat (4:1, ~14°)</option>
-          <option value="0.75">Steep (4:3, ~37°)</option>
-          <option value="1.0">Square (1:1, 45°)</option>
-        </select>
-      </p>
+        <p>
+          <label for="iso-ratio">Isometric angle:</label>
+          <select id="iso-ratio" name="iso-ratio">
+            <option value="0.5" selected>2:1 Pixel art (~27°)</option>
+            <option value="0.577">True isometric (~30°)</option>
+            <option value="0.25">Flat (4:1, ~14°)</option>
+            <option value="0.75">Steep (4:3, ~37°)</option>
+            <option value="1.0">Square (1:1, 45°)</option>
+          </select>
+        </p>
 
-      <p>
-        <label for="path-width">Path width:</label>
-        <input id="path-width" type="number" name="" value="3" min="1" max="5" step="1" />
-      </p>
+        <p>
+          <label for="path-width">Path width:</label>
+          <input id="path-width" type="number" name="" value="3" min="1" max="5" step="1" />
+        </p>
 
-      <p>
-        <label for="path-height">Path height:</label>
-        <input id="path-height" type="number" name="" value="3" min="1" max="5" step="1" />
-      </p>
+        <p>
+          <label for="path-height">Path height:</label>
+          <input id="path-height" type="number" name="" value="3" min="1" max="5" step="1" />
+        </p>
 
-      <p>
-        <label for="width">Columns:</label>
-        <input id="width" type="number" name="width" value="10" min="3" max="200" />
-      </p>
+        <p>
+          <label for="width">Columns:</label>
+          <input id="width" type="number" name="width" value="10" min="3" max="200" />
+        </p>
 
-      <p>
-        <label for="height">Rows:</label>
-        <input id="height" type="number" name="height" value="10" min="3" max="200" />
-      </p>
-      <p>
-        <label for="entry">Maze entries:</label>
-        <select id="entry" name="entry">
-          <option value="">none</option>
-          <option value="diagonal" selected="selected">diagonal (NW-SE)</option>
-          <option value="diagonal-alt">diagonal (NE-SW)</option>
-          <option value="diagonal-random">diagonal (random)</option>
-          <option value="horizontal">left and right</option>
-          <option value="vertical">top and bottom</option>
-        </select>
-      </p>
-      <p>
-        <label for="bias">Bias:</label>
-        <select id="bias" name="bias">
-          <option value="">none</option>
-          <option value="horizontal">horizontal</option>
-          <option value="vertical">vertical</option>
-        </select>
-      </p>
-      <p>
-        <label for="remove_walls">Remove maze walls:</label>
-        <input id="remove_walls" type="number" name="remove_walls" value="0" min="0" max="200" />
-      </p>
-      <p class="desc">
-        Click the colors below to select a color from a color pallete.
-      </p>
-      <div class="color-picker" data-default="#ffffff">
-        <label for="backgroundColor">Background Color</label>
-        <input type="text" class="" id="backgroundColor" name="backgroundColor" value="#ffffff" />
-        <div class="color-sample" style="background-color: #ffffff"></div>
-      </div>
-      <div class="color-picker" data-default="#000000">
-        <label for="color">Maze Color</label>
-        <input type="text" class="" id="color" name="color" value="#000000" />
-        <div class="color-sample" style="background-color: #000000"></div>
-      </div>
-      <div class="color-picker" data-default="#cc3737">
-        <label for="solveColor">Solve Color</label>
-        <input type="text" class="" id="solveColor" name="solveColor" value="#cc3737"
-          pattern="^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$" />
-        <div class="color-sample" style="background-color: #cc3737"></div>
-      </div>
-      <p>
-        <label for="export-format">Export format:</label>
-        <select id="export-format" name="export-format">
-          <option value="png" selected="selected">PNG</option>
-          <option value="svg">SVG</option>
-        </select>
-      </p>
-      <p class="desc">
-        Custom tileset (optional). Select from local assets or enter a URL.
-        Leave empty to use default programmatic rendering.
-      </p>
-      <p>
-        <label for="wall-height">Wall height:</label>
-        <input id="wall-height" type="number" name="wall-height" value="1.5" min="0.5" max="3" step="0.25" />
-      </p>
-      <p>
-        <label for="show-stroke">Show strokes:</label>
-        <input id="show-stroke" type="checkbox" name="show-stroke" checked />
-      </p>
-      <p>
-        <label for="stroke-top">Stroke top:</label>
-        <input id="stroke-top" type="checkbox" name="stroke-top" checked />
-      </p>
-      <p>
-        <label for="stroke-bottom">Stroke bottom:</label>
-        <input id="stroke-bottom" type="checkbox" name="stroke-bottom" checked />
-      </p>
-      <p>
-        <label for="stroke-corners">Stroke corners:</label>
-        <input id="stroke-corners" type="checkbox" name="stroke-corners" />
-      </p>
-      <p>
-        <label for="stroke-wall-corners">Wall corners only:</label>
-        <input id="stroke-wall-corners" type="checkbox" name="stroke-wall-corners" checked />
-      </p>
-      <p>
-        <label for="stroke-width">Stroke width:</label>
-        <input id="stroke-width" type="number" name="stroke-width" value="1" min="0" max="5" step="0.5" />
-      </p>
-      <p>
-        <label for="debug-stroke-colors">Debug stroke colors:</label>
-        <input id="debug-stroke-colors" type="checkbox" name="debug-stroke-colors" />
-      </p>
-      <p>
-        <label for="debug-test-pattern">Debug test pattern:</label>
-        <input id="debug-test-pattern" type="checkbox" name="debug-test-pattern" />
-        <span style="font-size: smaller; color: #666">(Shows numbered wall configurations)</span>
-      </p>
-      <p>
-        <label for="tight-spacing">Tight spacing:</label>
-        <input id="tight-spacing" type="checkbox" name="tight-spacing" />
-        <span style="font-size: smaller; color: #666">(Seamless floor tiles for tilesets)</span>
-      </p>
-      <div class="color-picker" data-default="">
-        <label for="wall-bg-color">Wall bg color:</label>
-        <input type="text" id="wall-bg-color" name="wall-bg-color" value="#FFFFFF"
-          placeholder="Optional, e.g. #8B4513" />
-        <div class="color-sample" style="background-color: transparent"></div>
-      </div>
-      <div class="asset-picker">
-        <label for="tile-wall-left">Wall left face:</label>
-        <div class="asset-picker-controls">
-          <input id="tile-wall-left" type="text" name="tile-wall-left" value="src/assets/isobrickswall-left.png"
-            placeholder="URL or select..." />
-          <button type="button" class="picker-toggle">Browse</button>
-          <button type="button" class="clear-btn">Clear</button>
-          <div class="selected-preview"></div>
+        <p>
+          <label for="height">Rows:</label>
+          <input id="height" type="number" name="height" value="10" min="3" max="200" />
+        </p>
+        <p>
+          <label for="entry">Maze entries:</label>
+          <select id="entry" name="entry">
+            <option value="">none</option>
+            <option value="diagonal">diagonal (NW-SE)</option>
+            <option value="diagonal-alt">diagonal (NE-SW)</option>
+            <option value="diagonal-random" selected="selected">
+              random
+            </option>
+            <option value="horizontal">left and right</option>
+            <option value="vertical">top and bottom</option>
+            <option value="left">both on left</option>
+            <option value="right">both on right</option>
+            <option value="top">both on top</option>
+            <option value="bottom">both on bottom</option>
+          </select>
+        </p>
+        <p>
+          <label for="bias">Bias:</label>
+          <select id="bias" name="bias">
+            <option value="">none</option>
+            <option value="horizontal">horizontal</option>
+            <option value="vertical">vertical</option>
+          </select>
+        </p>
+        <p>
+          <label for="remove_walls">Remove maze walls:</label>
+          <input id="remove_walls" type="number" name="remove_walls" value="0" min="0" max="200" />
+        </p>
+        <p class="desc">
+          Click the colors below to select a color from a color pallete.
+        </p>
+        <div class="color-picker" data-default="#ffffff">
+          <label for="backgroundColor">Background Color</label>
+          <input type="text" class="" id="backgroundColor" name="backgroundColor" value="#ffffff" />
+          <div class="color-sample" style="background-color: #ffffff"></div>
         </div>
-        <div class="asset-grid"></div>
-      </div>
-      <div class="asset-picker">
-        <label for="tile-wall-right">Wall right face:</label>
-        <div class="asset-picker-controls">
-          <input id="tile-wall-right" type="text" name="tile-wall-right" value="src/assets/isobrickswall-right.png"
-            placeholder="URL or select..." />
-          <button type="button" class="picker-toggle">Browse</button>
-          <button type="button" class="clear-btn">Clear</button>
-          <div class="selected-preview"></div>
+        <div class="color-picker" data-default="#000000">
+          <label for="color">Maze Color</label>
+          <input type="text" class="" id="color" name="color" value="#000000" />
+          <div class="color-sample" style="background-color: #000000"></div>
         </div>
-        <div class="asset-grid"></div>
-      </div>
-      <div class="asset-picker" data-multi="true">
-        <label for="tile-pathway">Pathway tiles:</label>
-        <div class="asset-picker-controls">
-          <input id="tile-pathway" type="text" name="tile-pathway" value="" placeholder="URL or select multiple..." />
-          <button type="button" class="picker-toggle">Browse</button>
-          <button type="button" class="add-blank-btn">+ Blank</button>
-          <button type="button" class="clear-btn">Clear All</button>
+        <div class="color-picker" data-default="#cc3737">
+          <label for="solveColor">Solve Color</label>
+          <input type="text" class="" id="solveColor" name="solveColor" value="#cc3737"
+            pattern="^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$" />
+          <div class="color-sample" style="background-color: #cc3737"></div>
         </div>
-        <div class="selected-tiles"></div>
-        <div class="asset-grid"></div>
-      </div>
-      <p class="desc" style="margin-top: 1em">
-        Start/End markers (directional). Use N/S/E/W variants based on gate
-        direction.
-      </p>
-      <p>
-        <label>End marker preset:</label>
-        <button type="button" id="preset-stairs" class="preset-btn">
-          Stairs
-        </button>
-        <button type="button" id="preset-door" class="preset-btn">
-          Door
-        </button>
-      </p>
-      <p>
-        <label for="end-marker-offset">End marker Y offset:</label>
-        <input id="end-marker-offset" type="number" name="end-marker-offset" value="-3.25" min="-20" max="20"
-          step=".25" />
-        <span style="font-size: smaller; color: #666">(Vertical, positive = down)</span>
-      </p>
-      <p>
-        <label for="end-marker-offset-x">End marker X offset:</label>
-        <input id="end-marker-offset-x" type="number" name="end-marker-offset-x" value="0" min="-20" max="20"
-          step=".25" />
-        <span style="font-size: smaller; color: #666">(Horizontal, positive = right)</span>
-      </p>
-      <div class="asset-picker">
-        <label for="tile-start-n">Start (North):</label>
-        <div class="asset-picker-controls">
-          <input id="tile-start-n" type="text" name="tile-start-n" value="src/assets/isostair3.png"
-            placeholder="URL or select..." />
-          <button type="button" class="picker-toggle">Browse</button>
-          <button type="button" class="clear-btn">Clear</button>
-          <div class="selected-preview"></div>
+        <p>
+          <label for="export-format">Export format:</label>
+          <select id="export-format" name="export-format">
+            <option value="png" selected="selected">PNG</option>
+            <option value="svg">SVG</option>
+          </select>
+        </p>
+        <p class="desc">
+          Custom tileset (optional). Select from local assets or enter a URL.
+          Leave empty to use default programmatic rendering.
+        </p>
+        <p>
+          <label for="wall-height">Wall height:</label>
+          <input id="wall-height" type="number" name="wall-height" value="1.5" min="0.5" max="3" step="0.25" />
+        </p>
+        <p>
+          <label for="show-stroke">Show strokes:</label>
+          <input id="show-stroke" type="checkbox" name="show-stroke" checked />
+        </p>
+        <p>
+          <label for="stroke-top">Stroke top:</label>
+          <input id="stroke-top" type="checkbox" name="stroke-top" checked />
+        </p>
+        <p>
+          <label for="stroke-bottom">Stroke bottom:</label>
+          <input id="stroke-bottom" type="checkbox" name="stroke-bottom" checked />
+        </p>
+        <p>
+          <label for="stroke-corners">Stroke corners:</label>
+          <input id="stroke-corners" type="checkbox" name="stroke-corners" />
+        </p>
+        <p>
+          <label for="stroke-wall-corners">Wall corners only:</label>
+          <input id="stroke-wall-corners" type="checkbox" name="stroke-wall-corners" checked />
+        </p>
+        <p>
+          <label for="stroke-width">Stroke width:</label>
+          <input id="stroke-width" type="number" name="stroke-width" value="1" min="0" max="5" step="0.5" />
+        </p>
+        <p>
+          <label for="debug-stroke-colors">Debug stroke colors:</label>
+          <input id="debug-stroke-colors" type="checkbox" name="debug-stroke-colors" />
+        </p>
+        <p>
+          <label for="debug-test-pattern">Debug test pattern:</label>
+          <input id="debug-test-pattern" type="checkbox" name="debug-test-pattern" />
+          <span style="font-size: smaller; color: #666">(Shows numbered wall configurations)</span>
+        </p>
+        <p>
+          <label for="tight-spacing">Tight spacing:</label>
+          <input id="tight-spacing" type="checkbox" name="tight-spacing" />
+          <span style="font-size: smaller; color: #666">(Seamless floor tiles for tilesets)</span>
+        </p>
+        <div class="color-picker" data-default="">
+          <label for="wall-bg-color">Wall bg color:</label>
+          <input type="text" id="wall-bg-color" name="wall-bg-color" value="#FFFFFF"
+            placeholder="Optional, e.g. #8B4513" />
+          <div class="color-sample" style="background-color: transparent"></div>
         </div>
-        <div class="asset-grid"></div>
-      </div>
-      <div class="asset-picker">
-        <label for="tile-start-s">Start (South):</label>
-        <div class="asset-picker-controls">
-          <input id="tile-start-s" type="text" name="tile-start-s" value="src/assets/isostair.png"
-            placeholder="URL or select..." />
-          <button type="button" class="picker-toggle">Browse</button>
-          <button type="button" class="clear-btn">Clear</button>
-          <div class="selected-preview"></div>
+        <div class="asset-picker">
+          <label for="tile-wall-left">Wall left face:</label>
+          <div class="asset-picker-controls">
+            <input id="tile-wall-left" type="text" name="tile-wall-left" value="src/assets/isobrickswall-left.png"
+              placeholder="URL or select..." />
+            <button type="button" class="picker-toggle">Browse</button>
+            <button type="button" class="clear-btn">Clear</button>
+            <div class="selected-preview"></div>
+          </div>
+          <div class="asset-grid"></div>
         </div>
-        <div class="asset-grid"></div>
-      </div>
-      <div class="asset-picker">
-        <label for="tile-start-e">Start (East):</label>
-        <div class="asset-picker-controls">
-          <input id="tile-start-e" type="text" name="tile-start-e" value="src/assets/isostair4.png"
-            placeholder="URL or select..." />
-          <button type="button" class="picker-toggle">Browse</button>
-          <button type="button" class="clear-btn">Clear</button>
-          <div class="selected-preview"></div>
+        <div class="asset-picker">
+          <label for="tile-wall-right">Wall right face:</label>
+          <div class="asset-picker-controls">
+            <input id="tile-wall-right" type="text" name="tile-wall-right" value="src/assets/isobrickswall-right.png"
+              placeholder="URL or select..." />
+            <button type="button" class="picker-toggle">Browse</button>
+            <button type="button" class="clear-btn">Clear</button>
+            <div class="selected-preview"></div>
+          </div>
+          <div class="asset-grid"></div>
         </div>
-        <div class="asset-grid"></div>
-      </div>
-      <div class="asset-picker">
-        <label for="tile-start-w">Start (West):</label>
-        <div class="asset-picker-controls">
-          <input id="tile-start-w" type="text" name="tile-start-w" value="src/assets/isostair2.png"
-            placeholder="URL or select..." />
-          <button type="button" class="picker-toggle">Browse</button>
-          <button type="button" class="clear-btn">Clear</button>
-          <div class="selected-preview"></div>
+        <div class="asset-picker" data-multi="true">
+          <label for="tile-pathway">Pathway tiles:</label>
+          <div class="asset-picker-controls">
+            <input id="tile-pathway" type="text" name="tile-pathway" value="" placeholder="URL or select multiple..." />
+            <button type="button" class="picker-toggle">Browse</button>
+            <button type="button" class="add-blank-btn">+ Blank</button>
+            <button type="button" class="clear-btn">Clear All</button>
+          </div>
+          <div class="selected-tiles"></div>
+          <div class="asset-grid"></div>
         </div>
-        <div class="asset-grid"></div>
-      </div>
-      <div class="asset-picker">
-        <label for="tile-end-n">End (North):</label>
-        <div class="asset-picker-controls">
-          <input id="tile-end-n" type="text" name="tile-end-n" value="src/assets/isostair.png"
-            placeholder="URL or select..." />
-          <button type="button" class="picker-toggle">Browse</button>
-          <button type="button" class="clear-btn">Clear</button>
-          <div class="selected-preview"></div>
+        <p class="desc" style="margin-top: 1em">
+          Start/End markers (directional). Use N/S/E/W variants based on gate
+          direction.
+        </p>
+        <p>
+          <label>End marker preset:</label>
+          <button type="button" id="preset-stairs" class="preset-btn">
+            Stairs
+          </button>
+          <button type="button" id="preset-door" class="preset-btn">
+            Door
+          </button>
+        </p>
+        <p>
+          <label for="end-marker-offset">End marker Y offset:</label>
+          <input id="end-marker-offset" type="number" name="end-marker-offset" value="-3.25" min="-20" max="20"
+            step=".25" />
+          <span style="font-size: smaller; color: #666">(Vertical, positive = down)</span>
+        </p>
+        <p>
+          <label for="end-marker-offset-x">End marker X offset:</label>
+          <input id="end-marker-offset-x" type="number" name="end-marker-offset-x" value="0" min="-20" max="20"
+            step=".25" />
+          <span style="font-size: smaller; color: #666">(Horizontal, positive = right)</span>
+        </p>
+        <div class="asset-picker">
+          <label for="tile-start-n">Start (North):</label>
+          <div class="asset-picker-controls">
+            <input id="tile-start-n" type="text" name="tile-start-n" value="src/assets/isostair.png"
+              placeholder="URL or select..." />
+            <button type="button" class="picker-toggle">Browse</button>
+            <button type="button" class="clear-btn">Clear</button>
+            <div class="selected-preview"></div>
+          </div>
+          <div class="asset-grid"></div>
         </div>
-        <div class="asset-grid"></div>
-      </div>
-      <div class="asset-picker">
-        <label for="tile-end-s">End (South):</label>
-        <div class="asset-picker-controls">
-          <input id="tile-end-s" type="text" name="tile-end-s" value="src/assets/isostair3.png"
-            placeholder="URL or select..." />
-          <button type="button" class="picker-toggle">Browse</button>
-          <button type="button" class="clear-btn">Clear</button>
-          <div class="selected-preview"></div>
+        <div class="asset-picker">
+          <label for="tile-start-s">Start (South):</label>
+          <div class="asset-picker-controls">
+            <input id="tile-start-s" type="text" name="tile-start-s" value="src/assets/isostair.png"
+              placeholder="URL or select..." />
+            <button type="button" class="picker-toggle">Browse</button>
+            <button type="button" class="clear-btn">Clear</button>
+            <div class="selected-preview"></div>
+          </div>
+          <div class="asset-grid"></div>
         </div>
-        <div class="asset-grid"></div>
-      </div>
-      <div class="asset-picker">
-        <label for="tile-end-e">End (East):</label>
-        <div class="asset-picker-controls">
-          <input id="tile-end-e" type="text" name="tile-end-e" value="src/assets/isostair2.png"
-            placeholder="URL or select..." />
-          <button type="button" class="picker-toggle">Browse</button>
-          <button type="button" class="clear-btn">Clear</button>
-          <div class="selected-preview"></div>
+        <div class="asset-picker">
+          <label for="tile-start-e">Start (East):</label>
+          <div class="asset-picker-controls">
+            <input id="tile-start-e" type="text" name="tile-start-e" value="src/assets/isostair2.png"
+              placeholder="URL or select..." />
+            <button type="button" class="picker-toggle">Browse</button>
+            <button type="button" class="clear-btn">Clear</button>
+            <div class="selected-preview"></div>
+          </div>
+          <div class="asset-grid"></div>
         </div>
-        <div class="asset-grid"></div>
-      </div>
-      <div class="asset-picker">
-        <label for="tile-end-w">End (West):</label>
-        <div class="asset-picker-controls">
-          <input id="tile-end-w" type="text" name="tile-end-w" value="src/assets/isostair4.png"
-            placeholder="URL or select..." />
-          <button type="button" class="picker-toggle">Browse</button>
-          <button type="button" class="clear-btn">Clear</button>
-          <div class="selected-preview"></div>
+        <div class="asset-picker">
+          <label for="tile-start-w">Start (West):</label>
+          <div class="asset-picker-controls">
+            <input id="tile-start-w" type="text" name="tile-start-w" value="src/assets/isostair2.png"
+              placeholder="URL or select..." />
+            <button type="button" class="picker-toggle">Browse</button>
+            <button type="button" class="clear-btn">Clear</button>
+            <div class="selected-preview"></div>
+          </div>
+          <div class="asset-grid"></div>
         </div>
-        <div class="asset-grid"></div>
-      </div>
-      <div id="generate">
-        <button id="create-maze" onclick="initMaze();" class="hide">
-          Generate Maze
-        </button>
-        <a href="" class="hide" id="download">Download Maze</a>
+        <div class="asset-picker">
+          <label for="tile-end-n">End (North):</label>
+          <div class="asset-picker-controls">
+            <input id="tile-end-n" type="text" name="tile-end-n" value="src/assets/isostair.png"
+              placeholder="URL or select..." />
+            <button type="button" class="picker-toggle">Browse</button>
+            <button type="button" class="clear-btn">Clear</button>
+            <div class="selected-preview"></div>
+          </div>
+          <div class="asset-grid"></div>
+        </div>
+        <div class="asset-picker">
+          <label for="tile-end-s">End (South):</label>
+          <div class="asset-picker-controls">
+            <input id="tile-end-s" type="text" name="tile-end-s" value="src/assets/isostair.png"
+              placeholder="URL or select..." />
+            <button type="button" class="picker-toggle">Browse</button>
+            <button type="button" class="clear-btn">Clear</button>
+            <div class="selected-preview"></div>
+          </div>
+          <div class="asset-grid"></div>
+        </div>
+        <div class="asset-picker">
+          <label for="tile-end-e">End (East):</label>
+          <div class="asset-picker-controls">
+            <input id="tile-end-e" type="text" name="tile-end-e" value="src/assets/isostair2.png"
+              placeholder="URL or select..." />
+            <button type="button" class="picker-toggle">Browse</button>
+            <button type="button" class="clear-btn">Clear</button>
+            <div class="selected-preview"></div>
+          </div>
+          <div class="asset-grid"></div>
+        </div>
+        <div class="asset-picker">
+          <label for="tile-end-w">End (West):</label>
+          <div class="asset-picker-controls">
+            <input id="tile-end-w" type="text" name="tile-end-w" value="src/assets/isostair2.png"
+              placeholder="URL or select..." />
+            <button type="button" class="picker-toggle">Browse</button>
+            <button type="button" class="clear-btn">Clear</button>
+            <div class="selected-preview"></div>
+          </div>
+          <div class="asset-grid"></div>
+        </div>
+        <div id="generate">
+          <button id="create-maze" onclick="initMaze();" class="hide">
+            Generate Maze
+          </button>
+          <a href="" class="hide" id="download">Download Maze</a>
+        </div>
       </div>
     </div>
-    </div><!-- End settings tab content -->
+    <!-- End settings tab content -->
 
     <div class="settings-tab-content active" data-tab-content="maps">
       <div class="map-browser">
         <div class="save-map-section">
           <label for="save-map-name">Save Current Map</label>
           <div class="save-map-row">
-            <input type="text" id="save-map-name" placeholder="Enter map name...">
+            <input type="text" id="save-map-name" placeholder="Enter map name..." />
             <button type="button" id="save-map-btn">Save</button>
           </div>
         </div>
@@ -1312,7 +1330,8 @@
           <div class="no-saved-maps">No saved maps yet</div>
         </div>
       </div>
-    </div><!-- End maps tab content -->
+    </div>
+    <!-- End maps tab content -->
   </div>
   <!-- End settings-panel -->
 
@@ -1399,7 +1418,7 @@
   <button type="button" class="fab-generate" id="fab-generate" title="Generate New Maze">
     <span class="fab-tooltip">New Maze</span>
     <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+      <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
     </svg>
   </button>
 
@@ -1473,40 +1492,48 @@
       }
 
       // Settings panel tabs
-      var tabs = document.querySelectorAll('.settings-tab');
-      var tabContents = document.querySelectorAll('.settings-tab-content');
+      var tabs = document.querySelectorAll(".settings-tab");
+      var tabContents = document.querySelectorAll(".settings-tab-content");
 
-      tabs.forEach(function(tab) {
-        tab.addEventListener('click', function() {
-          var targetTab = this.getAttribute('data-tab');
+      tabs.forEach(function (tab) {
+        tab.addEventListener("click", function () {
+          var targetTab = this.getAttribute("data-tab");
 
           // Update tab buttons
-          tabs.forEach(function(t) { t.classList.remove('active'); });
-          this.classList.add('active');
+          tabs.forEach(function (t) {
+            t.classList.remove("active");
+          });
+          this.classList.add("active");
 
           // Update tab content
-          tabContents.forEach(function(content) {
-            content.classList.remove('active');
-            if (content.getAttribute('data-tab-content') === targetTab) {
-              content.classList.add('active');
+          tabContents.forEach(function (content) {
+            content.classList.remove("active");
+            if (content.getAttribute("data-tab-content") === targetTab) {
+              content.classList.add("active");
             }
           });
 
           // Refresh saved maps list when switching to maps tab
-          if (targetTab === 'maps') {
+          if (targetTab === "maps") {
             renderSavedMapsList();
           }
         });
       });
 
       // Local Storage Map Management
-      var STORAGE_KEY = 'maze-generator-saved-maps';
+      var STORAGE_KEY = "maze-generator-saved-maps";
 
       function generateMapName() {
         var now = new Date();
-        var date = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        var time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-        return 'Maze ' + date + ' ' + time;
+        var date = now.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
+        var time = now.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        return "Maze " + date + " " + time;
       }
 
       function getSavedMaps() {
@@ -1514,7 +1541,7 @@
           var data = localStorage.getItem(STORAGE_KEY);
           return data ? JSON.parse(data) : [];
         } catch (e) {
-          console.warn('Failed to load saved maps:', e);
+          console.warn("Failed to load saved maps:", e);
           return [];
         }
       }
@@ -1523,31 +1550,31 @@
         try {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(maps));
         } catch (e) {
-          console.warn('Failed to save maps:', e);
-          alert('Failed to save map. Local storage may be full.');
+          console.warn("Failed to save maps:", e);
+          alert("Failed to save map. Local storage may be full.");
         }
       }
 
       function generateThumbnail() {
-        var canvas = document.getElementById('maze');
+        var canvas = document.getElementById("maze");
         if (!canvas) return null;
 
         // Create a smaller thumbnail
-        var thumbCanvas = document.createElement('canvas');
+        var thumbCanvas = document.createElement("canvas");
         var maxSize = 160;
         var scale = Math.min(maxSize / canvas.width, maxSize / canvas.height);
         thumbCanvas.width = canvas.width * scale;
         thumbCanvas.height = canvas.height * scale;
 
-        var ctx = thumbCanvas.getContext('2d');
+        var ctx = thumbCanvas.getContext("2d");
         ctx.drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
 
-        return thumbCanvas.toDataURL('image/jpeg', 0.7);
+        return thumbCanvas.toDataURL("image/jpeg", 0.7);
       }
 
       function saveCurrentMap(name) {
-        if (typeof mazeNodes === 'undefined' || !mazeNodes.exportMaze) {
-          alert('No maze to save');
+        if (typeof mazeNodes === "undefined" || !mazeNodes.exportMaze) {
+          alert("No maze to save");
           return;
         }
 
@@ -1557,7 +1584,7 @@
           name: name || generateMapName(),
           data: mazeNodes.exportMaze(),
           thumbnail: generateThumbnail(),
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
 
         maps.unshift(mapData); // Add to beginning
@@ -1569,45 +1596,54 @@
 
       function loadMap(mapId) {
         var maps = getSavedMaps();
-        var map = maps.find(function(m) { return m.id === mapId; });
+        var map = maps.find(function (m) {
+          return m.id === mapId;
+        });
 
         if (!map) {
-          alert('Map not found');
+          alert("Map not found");
           return;
         }
 
-        if (typeof mazeNodes === 'undefined' || !mazeNodes.importMaze) {
-          alert('Maze not initialized');
+        if (typeof mazeNodes === "undefined" || !mazeNodes.importMaze) {
+          alert("Maze not initialized");
           return;
         }
 
         if (mazeNodes.importMaze(map.data)) {
-          mazeNodes.loadDecorations().then(function() {
+          mazeNodes.loadDecorations().then(function () {
             mazeNodes.draw();
-            if (typeof TilePlacement !== 'undefined' && TilePlacement.saveCanvasState) {
+            if (
+              typeof TilePlacement !== "undefined" &&
+              TilePlacement.saveCanvasState
+            ) {
               TilePlacement.saveCanvasState();
             }
           });
         } else {
-          alert('Failed to load map');
+          alert("Failed to load map");
         }
       }
 
       function deleteMap(mapId) {
-        if (!confirm('Delete this map?')) return;
+        if (!confirm("Delete this map?")) return;
 
         var maps = getSavedMaps();
-        maps = maps.filter(function(m) { return m.id !== mapId; });
+        maps = maps.filter(function (m) {
+          return m.id !== mapId;
+        });
         saveMapsToStorage(maps);
         renderSavedMapsList();
       }
 
       function renameMap(mapId) {
         var maps = getSavedMaps();
-        var map = maps.find(function(m) { return m.id === mapId; });
+        var map = maps.find(function (m) {
+          return m.id === mapId;
+        });
         if (!map) return;
 
-        var newName = prompt('Enter new name:', map.name);
+        var newName = prompt("Enter new name:", map.name);
         if (newName && newName.trim()) {
           map.name = newName.trim();
           saveMapsToStorage(maps);
@@ -1618,112 +1654,147 @@
       var draggedItem = null;
 
       function renderSavedMapsList() {
-        var container = document.getElementById('saved-maps-list');
+        var container = document.getElementById("saved-maps-list");
         if (!container) return;
 
         var maps = getSavedMaps();
 
         if (maps.length === 0) {
-          container.innerHTML = '<div class="no-saved-maps">No saved maps yet</div>';
+          container.innerHTML =
+            '<div class="no-saved-maps">No saved maps yet</div>';
           return;
         }
 
-        var dragHandleSvg = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 6a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0 7.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0 7.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm6-15a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0 7.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0 7.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>';
+        var dragHandleSvg =
+          '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 6a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0 7.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0 7.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm6-15a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0 7.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0 7.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>';
 
-        container.innerHTML = maps.map(function(map) {
-          var date = new Date(map.timestamp);
-          var dateStr = date.toLocaleDateString('en-US', {
-            month: 'short', day: 'numeric', year: 'numeric'
-          });
+        container.innerHTML = maps
+          .map(function (map) {
+            var date = new Date(map.timestamp);
+            var dateStr = date.toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            });
 
-          return '<div class="saved-map-item" data-map-id="' + map.id + '" draggable="true">' +
-            '<div class="drag-handle">' + dragHandleSvg + '</div>' +
-            '<div class="saved-map-thumbnail">' +
-            (map.thumbnail ? '<img src="' + map.thumbnail + '" alt="">' : '') +
-            '</div>' +
-            '<div class="saved-map-info">' +
-            '<div class="saved-map-name">' + escapeHtml(map.name) + '</div>' +
-            '<div class="saved-map-meta">' + dateStr + '</div>' +
-            '</div>' +
-            '<div class="saved-map-actions">' +
-            '<button type="button" class="rename-btn" data-map-id="' + map.id + '">Rename</button>' +
-            '<button type="button" class="delete-btn" data-map-id="' + map.id + '">Delete</button>' +
-            '</div>' +
-            '</div>';
-        }).join('');
+            return (
+              '<div class="saved-map-item" data-map-id="' +
+              map.id +
+              '" draggable="true">' +
+              '<div class="drag-handle">' +
+              dragHandleSvg +
+              "</div>" +
+              '<div class="saved-map-thumbnail">' +
+              (map.thumbnail
+                ? '<img src="' + map.thumbnail + '" alt="">'
+                : "") +
+              "</div>" +
+              '<div class="saved-map-info">' +
+              '<div class="saved-map-name">' +
+              escapeHtml(map.name) +
+              "</div>" +
+              '<div class="saved-map-meta">' +
+              dateStr +
+              "</div>" +
+              "</div>" +
+              '<div class="saved-map-actions">' +
+              '<button type="button" class="rename-btn" data-map-id="' +
+              map.id +
+              '">Rename</button>' +
+              '<button type="button" class="delete-btn" data-map-id="' +
+              map.id +
+              '">Delete</button>' +
+              "</div>" +
+              "</div>"
+            );
+          })
+          .join("");
 
         // Add click handlers
-        container.querySelectorAll('.saved-map-item').forEach(function(item) {
-          item.addEventListener('click', function(e) {
-            if (e.target.classList.contains('rename-btn') ||
-                e.target.classList.contains('delete-btn') ||
-                e.target.closest('.drag-handle')) {
-              return; // Handle separately
-            }
-            var mapId = this.getAttribute('data-map-id');
-            loadMap(mapId);
-          });
+        container
+          .querySelectorAll(".saved-map-item")
+          .forEach(function (item) {
+            item.addEventListener("click", function (e) {
+              if (
+                e.target.classList.contains("rename-btn") ||
+                e.target.classList.contains("delete-btn") ||
+                e.target.closest(".drag-handle")
+              ) {
+                return; // Handle separately
+              }
+              var mapId = this.getAttribute("data-map-id");
+              loadMap(mapId);
+            });
 
-          // Drag and drop handlers
-          item.addEventListener('dragstart', function(e) {
-            draggedItem = this;
-            this.classList.add('dragging');
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', this.getAttribute('data-map-id'));
-          });
+            // Drag and drop handlers
+            item.addEventListener("dragstart", function (e) {
+              draggedItem = this;
+              this.classList.add("dragging");
+              e.dataTransfer.effectAllowed = "move";
+              e.dataTransfer.setData(
+                "text/plain",
+                this.getAttribute("data-map-id"),
+              );
+            });
 
-          item.addEventListener('dragend', function() {
-            this.classList.remove('dragging');
-            draggedItem = null;
-            container.querySelectorAll('.saved-map-item').forEach(function(i) {
-              i.classList.remove('drag-over');
+            item.addEventListener("dragend", function () {
+              this.classList.remove("dragging");
+              draggedItem = null;
+              container
+                .querySelectorAll(".saved-map-item")
+                .forEach(function (i) {
+                  i.classList.remove("drag-over");
+                });
+            });
+
+            item.addEventListener("dragover", function (e) {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+              if (draggedItem && draggedItem !== this) {
+                this.classList.add("drag-over");
+              }
+            });
+
+            item.addEventListener("dragleave", function () {
+              this.classList.remove("drag-over");
+            });
+
+            item.addEventListener("drop", function (e) {
+              e.preventDefault();
+              this.classList.remove("drag-over");
+
+              if (!draggedItem || draggedItem === this) return;
+
+              var draggedId = draggedItem.getAttribute("data-map-id");
+              var targetId = this.getAttribute("data-map-id");
+
+              reorderMaps(draggedId, targetId);
             });
           });
 
-          item.addEventListener('dragover', function(e) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            if (draggedItem && draggedItem !== this) {
-              this.classList.add('drag-over');
-            }
-          });
-
-          item.addEventListener('dragleave', function() {
-            this.classList.remove('drag-over');
-          });
-
-          item.addEventListener('drop', function(e) {
-            e.preventDefault();
-            this.classList.remove('drag-over');
-
-            if (!draggedItem || draggedItem === this) return;
-
-            var draggedId = draggedItem.getAttribute('data-map-id');
-            var targetId = this.getAttribute('data-map-id');
-
-            reorderMaps(draggedId, targetId);
+        container.querySelectorAll(".rename-btn").forEach(function (btn) {
+          btn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            renameMap(this.getAttribute("data-map-id"));
           });
         });
 
-        container.querySelectorAll('.rename-btn').forEach(function(btn) {
-          btn.addEventListener('click', function(e) {
+        container.querySelectorAll(".delete-btn").forEach(function (btn) {
+          btn.addEventListener("click", function (e) {
             e.stopPropagation();
-            renameMap(this.getAttribute('data-map-id'));
-          });
-        });
-
-        container.querySelectorAll('.delete-btn').forEach(function(btn) {
-          btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            deleteMap(this.getAttribute('data-map-id'));
+            deleteMap(this.getAttribute("data-map-id"));
           });
         });
       }
 
       function reorderMaps(draggedId, targetId) {
         var maps = getSavedMaps();
-        var draggedIndex = maps.findIndex(function(m) { return m.id === draggedId; });
-        var targetIndex = maps.findIndex(function(m) { return m.id === targetId; });
+        var draggedIndex = maps.findIndex(function (m) {
+          return m.id === draggedId;
+        });
+        var targetIndex = maps.findIndex(function (m) {
+          return m.id === targetId;
+        });
 
         if (draggedIndex === -1 || targetIndex === -1) return;
 
@@ -1736,21 +1807,21 @@
       }
 
       function escapeHtml(text) {
-        var div = document.createElement('div');
+        var div = document.createElement("div");
         div.textContent = text;
         return div.innerHTML;
       }
 
       // Save map button
-      var saveMapBtn = document.getElementById('save-map-btn');
-      var saveMapNameInput = document.getElementById('save-map-name');
+      var saveMapBtn = document.getElementById("save-map-btn");
+      var saveMapNameInput = document.getElementById("save-map-name");
 
       if (saveMapBtn) {
-        saveMapBtn.addEventListener('click', function() {
-          var name = saveMapNameInput ? saveMapNameInput.value.trim() : '';
+        saveMapBtn.addEventListener("click", function () {
+          var name = saveMapNameInput ? saveMapNameInput.value.trim() : "";
           var saved = saveCurrentMap(name);
           if (saved && saveMapNameInput) {
-            saveMapNameInput.value = '';
+            saveMapNameInput.value = "";
             alert('Map saved as "' + saved.name + '"');
           }
         });
@@ -1758,7 +1829,7 @@
 
       // Auto-generate name placeholder on focus
       if (saveMapNameInput) {
-        saveMapNameInput.addEventListener('focus', function() {
+        saveMapNameInput.addEventListener("focus", function () {
           if (!this.value) {
             this.placeholder = generateMapName();
           }
@@ -1769,24 +1840,32 @@
       renderSavedMapsList();
 
       // FAB - Generate New Maze button
-      var fabGenerate = document.getElementById('fab-generate');
+      var fabGenerate = document.getElementById("fab-generate");
       if (fabGenerate) {
-        fabGenerate.addEventListener('click', function() {
-          if (typeof initMaze === 'function') {
+        fabGenerate.addEventListener("click", function () {
+          if (typeof initMaze === "function") {
             initMaze();
           }
         });
       }
 
       // Live update entry positions when dropdown changes
-      var entrySelect = document.getElementById('entry');
+      var entrySelect = document.getElementById("entry");
       if (entrySelect) {
-        entrySelect.addEventListener('change', function() {
-          if (typeof mazeNodes !== 'undefined' && mazeNodes.setEntryType && mazeNodes.matrix && mazeNodes.matrix.length) {
+        entrySelect.addEventListener("change", function () {
+          if (
+            typeof mazeNodes !== "undefined" &&
+            mazeNodes.setEntryType &&
+            mazeNodes.matrix &&
+            mazeNodes.matrix.length
+          ) {
             mazeNodes.setEntryType(this.value);
             mazeNodes.draw();
             // Update canvas state for decoration preview
-            if (typeof TilePlacement !== 'undefined' && TilePlacement.saveCanvasState) {
+            if (
+              typeof TilePlacement !== "undefined" &&
+              TilePlacement.saveCanvasState
+            ) {
               TilePlacement.saveCanvasState();
             }
           }

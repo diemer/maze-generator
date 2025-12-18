@@ -305,9 +305,10 @@ Maze.prototype.setEntryType = function (entryType) {
   let entryNodes = {};
   let access = entryType;
 
-  // Handle random diagonal - pick one
+  // Handle random - pick any entry type
   if ("diagonal-random" === access) {
-    access = Math.random() < 0.5 ? "diagonal" : "diagonal-alt";
+    const options = ["diagonal", "diagonal-alt", "horizontal", "vertical", "left", "right", "top", "bottom"];
+    access = options[Math.floor(Math.random() * options.length)];
   }
 
   if ("diagonal" === access) {
@@ -339,6 +340,31 @@ Maze.prototype.setEntryType = function (entryType) {
 
     entryNodes.start = { x: start_x, y: start_y, gate: startgate };
     entryNodes.end = { x: end_x, y: end_y, gate: endgate };
+  }
+
+  // Same-side entries: start and end on the same wall
+  if ("left" === access) {
+    // Both on west wall (left side)
+    entryNodes.start = { x: 1, y: 1, gate: { x: 0, y: 1 } };
+    entryNodes.end = { x: 1, y: y, gate: { x: 0, y: y } };
+  }
+
+  if ("right" === access) {
+    // Both on east wall (right side)
+    entryNodes.start = { x: x, y: 1, gate: { x: x + 1, y: 1 } };
+    entryNodes.end = { x: x, y: y, gate: { x: x + 1, y: y } };
+  }
+
+  if ("top" === access) {
+    // Both on north wall (top side)
+    entryNodes.start = { x: 1, y: 1, gate: { x: 1, y: 0 } };
+    entryNodes.end = { x: x, y: 1, gate: { x: x, y: 0 } };
+  }
+
+  if ("bottom" === access) {
+    // Both on south wall (bottom side)
+    entryNodes.start = { x: 1, y: y, gate: { x: 1, y: y + 1 } };
+    entryNodes.end = { x: x, y: y, gate: { x: x, y: y + 1 } };
   }
 
   this.entryNodes = entryNodes;
@@ -679,9 +705,10 @@ Maze.prototype.getEntryNodes = function (access) {
 
   let entryNodes = {};
 
-  // Handle random diagonal - pick one
+  // Handle random - pick any entry type
   if ("diagonal-random" === access) {
-    access = Math.random() < 0.5 ? "diagonal" : "diagonal-alt";
+    const options = ["diagonal", "diagonal-alt", "horizontal", "vertical", "left", "right", "top", "bottom"];
+    access = options[Math.floor(Math.random() * options.length)];
   }
 
   if ("diagonal" === access) {
@@ -713,6 +740,31 @@ Maze.prototype.getEntryNodes = function (access) {
 
     entryNodes.start = { x: start_x, y: start_y, gate: startgate };
     entryNodes.end = { x: end_x, y: end_y, gate: endgate };
+  }
+
+  // Same-side entries: start and end on the same wall
+  if ("left" === access) {
+    // Both on west wall (left side)
+    entryNodes.start = { x: 1, y: 1, gate: { x: 0, y: 1 } };
+    entryNodes.end = { x: 1, y: y, gate: { x: 0, y: y } };
+  }
+
+  if ("right" === access) {
+    // Both on east wall (right side)
+    entryNodes.start = { x: x, y: 1, gate: { x: x + 1, y: 1 } };
+    entryNodes.end = { x: x, y: y, gate: { x: x + 1, y: y } };
+  }
+
+  if ("top" === access) {
+    // Both on north wall (top side)
+    entryNodes.start = { x: 1, y: 1, gate: { x: 1, y: 0 } };
+    entryNodes.end = { x: x, y: 1, gate: { x: x, y: 0 } };
+  }
+
+  if ("bottom" === access) {
+    // Both on south wall (bottom side)
+    entryNodes.start = { x: 1, y: y, gate: { x: 1, y: y + 1 } };
+    entryNodes.end = { x: x, y: y, gate: { x: x, y: y + 1 } };
   }
 
   return entryNodes;
