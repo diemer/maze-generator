@@ -291,6 +291,60 @@ Maze.prototype.importMaze = function (jsonString) {
 Maze.prototype.exportDecorations = Maze.prototype.exportMaze;
 Maze.prototype.importDecorations = Maze.prototype.importMaze;
 
+// Update entry nodes without regenerating the maze
+// Uses current matrix dimensions instead of original width/height
+Maze.prototype.setEntryType = function (entryType) {
+  if (!this.matrix.length) return;
+
+  // Calculate based on actual matrix dimensions
+  const matrixRows = this.matrix.length;
+  const matrixCols = this.matrix[0].length;
+  const y = matrixRows - 2; // Last non-border row
+  const x = matrixCols - 2; // Last non-border column
+
+  let entryNodes = {};
+  let access = entryType;
+
+  // Handle random diagonal - pick one
+  if ("diagonal-random" === access) {
+    access = Math.random() < 0.5 ? "diagonal" : "diagonal-alt";
+  }
+
+  if ("diagonal" === access) {
+    // NW to SE: start top-left (west wall), end bottom-right (east wall)
+    entryNodes.start = { x: 1, y: 1, gate: { x: 0, y: 1 } };
+    entryNodes.end = { x: x, y: y, gate: { x: x + 1, y: y } };
+  }
+
+  if ("diagonal-alt" === access) {
+    // NE to SW: start top-right (north wall), end bottom-left (south wall)
+    entryNodes.start = { x: x, y: 1, gate: { x: x, y: 0 } };
+    entryNodes.end = { x: 1, y: y, gate: { x: 1, y: y + 1 } };
+  }
+
+  if ("horizontal" === access || "vertical" === access) {
+    let xy = "horizontal" === access ? y : x;
+    xy = (xy - 1) / 2;
+    let even = xy % 2 === 0;
+    xy = even ? xy + 1 : xy;
+
+    let start_x = "horizontal" === access ? 1 : xy;
+    let start_y = "horizontal" === access ? xy : 1;
+    let end_x = "horizontal" === access ? x : even ? start_x : start_x + 2;
+    let end_y = "horizontal" === access ? (even ? start_y : start_y + 2) : y;
+    let startgate =
+      "horizontal" === access ? { x: 0, y: start_y } : { x: start_x, y: 0 };
+    let endgate =
+      "horizontal" === access ? { x: x + 1, y: end_y } : { x: end_x, y: y + 1 };
+
+    entryNodes.start = { x: start_x, y: start_y, gate: startgate };
+    entryNodes.end = { x: end_x, y: end_y, gate: endgate };
+  }
+
+  this.entryNodes = entryNodes;
+  return entryNodes;
+};
+
 // Determine the direction of a gate relative to its entry point
 // Returns 'N', 'S', 'E', or 'W'
 Maze.prototype.getGateDirection = function (entryX, entryY, gateX, gateY) {
@@ -625,9 +679,21 @@ Maze.prototype.getEntryNodes = function (access) {
 
   let entryNodes = {};
 
+  // Handle random diagonal - pick one
+  if ("diagonal-random" === access) {
+    access = Math.random() < 0.5 ? "diagonal" : "diagonal-alt";
+  }
+
   if ("diagonal" === access) {
+    // NW to SE: start top-left (west wall), end bottom-right (east wall)
     entryNodes.start = { x: 1, y: 1, gate: { x: 0, y: 1 } };
     entryNodes.end = { x: x, y: y, gate: { x: x + 1, y: y } };
+  }
+
+  if ("diagonal-alt" === access) {
+    // NE to SW: start top-right (north wall), end bottom-left (south wall)
+    entryNodes.start = { x: x, y: 1, gate: { x: x, y: 0 } };
+    entryNodes.end = { x: 1, y: y, gate: { x: 1, y: y + 1 } };
   }
 
   if ("horizontal" === access || "vertical" === access) {

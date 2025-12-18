@@ -1046,7 +1046,9 @@
         <label for="entry">Maze entries:</label>
         <select id="entry" name="entry">
           <option value="">none</option>
-          <option value="diagonal" selected="selected">diagonal</option>
+          <option value="diagonal" selected="selected">diagonal (NW-SE)</option>
+          <option value="diagonal-alt">diagonal (NE-SW)</option>
+          <option value="diagonal-random">diagonal (random)</option>
           <option value="horizontal">left and right</option>
           <option value="vertical">top and bottom</option>
         </select>
@@ -1772,6 +1774,21 @@
         fabGenerate.addEventListener('click', function() {
           if (typeof initMaze === 'function') {
             initMaze();
+          }
+        });
+      }
+
+      // Live update entry positions when dropdown changes
+      var entrySelect = document.getElementById('entry');
+      if (entrySelect) {
+        entrySelect.addEventListener('change', function() {
+          if (typeof mazeNodes !== 'undefined' && mazeNodes.setEntryType && mazeNodes.matrix && mazeNodes.matrix.length) {
+            mazeNodes.setEntryType(this.value);
+            mazeNodes.draw();
+            // Update canvas state for decoration preview
+            if (typeof TilePlacement !== 'undefined' && TilePlacement.saveCanvasState) {
+              TilePlacement.saveCanvasState();
+            }
           }
         });
       }
