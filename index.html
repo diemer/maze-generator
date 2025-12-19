@@ -1618,7 +1618,7 @@
         <div class="save-map-section">
           <label for="save-map-name">Save Current Map</label>
           <div class="save-map-row">
-            <input type="text" id="save-map-name" placeholder="Enter map name..." />
+            <input type="text" id="save-map-name" placeholder="Floor 1" />
             <button type="button" id="save-map-btn">Save</button>
           </div>
         </div>
@@ -2432,12 +2432,18 @@
       var saveMapBtn = document.getElementById("save-map-btn");
       var saveMapNameInput = document.getElementById("save-map-name");
 
+      function updateMapNameInput() {
+        if (saveMapNameInput) {
+          saveMapNameInput.value = generateMapName();
+        }
+      }
+
       if (saveMapBtn) {
         saveMapBtn.addEventListener("click", function () {
           var name = saveMapNameInput ? saveMapNameInput.value.trim() : "";
           var saved = saveCurrentMap(name);
-          if (saved && saveMapNameInput) {
-            saveMapNameInput.value = "";
+          if (saved) {
+            updateMapNameInput();
             alert('Map saved as "' + saved.name + '"');
           }
         });
@@ -2449,20 +2455,15 @@
         downloadAllBtn.addEventListener("click", downloadAllMaps);
       }
 
-      // Auto-generate name placeholder on focus
-      if (saveMapNameInput) {
-        saveMapNameInput.addEventListener("focus", function () {
-          if (!this.value) {
-            this.placeholder = generateMapName();
-          }
-        });
-      }
+      // Initialize map name input
+      updateMapNameInput();
 
       // Project selector event listeners
       var projectSelector = document.getElementById("current-project");
       if (projectSelector) {
         projectSelector.addEventListener("change", function() {
           setCurrentProjectId(this.value);
+          updateMapNameInput();
         });
       }
 
@@ -2475,6 +2476,7 @@
             var project = createProject(name.trim());
             setCurrentProjectId(project.id);
             renderProjectsList();
+            updateMapNameInput();
           }
         });
       }
