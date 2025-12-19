@@ -852,6 +852,96 @@
       font-style: italic;
     }
 
+    /* Project selector styles */
+    .project-selector {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      margin-bottom: 0.75em;
+    }
+
+    .project-selector label {
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .project-selector select {
+      flex: 1;
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    .project-selector button {
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #f5f5f5;
+      cursor: pointer;
+    }
+
+    .project-selector button:hover {
+      background: #e8e8e8;
+    }
+
+    /* Project list styles */
+    .project-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5em;
+    }
+
+    .project-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      padding: 0.5em;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    .project-item .project-name {
+      flex: 1;
+      font-weight: 500;
+    }
+
+    .project-item .project-count {
+      color: #666;
+      font-size: 0.85em;
+    }
+
+    .project-item button {
+      padding: 4px 8px;
+      font-size: 0.75em;
+      background: #f5f5f5;
+      border: 1px solid #999;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .project-item button:hover {
+      background: #e8e8e8;
+    }
+
+    .project-item button.delete-project-btn:hover {
+      background: #ffe0e0;
+      border-color: #f88;
+      color: #c00;
+    }
+
+    .add-project-row {
+      display: flex;
+      gap: 0.5em;
+      margin-top: 0.5em;
+    }
+
+    .add-project-row input {
+      flex: 1;
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
     /* Drag and drop styles */
     .saved-map-item {
       cursor: grab;
@@ -1149,6 +1239,9 @@
     <div class="settings-tabs">
       <button type="button" class="settings-tab active" data-tab="maps">
         Saved Maps
+      </button>
+      <button type="button" class="settings-tab" data-tab="projects">
+        Projects
       </button>
       <button type="button" class="settings-tab" data-tab="settings">
         Settings
@@ -1485,6 +1578,11 @@
 
     <div class="settings-tab-content active" data-tab-content="maps">
       <div class="map-browser">
+        <div class="project-selector">
+          <label for="current-project">Project:</label>
+          <select id="current-project"></select>
+          <button type="button" id="new-project-btn" title="New Project">+</button>
+        </div>
         <div class="save-map-section">
           <label for="save-map-name">Save Current Map</label>
           <div class="save-map-row">
@@ -1499,6 +1597,18 @@
       </div>
     </div>
     <!-- End maps tab content -->
+
+    <div class="settings-tab-content" data-tab-content="projects">
+      <div class="map-browser">
+        <h4>Manage Projects</h4>
+        <div class="add-project-row">
+          <input type="text" id="new-project-name" placeholder="New project name..." />
+          <button type="button" id="add-project-btn">Add</button>
+        </div>
+        <div class="project-list" id="project-list"></div>
+      </div>
+    </div>
+    <!-- End projects tab content -->
   </div>
   <!-- End settings-panel -->
 
@@ -1689,15 +1799,176 @@
             }
           });
 
-          // Refresh saved maps list when switching to maps tab
+          // Refresh lists when switching tabs
           if (targetTab === "maps") {
             renderSavedMapsList();
+          } else if (targetTab === "projects") {
+            renderProjectsList();
           }
         });
       });
 
       // Local Storage Map Management
       var STORAGE_KEY = "maze-generator-saved-maps";
+      var PROJECTS_KEY = "maze-generator-projects";
+      var CURRENT_PROJECT_KEY = "maze-generator-current-project";
+      var DEFAULT_PROJECT_ID = "default";
+
+      // Projects Management
+      function getProjects() {
+        try {
+          var data = localStorage.getItem(PROJECTS_KEY);
+          var projects = data ? JSON.parse(data) : [];
+          // Ensure default project exists
+          if (!projects.find(function(p) { return p.id === DEFAULT_PROJECT_ID; })) {
+            projects.unshift({ id: DEFAULT_PROJECT_ID, name: "Default", timestamp: Date.now() });
+            saveProjectsToStorage(projects);
+          }
+          return projects;
+        } catch (e) {
+          console.warn("Failed to load projects:", e);
+          return [{ id: DEFAULT_PROJECT_ID, name: "Default", timestamp: Date.now() }];
+        }
+      }
+
+      function saveProjectsToStorage(projects) {
+        try {
+          localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects));
+        } catch (e) {
+          console.warn("Failed to save projects:", e);
+        }
+      }
+
+      function getCurrentProjectId() {
+        return localStorage.getItem(CURRENT_PROJECT_KEY) || DEFAULT_PROJECT_ID;
+      }
+
+      function setCurrentProjectId(projectId) {
+        localStorage.setItem(CURRENT_PROJECT_KEY, projectId);
+        renderProjectSelector();
+        renderSavedMapsList();
+      }
+
+      function createProject(name) {
+        var projects = getProjects();
+        var newProject = {
+          id: Date.now().toString(),
+          name: name,
+          timestamp: Date.now()
+        };
+        projects.push(newProject);
+        saveProjectsToStorage(projects);
+        return newProject;
+      }
+
+      function renameProject(projectId, newName) {
+        var projects = getProjects();
+        var project = projects.find(function(p) { return p.id === projectId; });
+        if (project) {
+          project.name = newName;
+          saveProjectsToStorage(projects);
+        }
+      }
+
+      function deleteProject(projectId) {
+        if (projectId === DEFAULT_PROJECT_ID) {
+          alert("Cannot delete the default project");
+          return;
+        }
+        var projects = getProjects();
+        projects = projects.filter(function(p) { return p.id !== projectId; });
+        saveProjectsToStorage(projects);
+
+        // Move maps from deleted project to default
+        var maps = getAllMaps();
+        maps.forEach(function(map) {
+          if (map.projectId === projectId) {
+            map.projectId = DEFAULT_PROJECT_ID;
+          }
+        });
+        saveMapsToStorage(maps);
+
+        // Switch to default if current project was deleted
+        if (getCurrentProjectId() === projectId) {
+          setCurrentProjectId(DEFAULT_PROJECT_ID);
+        }
+      }
+
+      function getMapCountForProject(projectId) {
+        var maps = getAllMaps();
+        return maps.filter(function(m) { return (m.projectId || DEFAULT_PROJECT_ID) === projectId; }).length;
+      }
+
+      function renderProjectSelector() {
+        var select = document.getElementById("current-project");
+        if (!select) return;
+
+        var projects = getProjects();
+        var currentId = getCurrentProjectId();
+
+        select.innerHTML = projects.map(function(p) {
+          var selected = p.id === currentId ? " selected" : "";
+          return '<option value="' + p.id + '"' + selected + '>' + escapeHtml(p.name) + '</option>';
+        }).join("");
+      }
+
+      function renderProjectsList() {
+        var container = document.getElementById("project-list");
+        if (!container) return;
+
+        var projects = getProjects();
+
+        container.innerHTML = projects.map(function(project) {
+          var mapCount = getMapCountForProject(project.id);
+          var isDefault = project.id === DEFAULT_PROJECT_ID;
+          var deleteBtn = isDefault ? "" : '<button type="button" class="delete-project-btn" data-project-id="' + project.id + '">Delete</button>';
+
+          return '<div class="project-item" data-project-id="' + project.id + '">' +
+            '<span class="project-name">' + escapeHtml(project.name) + '</span>' +
+            '<span class="project-count">' + mapCount + ' map' + (mapCount !== 1 ? 's' : '') + '</span>' +
+            '<button type="button" class="rename-project-btn" data-project-id="' + project.id + '">Rename</button>' +
+            deleteBtn +
+            '</div>';
+        }).join("");
+
+        // Add event listeners
+        container.querySelectorAll(".rename-project-btn").forEach(function(btn) {
+          btn.addEventListener("click", function() {
+            var projectId = this.getAttribute("data-project-id");
+            var projects = getProjects();
+            var project = projects.find(function(p) { return p.id === projectId; });
+            if (!project) return;
+
+            var newName = prompt("Enter new name:", project.name);
+            if (newName && newName.trim()) {
+              renameProject(projectId, newName.trim());
+              renderProjectSelector();
+              renderProjectsList();
+            }
+          });
+        });
+
+        container.querySelectorAll(".delete-project-btn").forEach(function(btn) {
+          btn.addEventListener("click", function() {
+            var projectId = this.getAttribute("data-project-id");
+            if (confirm("Delete this project? Maps will be moved to Default.")) {
+              deleteProject(projectId);
+              renderProjectsList();
+            }
+          });
+        });
+      }
+
+      // Get all maps (unfiltered)
+      function getAllMaps() {
+        try {
+          var data = localStorage.getItem(STORAGE_KEY);
+          return data ? JSON.parse(data) : [];
+        } catch (e) {
+          console.warn("Failed to load saved maps:", e);
+          return [];
+        }
+      }
 
       function generateMapName() {
         var now = new Date();
@@ -1713,13 +1984,11 @@
       }
 
       function getSavedMaps() {
-        try {
-          var data = localStorage.getItem(STORAGE_KEY);
-          return data ? JSON.parse(data) : [];
-        } catch (e) {
-          console.warn("Failed to load saved maps:", e);
-          return [];
-        }
+        var currentProjectId = getCurrentProjectId();
+        var allMaps = getAllMaps();
+        return allMaps.filter(function(m) {
+          return (m.projectId || DEFAULT_PROJECT_ID) === currentProjectId;
+        });
       }
 
       function saveMapsToStorage(maps) {
@@ -1754,13 +2023,14 @@
           return;
         }
 
-        var maps = getSavedMaps();
+        var maps = getAllMaps();
         var mapData = {
           id: Date.now().toString(),
           name: name || generateMapName(),
           data: mazeNodes.exportMaze(),
           thumbnail: generateThumbnail(),
           timestamp: Date.now(),
+          projectId: getCurrentProjectId(),
         };
 
         maps.unshift(mapData); // Add to beginning
@@ -1771,7 +2041,7 @@
       }
 
       function loadMap(mapId) {
-        var maps = getSavedMaps();
+        var maps = getAllMaps();
         var map = maps.find(function (m) {
           return m.id === mapId;
         });
@@ -1804,7 +2074,7 @@
       function deleteMap(mapId) {
         if (!confirm("Delete this map?")) return;
 
-        var maps = getSavedMaps();
+        var maps = getAllMaps();
         maps = maps.filter(function (m) {
           return m.id !== mapId;
         });
@@ -1813,7 +2083,7 @@
       }
 
       function renameMap(mapId) {
-        var maps = getSavedMaps();
+        var maps = getAllMaps();
         var map = maps.find(function (m) {
           return m.id === mapId;
         });
@@ -1828,7 +2098,7 @@
       }
 
       function downloadMap(mapId) {
-        var maps = getSavedMaps();
+        var maps = getAllMaps();
         var map = maps.find(function (m) {
           return m.id === mapId;
         });
@@ -2030,21 +2300,21 @@
       }
 
       function reorderMaps(draggedId, targetId) {
-        var maps = getSavedMaps();
-        var draggedIndex = maps.findIndex(function (m) {
+        var allMaps = getAllMaps();
+        var draggedIndex = allMaps.findIndex(function (m) {
           return m.id === draggedId;
         });
-        var targetIndex = maps.findIndex(function (m) {
+        var targetIndex = allMaps.findIndex(function (m) {
           return m.id === targetId;
         });
 
         if (draggedIndex === -1 || targetIndex === -1) return;
 
         // Remove dragged item and insert at target position
-        var draggedMap = maps.splice(draggedIndex, 1)[0];
-        maps.splice(targetIndex, 0, draggedMap);
+        var draggedMap = allMaps.splice(draggedIndex, 1)[0];
+        allMaps.splice(targetIndex, 0, draggedMap);
 
-        saveMapsToStorage(maps);
+        saveMapsToStorage(allMaps);
         renderSavedMapsList();
       }
 
@@ -2078,7 +2348,47 @@
         });
       }
 
-      // Initial render of saved maps
+      // Project selector event listeners
+      var projectSelector = document.getElementById("current-project");
+      if (projectSelector) {
+        projectSelector.addEventListener("change", function() {
+          setCurrentProjectId(this.value);
+        });
+      }
+
+      // New project button (in maps tab)
+      var newProjectBtn = document.getElementById("new-project-btn");
+      if (newProjectBtn) {
+        newProjectBtn.addEventListener("click", function() {
+          var name = prompt("Enter project name:");
+          if (name && name.trim()) {
+            var project = createProject(name.trim());
+            setCurrentProjectId(project.id);
+            renderProjectsList();
+          }
+        });
+      }
+
+      // Add project button (in projects tab)
+      var addProjectBtn = document.getElementById("add-project-btn");
+      var newProjectNameInput = document.getElementById("new-project-name");
+      if (addProjectBtn) {
+        addProjectBtn.addEventListener("click", function() {
+          var name = newProjectNameInput ? newProjectNameInput.value.trim() : "";
+          if (name) {
+            createProject(name);
+            if (newProjectNameInput) newProjectNameInput.value = "";
+            renderProjectSelector();
+            renderProjectsList();
+          } else {
+            alert("Please enter a project name");
+          }
+        });
+      }
+
+      // Initial render of projects and saved maps
+      renderProjectSelector();
+      renderProjectsList();
       renderSavedMapsList();
 
       // FAB - Generate New Maze button
