@@ -852,6 +852,36 @@
       font-style: italic;
     }
 
+    .saved-maps-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5em;
+    }
+
+    .saved-maps-header h4 {
+      margin: 0;
+    }
+
+    .download-all-btn {
+      padding: 4px 10px;
+      font-size: 0.8em;
+      background: #f5f5f5;
+      color: #333;
+      border: 1px solid #999;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .download-all-btn:hover {
+      background: #e8e8e8;
+    }
+
+    .download-all-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     /* Project selector styles */
     .project-selector {
       display: flex;
@@ -1592,7 +1622,10 @@
             <button type="button" id="save-map-btn">Save</button>
           </div>
         </div>
-        <h4>Saved Maps</h4>
+        <div class="saved-maps-header">
+          <h4>Saved Maps</h4>
+          <button type="button" id="download-all-btn" class="download-all-btn">Download All</button>
+        </div>
         <div class="saved-maps-list" id="saved-maps-list">
           <div class="no-saved-maps">No saved maps yet</div>
         </div>
@@ -2152,6 +2185,83 @@
         }
       }
 
+      function downloadAllMaps() {
+        var maps = getSavedMaps();
+        if (maps.length === 0) {
+          alert("No maps to download");
+          return;
+        }
+
+        if (typeof mazeNodes === "undefined" || !mazeNodes.importMaze) {
+          alert("Maze not initialized");
+          return;
+        }
+
+        var downloadAllBtn = document.getElementById("download-all-btn");
+        if (downloadAllBtn) {
+          downloadAllBtn.disabled = true;
+          downloadAllBtn.textContent = "Downloading...";
+        }
+
+        var currentIndex = 0;
+        var totalMaps = maps.length;
+
+        function downloadNext() {
+          if (currentIndex >= totalMaps) {
+            // All done
+            if (downloadAllBtn) {
+              downloadAllBtn.disabled = false;
+              downloadAllBtn.textContent = "Download All";
+            }
+            return;
+          }
+
+          var map = maps[currentIndex];
+          if (downloadAllBtn) {
+            downloadAllBtn.textContent = "Downloading " + (currentIndex + 1) + "/" + totalMaps + "...";
+          }
+
+          if (mazeNodes.importMaze(map.data)) {
+            mazeNodes.loadDecorations().then(function () {
+              mazeNodes.draw();
+              if (
+                typeof TilePlacement !== "undefined" &&
+                TilePlacement.saveCanvasState
+              ) {
+                TilePlacement.saveCanvasState();
+              }
+
+              // Export canvas as PNG
+              try {
+                var canvas = document.getElementById("maze");
+                var image = canvas.toDataURL("image/png");
+
+                var link = document.createElement("a");
+                link.href = image;
+                var filename =
+                  map.name.replace(/[^a-z0-9]/gi, "_").toLowerCase() + ".png";
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              } catch (err) {
+                console.error("Failed to export map:", map.name, err);
+              }
+
+              currentIndex++;
+              // Small delay between downloads to avoid browser blocking
+              setTimeout(downloadNext, 500);
+            });
+          } else {
+            console.error("Failed to load map:", map.name);
+            currentIndex++;
+            setTimeout(downloadNext, 100);
+          }
+        }
+
+        downloadNext();
+      }
+
       var draggedItem = null;
 
       function renderSavedMapsList() {
@@ -2339,6 +2449,12 @@
             alert('Map saved as "' + saved.name + '"');
           }
         });
+      }
+
+      // Download All button
+      var downloadAllBtn = document.getElementById("download-all-btn");
+      if (downloadAllBtn) {
+        downloadAllBtn.addEventListener("click", downloadAllMaps);
       }
 
       // Auto-generate name placeholder on focus
