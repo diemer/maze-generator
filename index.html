@@ -748,6 +748,29 @@
       border-radius: 4px;
     }
 
+    .save-map-row button {
+      white-space: nowrap;
+    }
+
+    #update-map-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .current-map-info {
+      font-size: 0.8em;
+      color: #666;
+      margin-top: 0.5em;
+      padding: 0.25em 0.5em;
+      background: #f0f8ff;
+      border-radius: 3px;
+      display: none;
+    }
+
+    .current-map-info.active {
+      display: block;
+    }
+
     .saved-maps-list {
       display: flex;
       flex-direction: column;
@@ -1619,8 +1642,10 @@
           <label for="save-map-name">Save Current Map</label>
           <div class="save-map-row">
             <input type="text" id="save-map-name" placeholder="Floor 1" />
-            <button type="button" id="save-map-btn">Save</button>
+            <button type="button" id="save-map-btn">Save New</button>
+            <button type="button" id="update-map-btn" disabled>Update</button>
           </div>
+          <div class="current-map-info" id="current-map-info"></div>
         </div>
         <div class="saved-maps-header">
           <h4>Saved Maps</h4>
@@ -1848,6 +1873,7 @@
       var PROJECTS_KEY = "maze-generator-projects";
       var CURRENT_PROJECT_KEY = "maze-generator-current-project";
       var DEFAULT_PROJECT_ID = "default";
+      var currentMapId = null; // Track currently loaded map for updates
 
       // Projects Management
       function getProjects() {
@@ -2067,6 +2093,37 @@
         return mapData;
       }
 
+      function setCurrentMapDisplay(mapId, mapName) {
+        var updateBtn = document.getElementById("update-map-btn");
+        var infoDiv = document.getElementById("current-map-info");
+        var nameInput = document.getElementById("save-map-name");
+
+        currentMapId = mapId;
+
+        if (mapId && mapName) {
+          if (updateBtn) updateBtn.disabled = false;
+          if (infoDiv) {
+            infoDiv.textContent = "Editing: " + mapName;
+            infoDiv.classList.add("active");
+          }
+          if (nameInput) nameInput.value = mapName;
+        } else {
+          if (updateBtn) updateBtn.disabled = true;
+          if (infoDiv) {
+            infoDiv.textContent = "";
+            infoDiv.classList.remove("active");
+          }
+        }
+      }
+
+      function clearCurrentMap() {
+        setCurrentMapDisplay(null, null);
+        var nameInput = document.getElementById("save-map-name");
+        if (nameInput) {
+          nameInput.value = generateMapName();
+        }
+      }
+
       function loadMap(mapId) {
         var maps = getAllMaps();
         var map = maps.find(function (m) {
@@ -2092,10 +2149,48 @@
             ) {
               TilePlacement.saveCanvasState();
             }
+            // Set this as the current map for updates
+            setCurrentMapDisplay(map.id, map.name);
           });
         } else {
           alert("Failed to load map");
         }
+      }
+
+      function updateCurrentMap() {
+        if (!currentMapId) {
+          alert("No map loaded to update");
+          return;
+        }
+
+        if (typeof mazeNodes === "undefined" || !mazeNodes.exportMaze) {
+          alert("No maze to save");
+          return;
+        }
+
+        var maps = getAllMaps();
+        var mapIndex = maps.findIndex(function(m) { return m.id === currentMapId; });
+
+        if (mapIndex === -1) {
+          alert("Map not found");
+          clearCurrentMap();
+          return;
+        }
+
+        var nameInput = document.getElementById("save-map-name");
+        var newName = nameInput ? nameInput.value.trim() : "";
+
+        maps[mapIndex].data = mazeNodes.exportMaze();
+        maps[mapIndex].thumbnail = generateThumbnail();
+        maps[mapIndex].timestamp = Date.now();
+        if (newName) {
+          maps[mapIndex].name = newName;
+        }
+
+        saveMapsToStorage(maps);
+        renderSavedMapsList();
+        setCurrentMapDisplay(maps[mapIndex].id, maps[mapIndex].name);
+        alert('Map "' + maps[mapIndex].name + '" updated');
       }
 
       function deleteMap(mapId) {
@@ -2443,7 +2538,8 @@
           var name = saveMapNameInput ? saveMapNameInput.value.trim() : "";
           var saved = saveCurrentMap(name);
           if (saved) {
-            updateMapNameInput();
+            // Set the newly saved map as current for updates
+            setCurrentMapDisplay(saved.id, saved.name);
             alert('Map saved as "' + saved.name + '"');
           }
         });
@@ -2453,6 +2549,12 @@
       var downloadAllBtn = document.getElementById("download-all-btn");
       if (downloadAllBtn) {
         downloadAllBtn.addEventListener("click", downloadAllMaps);
+      }
+
+      // Update map button
+      var updateMapBtn = document.getElementById("update-map-btn");
+      if (updateMapBtn) {
+        updateMapBtn.addEventListener("click", updateCurrentMap);
       }
 
       // Initialize map name input
@@ -2509,6 +2611,7 @@
         fabGenerate.addEventListener("click", function () {
           if (typeof initMaze === "function") {
             initMaze();
+            clearCurrentMap();
           }
         });
       }
