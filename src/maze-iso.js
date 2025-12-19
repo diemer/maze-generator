@@ -2039,6 +2039,134 @@ Maze.prototype.draw = function () {
 
     ctx.restore();
   }
+
+  // PASS 5: Draw start indicator (arrow and START text)
+  if (gateEntry && this.entryNodes.start) {
+    const entryData = this.entryNodes.start;
+    const gateX = gateEntry.x;
+    const gateY = gateEntry.y;
+    const dir = this.getGateDirection(entryData.x, entryData.y, gateX, gateY);
+
+    // Start marker is at the gate position (not offset like end marker)
+    const markerX = gateX;
+    const markerY = gateY;
+
+    // Get isometric position of marker
+    const markerIsoX = (markerX - markerY) * tileWidth * 0.5 + offsetX;
+    const markerIsoY = (markerX + markerY) * tileHeight * 0.5 + offsetY;
+    const cubeBottomY = markerIsoY + tileHeight + cubeHeight;
+
+    // Determine position type based on direction and entry position
+    // WN: West wall, north end (low y) | WS: West wall, south end (high y)
+    // NW: North wall, west end (low x) | NE: North wall, east end (high x)
+    const matrixCols = this.matrix[0].length;
+    const matrixRows = this.matrix.length;
+    const midX = matrixCols / 2;
+    const midY = matrixRows / 2;
+
+    let positionType;
+    if (dir === 'W') {
+      positionType = entryData.y < midY ? 'WN' : 'WS';
+    } else if (dir === 'N') {
+      positionType = entryData.x < midX ? 'NW' : 'NE';
+    } else {
+      positionType = 'WN'; // Fallback
+    }
+
+    // Arrow and text styling
+    const arrowSize = tileWidth * 0.5;
+    const arrowWidth = arrowSize * 0.6;
+    const fontSize = Math.max(12, tileWidth * 0.4);
+    const textGap = fontSize * 0.3;
+
+    ctx.save();
+    ctx.fillStyle = this.color;
+    ctx.font = `bold ${fontSize}px sans-serif`;
+    ctx.textBaseline = 'middle';
+
+    const startText = 'START';
+    const textMetrics = ctx.measureText(startText);
+    const textWidth = textMetrics.width;
+    const charWidth = textWidth / 5; // 5 characters in START
+
+    if (positionType === 'WN') {
+      // Arrow to LEFT of marker pointing RIGHT, START to left, vertically centered
+      const arrowTipX = markerIsoX - arrowSize * 1.5;
+      const arrowBaseX = arrowTipX - arrowSize;
+      const arrowY = markerIsoY + tileHeight * 0.5;
+
+      // Draw arrow pointing right
+      ctx.beginPath();
+      ctx.moveTo(arrowTipX, arrowY);
+      ctx.lineTo(arrowBaseX, arrowY - arrowWidth * 0.5);
+      ctx.lineTo(arrowBaseX, arrowY + arrowWidth * 0.5);
+      ctx.closePath();
+      ctx.fill();
+
+      // Draw START text to left of arrow, vertically centered
+      ctx.textAlign = 'right';
+      const textX = arrowBaseX - textGap;
+      ctx.fillText(startText, textX, arrowY);
+
+    } else if (positionType === 'WS') {
+      // Arrow above marker pointing DOWN, START above arrow, S aligned to center
+      const arrowTipY = markerIsoY - arrowSize * 0.5;
+      const arrowBaseY = arrowTipY - arrowSize;
+
+      // Draw arrow pointing down
+      ctx.beginPath();
+      ctx.moveTo(markerIsoX, arrowTipY);
+      ctx.lineTo(markerIsoX - arrowWidth * 0.5, arrowBaseY);
+      ctx.lineTo(markerIsoX + arrowWidth * 0.5, arrowBaseY);
+      ctx.closePath();
+      ctx.fill();
+
+      // Draw START text above arrow, S (first char) aligned to center
+      ctx.textAlign = 'left';
+      const textX = markerIsoX - charWidth * 0.5;
+      const textY = arrowBaseY - textGap - fontSize * 0.5;
+      ctx.fillText(startText, textX, textY);
+
+    } else if (positionType === 'NW') {
+      // Arrow to LEFT of marker pointing RIGHT, START to left, vertically centered
+      const arrowTipX = markerIsoX - arrowSize * 1.5;
+      const arrowBaseX = arrowTipX - arrowSize;
+      const arrowY = markerIsoY + tileHeight * 0.5;
+
+      // Draw arrow pointing right
+      ctx.beginPath();
+      ctx.moveTo(arrowTipX, arrowY);
+      ctx.lineTo(arrowBaseX, arrowY - arrowWidth * 0.5);
+      ctx.lineTo(arrowBaseX, arrowY + arrowWidth * 0.5);
+      ctx.closePath();
+      ctx.fill();
+
+      // Draw START text to left of arrow, vertically centered
+      ctx.textAlign = 'right';
+      const textX = arrowBaseX - textGap;
+      ctx.fillText(startText, textX, arrowY);
+
+    } else if (positionType === 'NE') {
+      // Arrow above marker pointing DOWN, START above arrow, word centered
+      const arrowTipY = markerIsoY - arrowSize * 0.5;
+      const arrowBaseY = arrowTipY - arrowSize;
+
+      // Draw arrow pointing down
+      ctx.beginPath();
+      ctx.moveTo(markerIsoX, arrowTipY);
+      ctx.lineTo(markerIsoX - arrowWidth * 0.5, arrowBaseY);
+      ctx.lineTo(markerIsoX + arrowWidth * 0.5, arrowBaseY);
+      ctx.closePath();
+      ctx.fill();
+
+      // Draw START text above arrow, centered on arrow
+      ctx.textAlign = 'center';
+      const textY = arrowBaseY - textGap - fontSize * 0.5;
+      ctx.fillText(startText, markerIsoX, textY);
+    }
+
+    ctx.restore();
+  }
 };
 
 Maze.prototype.generateSVG = function () {
