@@ -82,6 +82,8 @@ function Maze(args) {
   this.tightSpacing = settings["tightSpacing"] === true;
   this.endMarkerOffset = parseFloat(settings["endMarkerOffset"]) || 0;
   this.endMarkerOffsetX = parseFloat(settings["endMarkerOffsetX"]) || 0;
+  this.showEntryIndicators = settings["showEntryIndicators"] !== false;
+  this.entryIndicatorFontSize = parseFloat(settings["entryIndicatorFontSize"]) || 0;
   this.maxMaze = parseInt(settings["maxMaze"], 10);
   this.maxCanvas = parseInt(settings["maxCanvas"], 10);
   this.maxCanvasDimension = parseInt(settings["maxCanvasDimension"], 10);
@@ -1902,7 +1904,7 @@ Maze.prototype.draw = function () {
   drawDecorationsForLayer('overlay');
 
   // PASS 4: Draw exit indicator (arrow and EXIT text)
-  if (gateExit && this.entryNodes.end) {
+  if (this.showEntryIndicators && gateExit && this.entryNodes.end) {
     const entryData = this.entryNodes.end;
     const gateX = gateExit.x;
     const gateY = gateExit.y;
@@ -1947,7 +1949,7 @@ Maze.prototype.draw = function () {
     // Arrow and text styling
     const arrowSize = tileWidth * 0.5;
     const arrowWidth = arrowSize * 0.6;
-    const fontSize = Math.max(12, tileWidth * 0.4);
+    const fontSize = this.entryIndicatorFontSize > 0 ? this.entryIndicatorFontSize : Math.max(12, tileWidth * 0.4);
     const textGap = fontSize * 0.3;
 
     ctx.save();
@@ -2041,7 +2043,7 @@ Maze.prototype.draw = function () {
   }
 
   // PASS 5: Draw start indicator (arrow and START text)
-  if (gateEntry && this.entryNodes.start) {
+  if (this.showEntryIndicators && gateEntry && this.entryNodes.start) {
     const entryData = this.entryNodes.start;
     const gateX = gateEntry.x;
     const gateY = gateEntry.y;
@@ -2076,7 +2078,7 @@ Maze.prototype.draw = function () {
     // Arrow and text styling
     const arrowSize = tileWidth * 0.5;
     const arrowWidth = arrowSize * 0.6;
-    const fontSize = Math.max(12, tileWidth * 0.4);
+    const fontSize = this.entryIndicatorFontSize > 0 ? this.entryIndicatorFontSize : Math.max(12, tileWidth * 0.4);
     const textGap = fontSize * 0.3;
 
     ctx.save();

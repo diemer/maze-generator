@@ -172,6 +172,9 @@ function initMaze() {
     const isoRatio = isoRatioSelect ? parseFloat(isoRatioSelect.value) : 0.5;
     const endMarkerOffset = getInputFloatVal("end-marker-offset", -3.5);
     const endMarkerOffsetX = getInputFloatVal("end-marker-offset-x", -1);
+    const showEntryIndicatorsCheckbox = document.getElementById("show-entry-indicators");
+    const showEntryIndicators = showEntryIndicatorsCheckbox ? showEntryIndicatorsCheckbox.checked : true;
+    const entryIndicatorFontSize = getInputFloatVal("entry-indicator-font-size", 0);
 
     const settings = {
         width: getInputIntVal("width", 20),
@@ -197,6 +200,8 @@ function initMaze() {
         isoRatio: isoRatio,
         endMarkerOffset: endMarkerOffset,
         endMarkerOffsetX: endMarkerOffsetX,
+        showEntryIndicators: showEntryIndicators,
+        entryIndicatorFontSize: entryIndicatorFontSize,
         entryType: "",
         bias: "",
         color: "#000000",

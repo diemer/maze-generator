@@ -1148,6 +1148,15 @@
           <span style="font-size: smaller; color: #666">(move to other end of wall)</span>
         </p>
         <p>
+          <label for="show-entry-indicators">Show entry indicators:</label>
+          <input id="show-entry-indicators" type="checkbox" name="show-entry-indicators" checked />
+        </p>
+        <p>
+          <label for="entry-indicator-font-size">Indicator font size:</label>
+          <input id="entry-indicator-font-size" type="number" name="entry-indicator-font-size" value="0" min="0" max="100" step="1" />
+          <span style="font-size: smaller; color: #666">(0 = auto)</span>
+        </p>
+        <p>
           <label for="bias">Bias:</label>
           <select id="bias" name="bias">
             <option value="">none</option>
@@ -2064,6 +2073,36 @@
       }
       if (flipExitCheckbox) {
         flipExitCheckbox.addEventListener("change", updateEntryPositions);
+      }
+
+      // Live toggle for entry indicators
+      var showEntryIndicatorsCheckbox = document.getElementById("show-entry-indicators");
+      if (showEntryIndicatorsCheckbox) {
+        showEntryIndicatorsCheckbox.addEventListener("change", function () {
+          if (
+            typeof mazeNodes !== "undefined" &&
+            mazeNodes.matrix &&
+            mazeNodes.matrix.length
+          ) {
+            mazeNodes.showEntryIndicators = showEntryIndicatorsCheckbox.checked;
+            mazeNodes.draw();
+          }
+        });
+      }
+
+      // Live update for entry indicator font size
+      var entryIndicatorFontSizeInput = document.getElementById("entry-indicator-font-size");
+      if (entryIndicatorFontSizeInput) {
+        entryIndicatorFontSizeInput.addEventListener("input", function () {
+          if (
+            typeof mazeNodes !== "undefined" &&
+            mazeNodes.matrix &&
+            mazeNodes.matrix.length
+          ) {
+            mazeNodes.entryIndicatorFontSize = parseFloat(entryIndicatorFontSizeInput.value) || 0;
+            mazeNodes.draw();
+          }
+        });
       }
 
       // Live toggle for show block numbers
