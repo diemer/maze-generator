@@ -169,7 +169,7 @@ function initMaze() {
     const endMarkerOffsetX = getInputFloatVal("end-marker-offset-x", -1);
     const showEntryIndicatorsCheckbox = document.getElementById("show-entry-indicators");
     const showEntryIndicators = showEntryIndicatorsCheckbox ? showEntryIndicatorsCheckbox.checked : true;
-    const entryIndicatorFontSize = getInputFloatVal("entry-indicator-font-size", 0);
+    const entryIndicatorFontSize = getInputFloatVal("entry-indicator-font-size", 8);
 
     const settings = {
         width: getInputIntVal("width", 20),

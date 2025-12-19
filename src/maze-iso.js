@@ -83,7 +83,7 @@ function Maze(args) {
   this.endMarkerOffset = parseFloat(settings["endMarkerOffset"]) || 0;
   this.endMarkerOffsetX = parseFloat(settings["endMarkerOffsetX"]) || 0;
   this.showEntryIndicators = settings["showEntryIndicators"] !== false;
-  this.entryIndicatorFontSize = parseFloat(settings["entryIndicatorFontSize"]) || 0;
+  this.entryIndicatorFontSize = parseFloat(settings["entryIndicatorFontSize"]) || 8;
   this.maxMaze = parseInt(settings["maxMaze"], 10);
   this.maxCanvas = parseInt(settings["maxCanvas"], 10);
   this.maxCanvasDimension = parseInt(settings["maxCanvasDimension"], 10);
@@ -2040,7 +2040,7 @@ Maze.prototype.draw = function () {
     // Arrow and text styling
     const arrowSize = tileWidth * 0.5;
     const arrowWidth = arrowSize * 0.6;
-    const fontSize = this.entryIndicatorFontSize > 0 ? this.entryIndicatorFontSize : Math.max(12, tileWidth * 0.4);
+    const fontSize = this.entryIndicatorFontSize;
     const textGap = fontSize * 0.3;
 
     ctx.save();
@@ -2169,7 +2169,7 @@ Maze.prototype.draw = function () {
     // Arrow and text styling
     const arrowSize = tileWidth * 0.5;
     const arrowWidth = arrowSize * 0.6;
-    const fontSize = this.entryIndicatorFontSize > 0 ? this.entryIndicatorFontSize : Math.max(12, tileWidth * 0.4);
+    const fontSize = this.entryIndicatorFontSize;
     const textGap = fontSize * 0.3;
 
     ctx.save();
