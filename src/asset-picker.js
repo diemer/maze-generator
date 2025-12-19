@@ -479,6 +479,24 @@ const TILE_ASSETS = [
   "src/assets/woodenSupportsBlock_W.png",
 ];
 
+// Parse weighted tile format: "url|weight,url|weight,..." or legacy "url,url,..."
+function parseWeightedTiles(inputValue) {
+  if (!inputValue || !inputValue.trim()) return [];
+  return inputValue.split(",").map(v => {
+    v = v.trim();
+    if (!v) return null;
+    const parts = v.split("|");
+    const url = parts[0].trim();
+    const weight = parts.length > 1 ? parseFloat(parts[1]) || 1 : 1;
+    return { url, weight };
+  }).filter(t => t !== null);
+}
+
+// Serialize weighted tiles back to input format
+function serializeWeightedTiles(tiles) {
+  return tiles.map(t => `${t.url}|${t.weight}`).join(",");
+}
+
 function initAssetPickers() {
   const pickers = document.querySelectorAll(".asset-picker");
 
@@ -491,32 +509,35 @@ function initAssetPickers() {
     const selectedTilesContainer = picker.querySelector(".selected-tiles");
     const addBlankBtn = picker.querySelector(".add-blank-btn");
 
-    // For multi-select mode, track selected tiles
+    // For multi-select mode, track selected tiles as objects with {url, weight}
     let selectedTiles = [];
 
     // Initialize from input value
     if (isMulti && input.value.trim()) {
-      // Parse comma-separated values or single value
-      const values = input.value
-        .split(",")
-        .map((v) => v.trim())
-        .filter((v) => v);
-      selectedTiles = values;
-      updateMultiSelectDisplay(
+      selectedTiles = parseWeightedTiles(input.value);
+      updateWeightedTileDisplay(
         selectedTilesContainer,
         selectedTiles,
         removeFromSelection,
+        updateWeight,
       );
     }
 
     function removeFromSelection(index) {
       selectedTiles.splice(index, 1);
-      input.value = selectedTiles.join(",");
-      updateMultiSelectDisplay(
+      input.value = serializeWeightedTiles(selectedTiles);
+      updateWeightedTileDisplay(
         selectedTilesContainer,
         selectedTiles,
         removeFromSelection,
+        updateWeight,
       );
+      refreshMazeTileset();
+    }
+
+    function updateWeight(index, newWeight) {
+      selectedTiles[index].weight = newWeight;
+      input.value = serializeWeightedTiles(selectedTiles);
       refreshMazeTileset();
     }
 
@@ -528,13 +549,15 @@ function initAssetPickers() {
       item.addEventListener("click", () => {
         if (isMulti) {
           // Multi-select: add to array if not already present
-          if (!selectedTiles.includes(asset)) {
-            selectedTiles.push(asset);
-            input.value = selectedTiles.join(",");
-            updateMultiSelectDisplay(
+          const existingIndex = selectedTiles.findIndex(t => t.url === asset);
+          if (existingIndex === -1) {
+            selectedTiles.push({ url: asset, weight: 1 });
+            input.value = serializeWeightedTiles(selectedTiles);
+            updateWeightedTileDisplay(
               selectedTilesContainer,
               selectedTiles,
               removeFromSelection,
+              updateWeight,
             );
           }
         } else {
@@ -565,14 +588,12 @@ function initAssetPickers() {
     input.addEventListener("change", () => {
       if (isMulti) {
         // Re-parse the input value
-        selectedTiles = input.value
-          .split(",")
-          .map((v) => v.trim())
-          .filter((v) => v);
-        updateMultiSelectDisplay(
+        selectedTiles = parseWeightedTiles(input.value);
+        updateWeightedTileDisplay(
           selectedTilesContainer,
           selectedTiles,
           removeFromSelection,
+          updateWeight,
         );
       }
       refreshMazeTileset();
@@ -589,12 +610,13 @@ function initAssetPickers() {
     if (addBlankBtn) {
       addBlankBtn.addEventListener("click", (e) => {
         e.preventDefault();
-        selectedTiles.push("blank");
-        input.value = selectedTiles.join(",");
-        updateMultiSelectDisplay(
+        selectedTiles.push({ url: "blank", weight: 1 });
+        input.value = serializeWeightedTiles(selectedTiles);
+        updateWeightedTileDisplay(
           selectedTilesContainer,
           selectedTiles,
           removeFromSelection,
+          updateWeight,
         );
         refreshMazeTileset();
       });
@@ -608,10 +630,11 @@ function initAssetPickers() {
         if (isMulti) {
           selectedTiles = [];
           input.value = "";
-          updateMultiSelectDisplay(
+          updateWeightedTileDisplay(
             selectedTilesContainer,
             selectedTiles,
             removeFromSelection,
+            updateWeight,
           );
         } else {
           input.value = "";
@@ -623,7 +646,46 @@ function initAssetPickers() {
   });
 }
 
-// Update the multi-select display with tile chips
+// Update the weighted tile display with vertical rows
+function updateWeightedTileDisplay(container, tiles, onRemove, onWeightChange) {
+  if (!container) return;
+
+  container.innerHTML = tiles
+    .map((tile, idx) => {
+      const isBlank = tile.url === "blank" || tile.url === "";
+      const imageHtml = isBlank
+        ? '<span class="blank-indicator"></span>'
+        : `<img src="${tile.url}" alt="tile" title="${tile.url.split("/").pop()}">`;
+
+      return `<div class="tile-row" data-idx="${idx}">
+        ${imageHtml}
+        <span class="weight-label">Weight:</span>
+        <input type="number" class="weight-input" value="${tile.weight}" min="0" step="0.1" data-idx="${idx}">
+        <button type="button" class="remove-tile" data-idx="${idx}">&times;</button>
+      </div>`;
+    })
+    .join("");
+
+  // Add remove handlers
+  container.querySelectorAll(".remove-tile").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const idx = parseInt(btn.dataset.idx, 10);
+      onRemove(idx);
+    });
+  });
+
+  // Add weight change handlers
+  container.querySelectorAll(".weight-input").forEach((input) => {
+    input.addEventListener("change", (e) => {
+      const idx = parseInt(input.dataset.idx, 10);
+      const newWeight = parseFloat(input.value) || 1;
+      onWeightChange(idx, newWeight);
+    });
+  });
+}
+
+// Update the multi-select display with tile chips (legacy, kept for compatibility)
 function updateMultiSelectDisplay(container, tiles, onRemove) {
   if (!container) return;
 

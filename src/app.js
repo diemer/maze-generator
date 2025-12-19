@@ -57,34 +57,29 @@ function initMaze() {
     const tileEndW = document.getElementById("tile-end-w");
     const showStrokeCheckbox = document.getElementById("show-stroke");
 
+    // Parse weighted tile format: "url|weight,url|weight,..." or legacy "url,url,..."
+    function parseWeightedTiles(inputValue) {
+        if (!inputValue || !inputValue.trim()) return null;
+        const tiles = inputValue.split(",").map(v => {
+            v = v.trim();
+            if (!v) return null;
+            const parts = v.split("|");
+            const url = parts[0].trim();
+            const weight = parts.length > 1 ? parseFloat(parts[1]) || 1 : 1;
+            return { url, weight };
+        }).filter(t => t !== null);
+        return tiles.length > 0 ? tiles : null;
+    }
+
     let tileset = null;
-    const wallLeftUrl = tileWallLeft ? tileWallLeft.value.trim() : "";
-    const wallRightUrl = tileWallRight ? tileWallRight.value.trim() : "";
+    const wallLeftValue = tileWallLeft ? tileWallLeft.value.trim() : "";
+    const wallRightValue = tileWallRight ? tileWallRight.value.trim() : "";
     const pathwayValue = tilePathway ? tilePathway.value.trim() : "";
 
-    // Check if pathway is multi-select (comma-separated values)
-    const pathwayPicker = tilePathway
-        ? tilePathway.closest(".asset-picker")
-        : null;
-    const isPathwayMulti =
-        pathwayPicker && pathwayPicker.dataset.multi === "true";
-    let pathwayTiles = null;
-
-    if (pathwayValue) {
-        if (isPathwayMulti && pathwayValue.includes(",")) {
-            // Parse as array, keeping "blank" as-is
-            pathwayTiles = pathwayValue
-                .split(",")
-                .map((v) => v.trim())
-                .filter((v) => v);
-        } else if (isPathwayMulti) {
-            // Single value but multi-select enabled - use as array
-            pathwayTiles = [pathwayValue];
-        } else {
-            // Single select mode - use as string
-            pathwayTiles = pathwayValue;
-        }
-    }
+    // Parse wall textures as weighted arrays
+    const wallLeftTiles = parseWeightedTiles(wallLeftValue);
+    const wallRightTiles = parseWeightedTiles(wallRightValue);
+    const pathwayTiles = parseWeightedTiles(pathwayValue);
 
     // Directional start URLs
     const startNUrl = tileStartN ? tileStartN.value.trim() : "";
@@ -98,8 +93,8 @@ function initMaze() {
     const endWUrl = tileEndW ? tileEndW.value.trim() : "";
 
     const hasAnyTile =
-        wallLeftUrl ||
-        wallRightUrl ||
+        wallLeftTiles ||
+        wallRightTiles ||
         pathwayTiles ||
         startNUrl ||
         startSUrl ||
@@ -112,8 +107,8 @@ function initMaze() {
 
     if (hasAnyTile) {
         tileset = {};
-        if (wallLeftUrl) tileset.wallLeft = wallLeftUrl;
-        if (wallRightUrl) tileset.wallRight = wallRightUrl;
+        if (wallLeftTiles) tileset.wallLeft = wallLeftTiles;
+        if (wallRightTiles) tileset.wallRight = wallRightTiles;
         if (pathwayTiles) tileset.pathway = pathwayTiles;
         // Directional start tiles
         if (startNUrl) tileset.startN = startNUrl;

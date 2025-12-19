@@ -363,9 +363,11 @@
 
     .selected-tiles {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
       gap: 4px;
       margin-top: 0.5em;
+      max-height: 150px;
+      overflow-y: auto;
       min-height: 0;
     }
 
@@ -373,6 +375,73 @@
       display: none;
     }
 
+    .tile-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 8px;
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      font-size: 0.85em;
+    }
+
+    .tile-row img {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+
+    .tile-row .blank-indicator {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(45deg,
+          #ddd 25%,
+          #fff 25%,
+          #fff 50%,
+          #ddd 50%,
+          #ddd 75%,
+          #fff 75%);
+      background-size: 8px 8px;
+      border: 1px solid #ccc;
+      flex-shrink: 0;
+    }
+
+    .tile-row .weight-label {
+      font-size: 0.8em;
+      color: #666;
+    }
+
+    .tile-row .weight-input {
+      width: 50px;
+      padding: 2px 4px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+
+    .tile-row .remove-tile {
+      width: 20px;
+      height: 20px;
+      padding: 0;
+      border: none;
+      background: #e0e0e0;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 12px;
+      line-height: 20px;
+      text-align: center;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+
+    .tile-row .remove-tile:hover {
+      background: #ff6666;
+      color: white;
+    }
+
+    /* Legacy chip styles for backwards compatibility */
     .tile-chip {
       display: inline-flex;
       align-items: center;
@@ -1251,26 +1320,28 @@
             placeholder="Optional, e.g. #8B4513" />
           <div class="color-sample" style="background-color: transparent"></div>
         </div>
-        <div class="asset-picker">
+        <div class="asset-picker" data-multi="true">
           <label for="tile-wall-left">Wall left face:</label>
           <div class="asset-picker-controls">
-            <input id="tile-wall-left" type="text" name="tile-wall-left" value="src/assets/isobrickswall-left.png"
-              placeholder="URL or select..." />
+            <input id="tile-wall-left" type="text" name="tile-wall-left" value="src/assets/isobrickswall-left.png|1"
+              placeholder="URL or select multiple..." />
             <button type="button" class="picker-toggle">Browse</button>
-            <button type="button" class="clear-btn">Clear</button>
-            <div class="selected-preview"></div>
+            <button type="button" class="add-blank-btn">+ Blank</button>
+            <button type="button" class="clear-btn">Clear All</button>
           </div>
+          <div class="selected-tiles"></div>
           <div class="asset-grid"></div>
         </div>
-        <div class="asset-picker">
+        <div class="asset-picker" data-multi="true">
           <label for="tile-wall-right">Wall right face:</label>
           <div class="asset-picker-controls">
-            <input id="tile-wall-right" type="text" name="tile-wall-right" value="src/assets/isobrickswall-right.png"
-              placeholder="URL or select..." />
+            <input id="tile-wall-right" type="text" name="tile-wall-right" value="src/assets/isobrickswall-right.png|1"
+              placeholder="URL or select multiple..." />
             <button type="button" class="picker-toggle">Browse</button>
-            <button type="button" class="clear-btn">Clear</button>
-            <div class="selected-preview"></div>
+            <button type="button" class="add-blank-btn">+ Blank</button>
+            <button type="button" class="clear-btn">Clear All</button>
           </div>
+          <div class="selected-tiles"></div>
           <div class="asset-grid"></div>
         </div>
         <div class="asset-picker" data-multi="true">

@@ -98,6 +98,9 @@ Maze.prototype.loadTileset = function () {
       return;
     }
 
+    // Initialize tileWeights to store weight arrays
+    this.tileWeights = {};
+
     // Include directional gate tiles
     const tileTypes = [
       'wallLeft', 'wallRight', 'pathway', 'start', 'end',
@@ -110,30 +113,34 @@ Maze.prototype.loadTileset = function () {
       const tileValue = this.tileset[type];
       if (!tileValue) return;
 
-      // Handle array of tile URLs (for random selection)
+      // Handle array of weighted tile objects: [{url, weight}, ...]
       if (Array.isArray(tileValue)) {
-        const arrayPromises = tileValue.map((url, idx) => {
+        const arrayPromises = tileValue.map((item, idx) => {
           return new Promise((res) => {
+            // Handle both new format {url, weight} and legacy format (string)
+            const url = typeof item === 'object' ? item.url : item;
+            const weight = typeof item === 'object' ? (item.weight || 1) : 1;
+
             // null, empty string, or "blank" = solid color (no image)
             if (!url || url === 'blank' || url === '') {
-              res({ index: idx, image: null });
+              res({ index: idx, image: null, weight: weight });
               return;
             }
             const img = new Image();
-            img.onload = () => res({ index: idx, image: img });
+            img.onload = () => res({ index: idx, image: img, weight: weight });
             img.onerror = () => {
               console.warn(`Failed to load tile: ${type}[${idx}]`);
-              res({ index: idx, image: null });
+              res({ index: idx, image: null, weight: weight });
             };
             img.src = url;
           });
         });
 
         const arrayPromise = Promise.all(arrayPromises).then((results) => {
-          // Sort by index to maintain order, then extract images
-          this.tileImages[type] = results
-            .sort((a, b) => a.index - b.index)
-            .map(r => r.image);
+          // Sort by index to maintain order
+          results.sort((a, b) => a.index - b.index);
+          this.tileImages[type] = results.map(r => r.image);
+          this.tileWeights[type] = results.map(r => r.weight);
         });
         promises.push(arrayPromise);
       } else {
@@ -156,6 +163,56 @@ Maze.prototype.loadTileset = function () {
 
     Promise.all(promises).then(resolve).catch(reject);
   });
+};
+
+// Weighted random selection helper
+Maze.prototype.selectWeightedRandom = function (tiles, weights) {
+  if (!tiles || tiles.length === 0) return null;
+  if (!weights || tiles.length === 1) return tiles[0];
+
+  const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+  if (totalWeight <= 0) return tiles[0];
+
+  let random = Math.random() * totalWeight;
+  for (let i = 0; i < tiles.length; i++) {
+    random -= weights[i];
+    if (random <= 0) return tiles[i];
+  }
+  return tiles[tiles.length - 1];
+};
+
+// Get weighted random index for a tile array (deterministic per position)
+Maze.prototype.getWeightedTileIndex = function (type, gridX, gridY) {
+  const tiles = this.tileImages[type];
+  const weights = this.tileWeights[type];
+  if (!tiles || !Array.isArray(tiles) || tiles.length === 0) return -1;
+  if (tiles.length === 1) return 0;
+
+  // Use position-based seed for deterministic randomness
+  const key = `${type}_${gridX},${gridY}`;
+  if (this.floorTileMap[key] !== undefined) {
+    return this.floorTileMap[key];
+  }
+
+  // Calculate weighted random index
+  const totalWeight = weights ? weights.reduce((sum, w) => sum + w, 0) : tiles.length;
+  let random = Math.random() * totalWeight;
+  let selectedIdx = 0;
+
+  if (weights) {
+    for (let i = 0; i < tiles.length; i++) {
+      random -= weights[i];
+      if (random <= 0) {
+        selectedIdx = i;
+        break;
+      }
+    }
+  } else {
+    selectedIdx = Math.floor(Math.random() * tiles.length);
+  }
+
+  this.floorTileMap[key] = selectedIdx;
+  return selectedIdx;
 };
 
 // Load decoration images (called when decorations are placed)
@@ -253,13 +310,15 @@ Maze.prototype.clearBlankFloors = function () {
 // Export full maze state as JSON string
 Maze.prototype.exportMaze = function () {
   const data = {
-    version: 2,
+    version: 3,
     matrix: this.matrix,
     decorations: this.decorations,
     blankFloorTiles: this.blankFloorTiles,
     floorTileMap: this.floorTileMap,
     entryNodes: this.entryNodes,
-    entryType: this.entryType || null
+    entryType: this.entryType || null,
+    tileset: this.tileset || null,
+    tileWeights: this.tileWeights || null
   };
   return JSON.stringify(data, null, 2);
 };
@@ -294,6 +353,13 @@ Maze.prototype.importMaze = function (jsonString) {
     }
     if (parsed.entryType) {
       this.entryType = parsed.entryType;
+    }
+    // Version 3+: tileset configuration with weights
+    if (parsed.tileset) {
+      this.tileset = parsed.tileset;
+    }
+    if (parsed.tileWeights) {
+      this.tileWeights = parsed.tileWeights;
     }
     return true;
   } catch (e) {
@@ -1531,15 +1597,13 @@ Maze.prototype.draw = function () {
   // Check if pathway is an array (for random tile selection)
   const pathwayIsArray = Array.isArray(this.tileImages.pathway);
   const pathwayTiles = pathwayIsArray ? this.tileImages.pathway : null;
+  const pathwayWeights = pathwayIsArray ? this.tileWeights.pathway : null;
 
-  // Helper to get a floor tile for a given position
+  // Helper to get a floor tile for a given position (uses weighted random selection)
   const getFloorTile = (gridX, gridY) => {
     if (pathwayIsArray && pathwayTiles.length > 0) {
-      const key = `${gridX},${gridY}`;
-      if (this.floorTileMap[key] === undefined) {
-        this.floorTileMap[key] = Math.floor(Math.random() * pathwayTiles.length);
-      }
-      return pathwayTiles[this.floorTileMap[key]]; // May be null for "blank" tiles
+      const idx = this.getWeightedTileIndex('pathway', gridX, gridY);
+      return idx >= 0 ? pathwayTiles[idx] : null; // May be null for "blank" tiles
     }
     return this.tileImages.pathway || null;
   };
@@ -1751,8 +1815,35 @@ Maze.prototype.draw = function () {
       const isoX = (j - i) * tileWidth * 0.5 + offsetX;
       const isoY = (j + i) * tileHeight * 0.5 + offsetY;
 
-      // Draw wall tile
-      if (this.tileImages.wallLeft || this.tileImages.wallRight) {
+      // Draw wall tile - select from weighted arrays if applicable
+      const wallLeftImages = this.tileImages.wallLeft;
+      const wallRightImages = this.tileImages.wallRight;
+      const hasWallLeft = wallLeftImages && (Array.isArray(wallLeftImages) ? wallLeftImages.length > 0 : true);
+      const hasWallRight = wallRightImages && (Array.isArray(wallRightImages) ? wallRightImages.length > 0 : true);
+
+      if (hasWallLeft || hasWallRight) {
+        // Get wall tile for this position (weighted random selection for arrays)
+        let leftImage = null;
+        let rightImage = null;
+
+        if (hasWallLeft) {
+          if (Array.isArray(wallLeftImages)) {
+            const idx = this.getWeightedTileIndex('wallLeft', j, i);
+            leftImage = idx >= 0 ? wallLeftImages[idx] : null;
+          } else {
+            leftImage = wallLeftImages;
+          }
+        }
+
+        if (hasWallRight) {
+          if (Array.isArray(wallRightImages)) {
+            const idx = this.getWeightedTileIndex('wallRight', j, i);
+            rightImage = idx >= 0 ? wallRightImages[idx] : null;
+          } else {
+            rightImage = wallRightImages;
+          }
+        }
+
         this.createTexturedCube({
           ctx,
           isoX,
@@ -1761,8 +1852,8 @@ Maze.prototype.draw = function () {
           tileHeight,
           height: cubeHeight,
           wallHeight: this.wallHeight,
-          leftImage: this.tileImages.wallLeft || null,
-          rightImage: this.tileImages.wallRight || null,
+          leftImage: leftImage,
+          rightImage: rightImage,
           topColor: "#ffffff",
           showStroke: this.showStroke,
           strokeTop: this.strokeTop,
