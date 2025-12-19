@@ -675,13 +675,15 @@ function updateWeightedTileDisplay(container, tiles, onRemove, onWeightChange) {
     });
   });
 
-  // Add weight change handlers
+  // Add weight change handlers (both input for live updates and change for final value)
   container.querySelectorAll(".weight-input").forEach((input) => {
-    input.addEventListener("change", (e) => {
+    const handleWeightChange = () => {
       const idx = parseInt(input.dataset.idx, 10);
       const newWeight = parseFloat(input.value) || 1;
       onWeightChange(idx, newWeight);
-    });
+    };
+    input.addEventListener("change", handleWeightChange);
+    input.addEventListener("input", handleWeightChange);
   });
 }
 
@@ -749,9 +751,45 @@ function refreshMazeTileset() {
   const tileEndW = document.getElementById("tile-end-w");
   const showStrokeCheckbox = document.getElementById("show-stroke");
 
-  const wallLeftUrl = tileWallLeft ? tileWallLeft.value.trim() : "";
-  const wallRightUrl = tileWallRight ? tileWallRight.value.trim() : "";
+  const wallLeftValue = tileWallLeft ? tileWallLeft.value.trim() : "";
+  const wallRightValue = tileWallRight ? tileWallRight.value.trim() : "";
   const pathwayValue = tilePathway ? tilePathway.value.trim() : "";
+
+  // Check if wall-left is multi-select (comma-separated values with weights)
+  const wallLeftPicker = tileWallLeft ? tileWallLeft.closest(".asset-picker") : null;
+  const isWallLeftMulti = wallLeftPicker && wallLeftPicker.dataset.multi === "true";
+  let wallLeftTiles = null;
+
+  if (wallLeftValue) {
+    if (isWallLeftMulti && wallLeftValue.includes(",")) {
+      // Parse as weighted array
+      wallLeftTiles = parseWeightedTiles(wallLeftValue);
+    } else if (isWallLeftMulti) {
+      // Single value but multi-select enabled
+      wallLeftTiles = parseWeightedTiles(wallLeftValue);
+    } else {
+      // Single select mode - use as string
+      wallLeftTiles = wallLeftValue;
+    }
+  }
+
+  // Check if wall-right is multi-select (comma-separated values with weights)
+  const wallRightPicker = tileWallRight ? tileWallRight.closest(".asset-picker") : null;
+  const isWallRightMulti = wallRightPicker && wallRightPicker.dataset.multi === "true";
+  let wallRightTiles = null;
+
+  if (wallRightValue) {
+    if (isWallRightMulti && wallRightValue.includes(",")) {
+      // Parse as weighted array
+      wallRightTiles = parseWeightedTiles(wallRightValue);
+    } else if (isWallRightMulti) {
+      // Single value but multi-select enabled
+      wallRightTiles = parseWeightedTiles(wallRightValue);
+    } else {
+      // Single select mode - use as string
+      wallRightTiles = wallRightValue;
+    }
+  }
 
   // Check if pathway is multi-select (comma-separated values)
   const pathwayPicker = tilePathway
@@ -763,14 +801,11 @@ function refreshMazeTileset() {
 
   if (pathwayValue) {
     if (isPathwayMulti && pathwayValue.includes(",")) {
-      // Parse as array, keeping "blank" as-is
-      pathwayTiles = pathwayValue
-        .split(",")
-        .map((v) => v.trim())
-        .filter((v) => v);
+      // Parse as weighted array
+      pathwayTiles = parseWeightedTiles(pathwayValue);
     } else if (isPathwayMulti) {
-      // Single value but multi-select enabled - still use as array for consistency
-      pathwayTiles = [pathwayValue];
+      // Single value but multi-select enabled
+      pathwayTiles = parseWeightedTiles(pathwayValue);
     } else {
       // Single select mode - use as string
       pathwayTiles = pathwayValue;
@@ -791,8 +826,8 @@ function refreshMazeTileset() {
   // Update tileset on existing maze
   let tileset = null;
   const hasAnyTile =
-    wallLeftUrl ||
-    wallRightUrl ||
+    wallLeftTiles ||
+    wallRightTiles ||
     pathwayTiles ||
     startNUrl ||
     startSUrl ||
@@ -805,8 +840,8 @@ function refreshMazeTileset() {
 
   if (hasAnyTile) {
     tileset = {};
-    if (wallLeftUrl) tileset.wallLeft = wallLeftUrl;
-    if (wallRightUrl) tileset.wallRight = wallRightUrl;
+    if (wallLeftTiles) tileset.wallLeft = wallLeftTiles;
+    if (wallRightTiles) tileset.wallRight = wallRightTiles;
     if (pathwayTiles) tileset.pathway = pathwayTiles;
     // Directional start tiles
     if (startNUrl) tileset.startN = startNUrl;
@@ -839,6 +874,7 @@ function refreshMazeTileset() {
 
   mazeNodes.tileset = tileset;
   mazeNodes.tileImages = {}; // Clear cached images
+  mazeNodes.floorTileMap = {}; // Clear tile selection cache so new weights take effect
   mazeNodes.showStroke = showStrokeCheckbox ? showStrokeCheckbox.checked : true;
   mazeNodes.strokeTop = strokeTopCheckbox ? strokeTopCheckbox.checked : true;
   mazeNodes.strokeBottom = strokeBottomCheckbox
