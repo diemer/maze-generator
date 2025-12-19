@@ -1825,6 +1825,77 @@ Maze.prototype.draw = function () {
     }
   }
 
+  // PASS 2.5: Redraw top face strokes to cover any artifacts from extended fills
+  // This ensures strokes are always on top of all fills
+  // Only redraws edges that should be visible (respects neighbor-aware logic)
+  if (this.showStroke && this.strokeTop) {
+    ctx.strokeStyle = this.color;
+    ctx.lineWidth = this.strokeWidth;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+
+    for (let i = 0; i < rowCount; i++) {
+      const rowLength = this.matrix[i].length;
+      for (let j = 0; j < rowLength; j++) {
+        // Skip gate positions
+        const isStartGate = gateEntry && j === gateEntry.x && i === gateEntry.y;
+        const isEndGate = gateExit && j === gateExit.x && i === gateExit.y;
+        if (isStartGate || isEndGate) continue;
+
+        const pixel = parseInt(this.matrix[i].charAt(j), 10);
+        if (!pixel) continue; // Skip floors
+
+        // Get all neighbor pixels
+        const leftPixel = j > 0 ? (isGate(j - 1, i) ? 0 : parseInt(this.matrix[i].charAt(j - 1), 10)) : 0;
+        const rightPixel = j < rowLength - 1 ? (isGate(j + 1, i) ? 0 : parseInt(this.matrix[i].charAt(j + 1), 10)) : 0;
+        const topPixel = i > 0 ? (isGate(j, i - 1) ? 0 : parseInt(this.matrix[i - 1].charAt(j), 10)) : 0;
+        const bottomPixel = i < rowCount - 1 ? (isGate(j, i + 1) ? 0 : parseInt(this.matrix[i + 1].charAt(j), 10)) : 0;
+
+        // Only redraw strokes for walls that have a wall above (where triangles appear)
+        if (!topPixel) continue;
+
+        const isoX = (j - i) * tileWidth * 0.5 + offsetX;
+        const isoY = (j + i) * tileHeight * 0.5 + offsetY;
+
+        // Top face vertices
+        const topCenter = { x: isoX, y: isoY };
+        const topRight = { x: isoX + tileWidth * 0.5, y: isoY + tileHeight * 0.5 };
+        const bottomCenter = { x: isoX, y: isoY + tileHeight };
+        const topLeft = { x: isoX - tileWidth * 0.5, y: isoY + tileHeight * 0.5 };
+
+        // Only redraw edges that should be visible (no adjacent wall sharing them)
+        // This matches the strokeWallCorners logic from createBorderCube
+
+        // Upper-right edge (topCenter → topRight): draw if no wall above (but we know topPixel=1 here)
+        // Skip this edge since topPixel is always true in this pass
+
+        // Lower-right edge (topRight → bottomCenter): draw if no wall to the right
+        if (!rightPixel) {
+          ctx.beginPath();
+          ctx.moveTo(topRight.x, topRight.y);
+          ctx.lineTo(bottomCenter.x, bottomCenter.y);
+          ctx.stroke();
+        }
+
+        // Lower-left edge (bottomCenter → topLeft): draw if no wall below
+        if (!bottomPixel) {
+          ctx.beginPath();
+          ctx.moveTo(bottomCenter.x, bottomCenter.y);
+          ctx.lineTo(topLeft.x, topLeft.y);
+          ctx.stroke();
+        }
+
+        // Upper-left edge (topLeft → topCenter): draw if no wall to the left
+        if (!leftPixel) {
+          ctx.beginPath();
+          ctx.moveTo(topLeft.x, topLeft.y);
+          ctx.lineTo(topCenter.x, topCenter.y);
+          ctx.stroke();
+        }
+      }
+    }
+  }
+
   // PASS 3: Draw "overlay" layer decorations (on top of everything)
   drawDecorationsForLayer('overlay');
 };
