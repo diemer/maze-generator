@@ -771,6 +771,26 @@
       display: block;
     }
 
+    .database-tools {
+      display: flex;
+      gap: 0.5em;
+      flex-wrap: wrap;
+    }
+
+    .database-tools button {
+      padding: 6px 12px;
+      font-size: 0.85em;
+      background: #f5f5f5;
+      color: #333;
+      border: 1px solid #999;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .database-tools button:hover {
+      background: #e8e8e8;
+    }
+
     .saved-maps-list {
       display: flex;
       flex-direction: column;
@@ -1626,6 +1646,14 @@
             Generate Maze
           </button>
           <a href="" class="hide" id="download">Download Maze</a>
+        </div>
+        <p class="desc" style="margin-top: 2em">
+          Backup &amp; Restore all saved maps and projects.
+        </p>
+        <div class="database-tools">
+          <button type="button" id="export-database-btn">Export Database</button>
+          <button type="button" id="import-database-btn">Import Database</button>
+          <input type="file" id="import-database-file" accept=".json" style="display: none" />
         </div>
       </div>
     </div>
@@ -2604,6 +2632,109 @@
       renderProjectSelector();
       renderProjectsList();
       renderSavedMapsList();
+
+      // Database Export/Import
+      function exportDatabase() {
+        var data = {
+          version: 1,
+          exportDate: new Date().toISOString(),
+          projects: getProjects(),
+          maps: getAllMaps(),
+          currentProject: getCurrentProjectId()
+        };
+
+        var json = JSON.stringify(data, null, 2);
+        var blob = new Blob([json], { type: "application/json" });
+        var url = URL.createObjectURL(blob);
+
+        var link = document.createElement("a");
+        link.href = url;
+        var date = new Date().toISOString().split("T")[0];
+        link.download = "maze-generator-backup-" + date + ".json";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+
+      function importDatabase(file) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          try {
+            var data = JSON.parse(e.target.result);
+
+            if (!data.projects || !data.maps) {
+              alert("Invalid backup file format");
+              return;
+            }
+
+            var mapCount = data.maps ? data.maps.length : 0;
+            var projectCount = data.projects ? data.projects.length : 0;
+
+            var confirmMsg = "Import " + mapCount + " maps and " + projectCount + " projects?\n\n";
+            confirmMsg += "Choose how to handle existing data:\n";
+            confirmMsg += "• OK = Merge (add to existing)\n";
+            confirmMsg += "• Cancel = Abort import";
+
+            if (!confirm(confirmMsg)) {
+              return;
+            }
+
+            // Merge projects (avoid duplicates by ID)
+            var existingProjects = getProjects();
+            var existingProjectIds = existingProjects.map(function(p) { return p.id; });
+            data.projects.forEach(function(project) {
+              if (existingProjectIds.indexOf(project.id) === -1) {
+                existingProjects.push(project);
+              }
+            });
+            saveProjectsToStorage(existingProjects);
+
+            // Merge maps (avoid duplicates by ID)
+            var existingMaps = getAllMaps();
+            var existingMapIds = existingMaps.map(function(m) { return m.id; });
+            data.maps.forEach(function(map) {
+              if (existingMapIds.indexOf(map.id) === -1) {
+                existingMaps.push(map);
+              }
+            });
+            saveMapsToStorage(existingMaps);
+
+            // Refresh UI
+            renderProjectSelector();
+            renderProjectsList();
+            renderSavedMapsList();
+            updateMapNameInput();
+
+            alert("Import complete! Added " + mapCount + " maps and " + projectCount + " projects.");
+          } catch (err) {
+            console.error("Import failed:", err);
+            alert("Failed to import: " + err.message);
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      // Export database button
+      var exportDbBtn = document.getElementById("export-database-btn");
+      if (exportDbBtn) {
+        exportDbBtn.addEventListener("click", exportDatabase);
+      }
+
+      // Import database button
+      var importDbBtn = document.getElementById("import-database-btn");
+      var importDbFile = document.getElementById("import-database-file");
+      if (importDbBtn && importDbFile) {
+        importDbBtn.addEventListener("click", function() {
+          importDbFile.click();
+        });
+        importDbFile.addEventListener("change", function() {
+          if (this.files && this.files[0]) {
+            importDatabase(this.files[0]);
+            this.value = ""; // Reset for next import
+          }
+        });
+      }
 
       // FAB - Generate New Maze button
       var fabGenerate = document.getElementById("fab-generate");
