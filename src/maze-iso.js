@@ -1900,6 +1900,145 @@ Maze.prototype.draw = function () {
 
   // PASS 3: Draw "overlay" layer decorations (on top of everything)
   drawDecorationsForLayer('overlay');
+
+  // PASS 4: Draw exit indicator (arrow and EXIT text)
+  if (gateExit && this.entryNodes.end) {
+    const entryData = this.entryNodes.end;
+    const gateX = gateExit.x;
+    const gateY = gateExit.y;
+    const dir = this.getGateDirection(entryData.x, entryData.y, gateX, gateY);
+
+    // Calculate marker position (one step outward from gate)
+    let outX = 0, outY = 0;
+    if (dir === 'N') outY = -1;
+    else if (dir === 'S') outY = 1;
+    else if (dir === 'E') outX = 1;
+    else if (dir === 'W') outX = -1;
+
+    const markerX = gateX + outX;
+    const markerY = gateY + outY;
+
+    // Get isometric position of marker
+    const tightPadding = this.tightSpacing ? this.strokeWidth * 0.5 : 0;
+    const markerIsoX = (markerX - markerY) * tileWidth * 0.5 + offsetX;
+    const markerIsoY = (markerX + markerY) * tileHeight * 0.5 + offsetY;
+    const xOffsetMultiplier = (dir === 'S') ? -1 : 1;
+    const adjustedMarkerX = markerIsoX + (this.endMarkerOffsetX * xOffsetMultiplier);
+    const cubeBottomY = markerIsoY + tileHeight + cubeHeight;
+    const markerBottomY = cubeBottomY + cubeHeight + this.endMarkerOffset;
+
+    // Determine position type based on direction and entry position
+    // SW: South wall, west end (low x) | SE: South wall, east end (high x)
+    // ES: East wall, south end (high y) | EN: East wall, north end (low y)
+    const matrixCols = this.matrix[0].length;
+    const matrixRows = this.matrix.length;
+    const midX = matrixCols / 2;
+    const midY = matrixRows / 2;
+
+    let positionType;
+    if (dir === 'S') {
+      positionType = entryData.x < midX ? 'SW' : 'SE';
+    } else if (dir === 'E') {
+      positionType = entryData.y > midY ? 'ES' : 'EN';
+    } else {
+      positionType = 'SW'; // Fallback
+    }
+
+    // Arrow and text styling
+    const arrowSize = tileWidth * 0.5;
+    const arrowWidth = arrowSize * 0.6;
+    const fontSize = Math.max(12, tileWidth * 0.4);
+    const textGap = fontSize * 0.3;
+
+    ctx.save();
+    ctx.fillStyle = this.color;
+    ctx.font = `bold ${fontSize}px sans-serif`;
+    ctx.textBaseline = 'middle';
+
+    const exitText = 'EXIT';
+    const textMetrics = ctx.measureText(exitText);
+    const textWidth = textMetrics.width;
+    const charWidth = textWidth / 4; // Approximate width per character
+
+    if (positionType === 'SW') {
+      // Arrow below marker pointing UP, EXIT below arrow, E aligned to center
+      const arrowTipY = markerBottomY + arrowSize * 0.5;
+      const arrowBaseY = arrowTipY + arrowSize;
+
+      // Draw arrow pointing up
+      ctx.beginPath();
+      ctx.moveTo(adjustedMarkerX, arrowTipY);
+      ctx.lineTo(adjustedMarkerX - arrowWidth * 0.5, arrowBaseY);
+      ctx.lineTo(adjustedMarkerX + arrowWidth * 0.5, arrowBaseY);
+      ctx.closePath();
+      ctx.fill();
+
+      // Draw EXIT text below arrow, E (first char) aligned to center
+      ctx.textAlign = 'left';
+      const textX = adjustedMarkerX - charWidth * 0.5;
+      const textY = arrowBaseY + textGap + fontSize * 0.5;
+      ctx.fillText(exitText, textX, textY);
+
+    } else if (positionType === 'SE') {
+      // Arrow to LEFT of marker pointing RIGHT, EXIT to left, vertically centered
+      const arrowTipX = adjustedMarkerX - arrowSize * 1.5;
+      const arrowBaseX = arrowTipX - arrowSize;
+      const arrowY = markerBottomY - tileHeight * 0.5;
+
+      // Draw arrow pointing right
+      ctx.beginPath();
+      ctx.moveTo(arrowTipX, arrowY);
+      ctx.lineTo(arrowBaseX, arrowY - arrowWidth * 0.5);
+      ctx.lineTo(arrowBaseX, arrowY + arrowWidth * 0.5);
+      ctx.closePath();
+      ctx.fill();
+
+      // Draw EXIT text to left of arrow, vertically centered
+      ctx.textAlign = 'right';
+      const textX = arrowBaseX - textGap;
+      ctx.fillText(exitText, textX, arrowY);
+
+    } else if (positionType === 'ES') {
+      // Arrow to RIGHT of marker pointing LEFT, EXIT to right, vertically centered
+      const arrowTipX = adjustedMarkerX + arrowSize * 1.5;
+      const arrowBaseX = arrowTipX + arrowSize;
+      const arrowY = markerBottomY - tileHeight * 0.5;
+
+      // Draw arrow pointing left
+      ctx.beginPath();
+      ctx.moveTo(arrowTipX, arrowY);
+      ctx.lineTo(arrowBaseX, arrowY - arrowWidth * 0.5);
+      ctx.lineTo(arrowBaseX, arrowY + arrowWidth * 0.5);
+      ctx.closePath();
+      ctx.fill();
+
+      // Draw EXIT text to right of arrow, vertically centered
+      ctx.textAlign = 'left';
+      const textX = arrowBaseX + textGap;
+      ctx.fillText(exitText, textX, arrowY);
+
+    } else if (positionType === 'EN') {
+      // Arrow below marker pointing UP, EXIT below arrow, T aligned to center
+      const arrowTipY = markerBottomY + arrowSize * 0.5;
+      const arrowBaseY = arrowTipY + arrowSize;
+
+      // Draw arrow pointing up
+      ctx.beginPath();
+      ctx.moveTo(adjustedMarkerX, arrowTipY);
+      ctx.lineTo(adjustedMarkerX - arrowWidth * 0.5, arrowBaseY);
+      ctx.lineTo(adjustedMarkerX + arrowWidth * 0.5, arrowBaseY);
+      ctx.closePath();
+      ctx.fill();
+
+      // Draw EXIT text below arrow, T (4th char, index 3) aligned to center
+      ctx.textAlign = 'left';
+      const textX = adjustedMarkerX - charWidth * 3.5; // Offset so T is centered
+      const textY = arrowBaseY + textGap + fontSize * 0.5;
+      ctx.fillText(exitText, textX, textY);
+    }
+
+    ctx.restore();
+  }
 };
 
 Maze.prototype.generateSVG = function () {
