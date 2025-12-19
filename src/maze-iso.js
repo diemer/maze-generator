@@ -1761,10 +1761,12 @@ Maze.prototype.draw = function () {
         const drawWidth = tileWidth + tightPadding * 2;
         const drawHeight = drawWidth * tileAspect;
         // Apply horizontal offset, inverted for visual left side ('S' in isometric) to push away from wall correctly
+        // Scale offsets by wallSize/10 since defaults were designed for wallSize=10
+        const offsetScale = this.wallSize / 10;
         const xOffsetMultiplier = (dir === 'S') ? -1 : 1;
-        const drawX = markerIsoX - drawWidth * 0.5 + (this.endMarkerOffsetX * xOffsetMultiplier);
+        const drawX = markerIsoX - drawWidth * 0.5 + (this.endMarkerOffsetX * offsetScale * xOffsetMultiplier);
         const cubeBottomY = markerIsoY + tileHeight + cubeHeight;
-        const drawY = cubeBottomY - drawHeight + cubeHeight + this.endMarkerOffset; // Shift down one cubeHeight + offset
+        const drawY = cubeBottomY - drawHeight + cubeHeight + (this.endMarkerOffset * offsetScale); // Shift down one cubeHeight + offset
         ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
       }
     } else {
@@ -2015,10 +2017,12 @@ Maze.prototype.draw = function () {
     const tightPadding = this.tightSpacing ? this.strokeWidth * 0.5 : 0;
     const markerIsoX = (markerX - markerY) * tileWidth * 0.5 + offsetX;
     const markerIsoY = (markerX + markerY) * tileHeight * 0.5 + offsetY;
+    // Scale offsets by wallSize/10 since defaults were designed for wallSize=10
+    const offsetScale = this.wallSize / 10;
     const xOffsetMultiplier = (dir === 'S') ? -1 : 1;
-    const adjustedMarkerX = markerIsoX + (this.endMarkerOffsetX * xOffsetMultiplier);
+    const adjustedMarkerX = markerIsoX + (this.endMarkerOffsetX * offsetScale * xOffsetMultiplier);
     const cubeBottomY = markerIsoY + tileHeight + cubeHeight;
-    const markerBottomY = cubeBottomY + cubeHeight + this.endMarkerOffset;
+    const markerBottomY = cubeBottomY + cubeHeight + (this.endMarkerOffset * offsetScale);
 
     // Determine position type based on direction and entry position
     // SW: South wall, west end (low x) | SE: South wall, east end (high x)
