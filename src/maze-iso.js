@@ -30,8 +30,8 @@ function Maze(args) {
     showBlockNumbers: false, // Show grid coordinates on walls and pathways (for debugging)
     isoRatio: 0.5, // Isometric ratio (height/width): 0.5=2:1 pixel art, 0.577=true iso (~30°)
     tightSpacing: false, // Remove stroke-based spacing for seamless tileset rendering
-    endMarkerOffset: 0, // Vertical offset for end marker tile (positive = down)
-    endMarkerOffsetX: 0, // Horizontal offset for end marker tile (positive = right in screen space)
+    endMarkerOffset: -3.5, // Vertical offset for end marker tile (positive = down)
+    endMarkerOffsetX: -1, // Horizontal offset for end marker tile (positive = right, inverted for left-side exits)
 
     // Maximum 300 walls can be removed
     maxWallsRemove: 300,
@@ -1694,7 +1694,9 @@ Maze.prototype.draw = function () {
         const tileAspect = img.naturalHeight / img.naturalWidth;
         const drawWidth = tileWidth + tightPadding * 2;
         const drawHeight = drawWidth * tileAspect;
-        const drawX = markerIsoX - drawWidth * 0.5 + this.endMarkerOffsetX; // Apply horizontal offset
+        // Apply horizontal offset, inverted for visual left side ('S' in isometric) to push away from wall correctly
+        const xOffsetMultiplier = (dir === 'S') ? -1 : 1;
+        const drawX = markerIsoX - drawWidth * 0.5 + (this.endMarkerOffsetX * xOffsetMultiplier);
         const cubeBottomY = markerIsoY + tileHeight + cubeHeight;
         const drawY = cubeBottomY - drawHeight + cubeHeight + this.endMarkerOffset; // Shift down one cubeHeight + offset
         ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);

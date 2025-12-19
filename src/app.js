@@ -170,8 +170,8 @@ function initMaze() {
     const wallBgColor = wallBgColorInput ? wallBgColorInput.value.trim() : "";
     const isoRatioSelect = document.getElementById("iso-ratio");
     const isoRatio = isoRatioSelect ? parseFloat(isoRatioSelect.value) : 0.5;
-    const endMarkerOffset = getInputFloatVal("end-marker-offset", -3);
-    const endMarkerOffsetX = getInputFloatVal("end-marker-offset-x", -0.25);
+    const endMarkerOffset = getInputFloatVal("end-marker-offset", -3.5);
+    const endMarkerOffsetX = getInputFloatVal("end-marker-offset-x", -1);
 
     const settings = {
         width: getInputIntVal("width", 20),

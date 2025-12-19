@@ -594,6 +594,18 @@
       transform: translateX(-100%);
     }
 
+    /* Push main content when drawer is open */
+    .maze-area,
+    .decoration-palette {
+      transition: margin-left 0.3s ease;
+    }
+
+    body.drawer-open .maze-area,
+    body.drawer-open .decoration-palette {
+      margin-left: 320px;
+      padding-left: 1em;
+    }
+
     .settings-panel .controls {
       padding-bottom: 1em;
     }
@@ -1221,13 +1233,13 @@
         </p>
         <p>
           <label for="end-marker-offset">End marker Y offset:</label>
-          <input id="end-marker-offset" type="number" name="end-marker-offset" value="-3.25" min="-20" max="20"
+          <input id="end-marker-offset" type="number" name="end-marker-offset" value="-3.5" min="-20" max="20"
             step=".25" />
           <span style="font-size: smaller; color: #666">(Vertical, positive = down)</span>
         </p>
         <p>
           <label for="end-marker-offset-x">End marker X offset:</label>
-          <input id="end-marker-offset-x" type="number" name="end-marker-offset-x" value="0" min="-20" max="20"
+          <input id="end-marker-offset-x" type="number" name="end-marker-offset-x" value="-1" min="-20" max="20"
             step=".25" />
           <span style="font-size: smaller; color: #666">(Horizontal, positive = right)</span>
         </p>
@@ -1464,6 +1476,7 @@
         settingsToggle.addEventListener("click", function () {
           settingsPanel.classList.toggle("hidden");
           settingsToggle.classList.toggle("active");
+          document.body.classList.toggle("drawer-open");
         });
       }
 
@@ -1875,7 +1888,9 @@
           mazeNodes.matrix.length
         ) {
           var entryType = entrySelect ? entrySelect.value : "";
-          var flipStart = flipStartCheckbox ? flipStartCheckbox.checked : false;
+          var flipStart = flipStartCheckbox
+            ? flipStartCheckbox.checked
+            : false;
           var flipExit = flipExitCheckbox ? flipExitCheckbox.checked : false;
           mazeNodes.setEntryType(entryType, flipStart, flipExit);
           mazeNodes.draw();
@@ -1900,7 +1915,8 @@
       }
 
       // Live toggle for show block numbers
-      var showBlockNumbersCheckbox = document.getElementById("show-block-numbers");
+      var showBlockNumbersCheckbox =
+        document.getElementById("show-block-numbers");
       if (showBlockNumbersCheckbox) {
         showBlockNumbersCheckbox.addEventListener("change", function () {
           if (
@@ -1910,7 +1926,10 @@
           ) {
             mazeNodes.showBlockNumbers = showBlockNumbersCheckbox.checked;
             mazeNodes.draw();
-            if (typeof TilePlacement !== "undefined" && TilePlacement.saveCanvasState) {
+            if (
+              typeof TilePlacement !== "undefined" &&
+              TilePlacement.saveCanvasState
+            ) {
               TilePlacement.saveCanvasState();
             }
           }
