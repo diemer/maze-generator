@@ -1677,6 +1677,59 @@
         }
       }
 
+      function downloadMap(mapId) {
+        var maps = getSavedMaps();
+        var map = maps.find(function (m) {
+          return m.id === mapId;
+        });
+
+        if (!map) {
+          alert("Map not found");
+          return;
+        }
+
+        if (typeof mazeNodes === "undefined" || !mazeNodes.importMaze) {
+          alert("Maze not initialized");
+          return;
+        }
+
+        // Load and render the map, then export as PNG
+        if (mazeNodes.importMaze(map.data)) {
+          mazeNodes.loadDecorations().then(function () {
+            mazeNodes.draw();
+            if (
+              typeof TilePlacement !== "undefined" &&
+              TilePlacement.saveCanvasState
+            ) {
+              TilePlacement.saveCanvasState();
+            }
+
+            // Export canvas as PNG
+            try {
+              var canvas = document.getElementById("maze");
+              var image = canvas.toDataURL("image/png");
+
+              var link = document.createElement("a");
+              link.href = image;
+              // Sanitize the map name for filename
+              var filename =
+                map.name.replace(/[^a-z0-9]/gi, "_").toLowerCase() + ".png";
+              link.download = filename;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+            } catch (err) {
+              alert(
+                "Cannot export PNG: canvas contains cross-origin images. Try running from a local server."
+              );
+              console.error("toDataURL failed:", err);
+            }
+          });
+        } else {
+          alert("Failed to load map");
+        }
+      }
+
       var draggedItem = null;
 
       function renderSavedMapsList() {
@@ -1724,6 +1777,9 @@
               "</div>" +
               "</div>" +
               '<div class="saved-map-actions">' +
+              '<button type="button" class="download-btn" data-map-id="' +
+              map.id +
+              '">Download</button>' +
               '<button type="button" class="rename-btn" data-map-id="' +
               map.id +
               '">Rename</button>' +
@@ -1742,6 +1798,7 @@
           .forEach(function (item) {
             item.addEventListener("click", function (e) {
               if (
+                e.target.classList.contains("download-btn") ||
                 e.target.classList.contains("rename-btn") ||
                 e.target.classList.contains("delete-btn") ||
                 e.target.closest(".drag-handle")
@@ -1809,6 +1866,13 @@
           btn.addEventListener("click", function (e) {
             e.stopPropagation();
             deleteMap(this.getAttribute("data-map-id"));
+          });
+        });
+
+        container.querySelectorAll(".download-btn").forEach(function (btn) {
+          btn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            downloadMap(this.getAttribute("data-map-id"));
           });
         });
       }
