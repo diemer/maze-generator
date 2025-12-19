@@ -1001,6 +1001,19 @@ Maze.prototype.createBorderCube = function ({
   const bottomRight = { x: isoX + tileWidth * 0.5, y: isoY + tileHeight * 0.5 + height };
   const bottomCenterLow = { x: isoX, y: isoY + tileHeight + height };
 
+  // Extended top face vertices - extend upward very slightly when there's a wall above
+  // to cover anti-aliasing artifacts without reaching the stroke area
+  const topOverlap = topPixel ? 0.1 : 0;
+  const topCenterFill = { x: topCenter.x, y: topCenter.y - topOverlap };
+  const topRightFill = { x: topRight.x, y: topRight.y - topOverlap * 0.5 };
+  const topLeftFill = { x: topLeft.x, y: topLeft.y - topOverlap * 0.5 };
+
+  // Extended bottom vertices - extend downward slightly when there's a wall below
+  const bottomOverlap = bottomPixel ? 0.5 : 0;
+  const bottomLeftFill = { x: bottomLeft.x, y: bottomLeft.y + bottomOverlap * 0.5 };
+  const bottomRightFill = { x: bottomRight.x, y: bottomRight.y + bottomOverlap * 0.5 };
+  const bottomCenterLowFill = { x: bottomCenterLow.x, y: bottomCenterLow.y + bottomOverlap };
+
   // Draw top face
   if (topPixel) {
     ctx.fillStyle = "#ff0000";
@@ -1011,30 +1024,30 @@ Maze.prototype.createBorderCube = function ({
   }
 
   ctx.beginPath();
-  ctx.moveTo(topCenter.x, topCenter.y);
-  ctx.lineTo(topRight.x, topRight.y);
+  ctx.moveTo(topCenterFill.x, topCenterFill.y);
+  ctx.lineTo(topRightFill.x, topRightFill.y);
   ctx.lineTo(bottomCenter.x, bottomCenter.y);
-  ctx.lineTo(topLeft.x, topLeft.y);
+  ctx.lineTo(topLeftFill.x, topLeftFill.y);
   ctx.closePath();
   ctx.fill();
 
-  // Draw left face
+  // Draw left face - use extended vertices for both top and bottom
   ctx.fillStyle = "#aaa";
   ctx.beginPath();
   ctx.moveTo(bottomCenter.x, bottomCenter.y);
-  ctx.lineTo(topLeft.x, topLeft.y);
-  ctx.lineTo(bottomLeft.x, bottomLeft.y);
-  ctx.lineTo(bottomCenterLow.x, bottomCenterLow.y);
+  ctx.lineTo(topLeftFill.x, topLeftFill.y);
+  ctx.lineTo(bottomLeftFill.x, bottomLeftFill.y);
+  ctx.lineTo(bottomCenterLowFill.x, bottomCenterLowFill.y);
   ctx.closePath();
   ctx.fill();
 
-  // Draw right face
+  // Draw right face - use extended vertices for both top and bottom
   ctx.fillStyle = "#888";
   ctx.beginPath();
   ctx.moveTo(bottomCenter.x, bottomCenter.y);
-  ctx.lineTo(topRight.x, topRight.y);
-  ctx.lineTo(bottomRight.x, bottomRight.y);
-  ctx.lineTo(bottomCenterLow.x, bottomCenterLow.y);
+  ctx.lineTo(topRightFill.x, topRightFill.y);
+  ctx.lineTo(bottomRightFill.x, bottomRightFill.y);
+  ctx.lineTo(bottomCenterLowFill.x, bottomCenterLowFill.y);
   ctx.closePath();
   ctx.fill();
 
@@ -1199,13 +1212,26 @@ Maze.prototype.createTexturedCube = function ({
   const bottomRight = { x: isoX + tileWidth * 0.5, y: isoY + tileHeight * 0.5 + height };
   const bottomCenterLow = { x: isoX, y: isoY + tileHeight + height };
 
+  // Extended top face vertices - extend upward very slightly when there's a wall above
+  // to cover anti-aliasing artifacts without reaching the stroke area
+  const topOverlap = topPixel ? 0.1 : 0;
+  const topCenterFill = { x: topCenter.x, y: topCenter.y - topOverlap };
+  const topRightFill = { x: topRight.x, y: topRight.y - topOverlap * 0.5 };
+  const topLeftFill = { x: topLeft.x, y: topLeft.y - topOverlap * 0.5 };
+
+  // Extended bottom vertices - extend downward slightly when there's a wall below
+  const bottomOverlap = bottomPixel ? 0.5 : 0;
+  const bottomLeftFill = { x: bottomLeft.x, y: bottomLeft.y + bottomOverlap * 0.5 };
+  const bottomRightFill = { x: bottomRight.x, y: bottomRight.y + bottomOverlap * 0.5 };
+  const bottomCenterLowFill = { x: bottomCenterLow.x, y: bottomCenterLow.y + bottomOverlap };
+
   // Draw top face (solid color)
   ctx.fillStyle = topColor;
   ctx.beginPath();
-  ctx.moveTo(topCenter.x, topCenter.y);
-  ctx.lineTo(topRight.x, topRight.y);
+  ctx.moveTo(topCenterFill.x, topCenterFill.y);
+  ctx.lineTo(topRightFill.x, topRightFill.y);
   ctx.lineTo(bottomCenter.x, bottomCenter.y);
-  ctx.lineTo(topLeft.x, topLeft.y);
+  ctx.lineTo(topLeftFill.x, topLeftFill.y);
   ctx.closePath();
   ctx.fill();
 
