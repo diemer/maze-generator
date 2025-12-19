@@ -602,8 +602,7 @@
 
     body.drawer-open .maze-area,
     body.drawer-open .decoration-palette {
-      margin-left: 320px;
-      padding-left: 1em;
+      margin-left: calc(320px + 2em);
     }
 
     .settings-panel .controls {
@@ -866,6 +865,64 @@
     }
 
     .fab-generate:hover .fab-tooltip {
+      opacity: 1;
+    }
+
+    /* FAB - Download Map button */
+    .fab-download {
+      position: fixed;
+      bottom: 150px;
+      right: 1em;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #2196f3;
+      color: white;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      z-index: 1001;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition:
+        transform 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
+    }
+
+    .fab-download:hover {
+      background: #1976d2;
+      transform: scale(1.1);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+    }
+
+    .fab-download:active {
+      transform: scale(0.95);
+    }
+
+    .fab-download svg {
+      width: 28px;
+      height: 28px;
+      fill: currentColor;
+    }
+
+    .fab-download .fab-tooltip {
+      position: absolute;
+      right: 100%;
+      margin-right: 10px;
+      padding: 6px 12px;
+      background: #333;
+      color: white;
+      font-size: 0.85em;
+      border-radius: 4px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .fab-download:hover .fab-tooltip {
       opacity: 1;
     }
 
@@ -1439,6 +1496,14 @@
     <!-- End palette-content -->
   </div>
 
+  <!-- FAB - Download Map -->
+  <button type="button" class="fab-download" id="fab-download" title="Download Map">
+    <span class="fab-tooltip">Download</span>
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
+    </svg>
+  </button>
+
   <!-- FAB - Generate New Maze -->
   <button type="button" class="fab-generate" id="fab-generate" title="Generate New Maze">
     <span class="fab-tooltip">New Maze</span>
@@ -1720,7 +1785,7 @@
               document.body.removeChild(link);
             } catch (err) {
               alert(
-                "Cannot export PNG: canvas contains cross-origin images. Try running from a local server."
+                "Cannot export PNG: canvas contains cross-origin images. Try running from a local server.",
               );
               console.error("toDataURL failed:", err);
             }
@@ -1935,6 +2000,29 @@
         fabGenerate.addEventListener("click", function () {
           if (typeof initMaze === "function") {
             initMaze();
+          }
+        });
+      }
+
+      // FAB - Download Map button
+      var fabDownload = document.getElementById("fab-download");
+      if (fabDownload) {
+        fabDownload.addEventListener("click", function () {
+          try {
+            var canvas = document.getElementById("maze");
+            var image = canvas.toDataURL("image/png");
+
+            var link = document.createElement("a");
+            link.href = image;
+            link.download = "maze.png";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          } catch (err) {
+            alert(
+              "Cannot export PNG: canvas contains cross-origin images. Try running from a local server."
+            );
+            console.error("toDataURL failed:", err);
           }
         });
       }
