@@ -2006,16 +2006,8 @@
       }
 
       function generateMapName() {
-        var now = new Date();
-        var date = now.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        });
-        var time = now.toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-        return "Maze " + date + " " + time;
+        var maps = getSavedMaps();
+        return "Floor " + (maps.length + 1);
       }
 
       function getSavedMaps() {
