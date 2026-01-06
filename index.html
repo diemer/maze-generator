@@ -83,7 +83,15 @@
       border: 2px solid #ddd;
       border-radius: 4px;
       box-sizing: border-box;
-      margin-bottom: 1em;
+      margin-bottom: 0.75em;
+    }
+
+    .password-box label {
+      display: block;
+      text-align: left;
+      font-size: 0.85em;
+      color: #666;
+      margin-bottom: 0.25em;
     }
 
     .password-box input:focus {
@@ -102,8 +110,13 @@
       cursor: pointer;
     }
 
-    .password-box button:hover {
+    .password-box button:hover:not(:disabled) {
       background: #0055ff;
+    }
+
+    .password-box button:disabled {
+      background: #999;
+      cursor: not-allowed;
     }
 
     .password-box .error {
@@ -1245,6 +1258,31 @@
       transform: translateX(-100%);
     }
 
+    .settings-logout {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 1em;
+      border-top: 1px solid #ddd;
+      background: #f9f9f9;
+    }
+
+    .settings-logout button {
+      width: 100%;
+      padding: 10px;
+      font-size: 0.9em;
+      background: #666;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .settings-logout button:hover {
+      background: #444;
+    }
+
     /* Push main content when drawers are open */
     .maze-area {
       transition:
@@ -1337,25 +1375,61 @@
 
     .save-map-row button {
       white-space: nowrap;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s, opacity 0.2s;
     }
 
-    #update-map-btn:disabled {
-      opacity: 0.5;
+    .save-map-row .save-new-btn {
+      position: relative;
+      background: #22c55e;
+      border: 1px solid #16a34a;
+      color: white;
+    }
+
+    .save-map-row .save-new-btn:hover:not(:disabled) {
+      background: #16a34a;
+    }
+
+    .save-map-row .save-new-btn:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    .save-map-row .save-new-btn .plus-icon {
+      position: absolute;
+      bottom: 2px;
+      right: 2px;
+      background: #22c55e;
+      border-radius: 2px;
+    }
+
+    .save-map-row .update-btn {
+      background: #3b82f6;
+      border: 1px solid #2563eb;
+      color: white;
+    }
+
+    .save-map-row .update-btn:hover:not(:disabled) {
+      background: #2563eb;
+    }
+
+    .save-map-row .update-btn:disabled {
+      opacity: 0.4;
       cursor: not-allowed;
     }
 
-    .current-map-info {
-      font-size: 0.8em;
-      color: #666;
-      margin-top: 0.5em;
-      padding: 0.25em 0.5em;
-      background: #f0f8ff;
-      border-radius: 3px;
-      display: none;
+    .save-map-row .update-btn:disabled.saving {
+      cursor: wait;
+      opacity: 0.6;
     }
 
-    .current-map-info.active {
-      display: block;
+    .current-map-info {
+      display: none;
     }
 
     .database-tools {
@@ -1414,15 +1488,18 @@
       gap: 0.75em;
       max-height: calc(100vh - 250px);
       overflow-y: auto;
+      padding-top: 10px;
     }
 
     .saved-map-item {
+      position: relative;
       display: flex;
       flex-direction: column;
       padding: 0.5em;
       border: 1px solid #ddd;
       border-radius: 4px;
       cursor: pointer;
+      overflow: visible;
       transition:
         border-color 0.2s,
         background 0.2s;
@@ -1431,6 +1508,27 @@
     .saved-map-item:hover {
       border-color: #3377ff;
       background: #f8faff;
+    }
+
+    .saved-map-item.editing {
+      border-color: #22c55e;
+      background: #f0fdf4;
+      box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+    }
+
+    .saved-map-item.editing::before {
+      content: "Editing";
+      position: absolute;
+      top: -8px;
+      left: 8px;
+      font-size: 0.65em;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: white;
+      background: #22c55e;
+      padding: 2px 6px;
+      border-radius: 3px;
+      z-index: 1;
     }
 
     .saved-map-content {
@@ -1624,7 +1722,7 @@
     .add-project-row {
       display: flex;
       gap: 0.5em;
-      margin-top: 0.5em;
+      margin-bottom: 1em;
     }
 
     .add-project-row input {
@@ -1783,6 +1881,718 @@
       opacity: 1;
     }
 
+    /* FAB - Publish button */
+    .fab-publish {
+      position: fixed;
+      bottom: 220px;
+      right: 1em;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #9c27b0;
+      color: white;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      z-index: 1001;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .fab-publish:hover {
+      background: #7b1fa2;
+      transform: scale(1.1);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+    }
+
+    .fab-publish:active {
+      transform: scale(0.95);
+    }
+
+    .fab-publish svg {
+      width: 28px;
+      height: 28px;
+      fill: currentColor;
+    }
+
+    .fab-publish .fab-tooltip {
+      position: absolute;
+      right: 100%;
+      margin-right: 10px;
+      padding: 6px 12px;
+      background: #333;
+      color: white;
+      font-size: 0.85em;
+      border-radius: 4px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+    }
+
+    .fab-publish:hover .fab-tooltip {
+      opacity: 1;
+    }
+
+    /* Hide publish FAB when in publishing mode */
+    body.publishing-mode .fab-publish {
+      display: none;
+    }
+
+    /* Publishing Mode Toolbar */
+    .publishing-toolbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 12px 20px;
+      z-index: 1100;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .publishing-toolbar-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .publishing-title {
+      font-size: 1.1em;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .publishing-title::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: #4caf50;
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.2); }
+    }
+
+    .publishing-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .publishing-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.9em;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+    }
+
+    .publishing-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    .publishing-btn:active {
+      transform: scale(0.97);
+    }
+
+    .publishing-btn-primary {
+      background: #4caf50;
+    }
+
+    .publishing-btn-primary:hover {
+      background: #43a047;
+    }
+
+    .publishing-btn-secondary {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .publishing-btn-secondary:hover {
+      background: rgba(255, 0, 0, 0.3);
+    }
+
+    .publishing-btn-export {
+      background: #2196f3;
+    }
+
+    .publishing-btn-export:hover {
+      background: #1976d2;
+    }
+
+    /* Adjust body when in publishing mode */
+    body.publishing-mode {
+      padding-top: 60px;
+    }
+
+    /* Border Library Modal */
+    .border-library-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .border-library-modal.hidden {
+      display: none;
+    }
+
+    .border-library-content {
+      background: #fff;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 800px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .border-library-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .border-library-header h3 {
+      margin: 0;
+      font-size: 1.2em;
+    }
+
+    .border-library-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #666;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .border-library-close:hover {
+      color: #333;
+    }
+
+    .border-library-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .border-upload-zone {
+      border: 2px dashed #ccc;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 20px;
+      background: #f9f9f9;
+      transition: all 0.2s;
+    }
+
+    .border-upload-zone:hover,
+    .border-upload-zone.dragover {
+      border-color: #667eea;
+      background: #f0f4ff;
+    }
+
+    .border-upload-zone p {
+      margin: 0;
+      color: #666;
+    }
+
+    .border-upload-zone button {
+      margin-left: 8px;
+      padding: 6px 12px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .border-upload-zone button:hover {
+      background: #5a6fd6;
+    }
+
+    .border-library-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 16px;
+    }
+
+    .border-item {
+      position: relative;
+      border: 2px solid #eee;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.2s;
+      aspect-ratio: 11 / 8.5;
+      background: #f5f5f5;
+    }
+
+    .border-item:hover {
+      border-color: #667eea;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    }
+
+    .border-item.selected {
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+    }
+
+    .border-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .border-item-actions {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .border-item:hover .border-item-actions {
+      opacity: 1;
+    }
+
+    .border-item-delete {
+      background: rgba(220, 53, 69, 0.9);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      width: 24px;
+      height: 24px;
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .border-item-delete:hover {
+      background: #dc3545;
+    }
+
+    .border-item-name {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 4px 8px;
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .border-library-empty {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+
+    .border-library-loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+
+    /* Border Assignment UI */
+    .border-assignment-section {
+      border-top: 1px solid #eee;
+      padding-top: 16px;
+      margin-top: 16px;
+    }
+
+    .border-assignment-section h4 {
+      margin: 0 0 12px 0;
+      font-size: 0.95em;
+      color: #333;
+    }
+
+    .assignment-mode-toggle {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .assignment-mode-toggle label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      padding: 8px 12px;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+
+    .assignment-mode-toggle label:hover {
+      background: #f5f5f5;
+    }
+
+    .assignment-mode-toggle input[type="radio"] {
+      margin: 0;
+    }
+
+    .assignment-mode-toggle .mode-description {
+      font-size: 0.85em;
+      color: #666;
+      margin-left: 20px;
+    }
+
+    .single-border-select {
+      margin-left: 24px;
+      margin-top: 8px;
+      display: none;
+    }
+
+    .single-border-select.visible {
+      display: block;
+    }
+
+    .single-border-select select {
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-size: 0.9em;
+      min-width: 200px;
+    }
+
+    .border-item.selectable {
+      position: relative;
+    }
+
+    .border-item-checkbox {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      width: 22px;
+      height: 22px;
+      background: white;
+      border: 2px solid #667eea;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 1;
+    }
+
+    .border-item.selectable:hover .border-item-checkbox,
+    .border-item.selectable.selected .border-item-checkbox {
+      opacity: 1;
+    }
+
+    .border-item.selectable.selected .border-item-checkbox {
+      background: #667eea;
+    }
+
+    .border-item-checkbox svg {
+      width: 14px;
+      height: 14px;
+      fill: white;
+      display: none;
+    }
+
+    .border-item.selectable.selected .border-item-checkbox svg {
+      display: block;
+    }
+
+    /* Border Preview Section */
+    .border-preview-section {
+      border-top: 1px solid #eee;
+      padding-top: 16px;
+      margin-top: 16px;
+    }
+
+    .border-preview-section h4 {
+      margin: 0 0 12px 0;
+      font-size: 0.95em;
+      color: #333;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .border-preview-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .border-preview-actions button {
+      padding: 4px 10px;
+      font-size: 0.8em;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background: #667eea;
+      color: white;
+    }
+
+    .border-preview-actions button:hover {
+      background: #5a6fd6;
+    }
+
+    .border-preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+      padding: 4px;
+    }
+
+    .border-preview-item {
+      position: relative;
+      border: 2px solid #eee;
+      border-radius: 6px;
+      overflow: hidden;
+      aspect-ratio: 11 / 8.5;
+      background: #f5f5f5;
+    }
+
+    .border-preview-item img.border-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 1;
+    }
+
+    .border-preview-item .map-thumbnail {
+      position: absolute;
+      top: 10%;
+      left: 10%;
+      width: 80%;
+      height: 80%;
+      object-fit: contain;
+      z-index: 0;
+      background: white;
+    }
+
+    .border-preview-item .map-name {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 4px 6px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      font-size: 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      z-index: 2;
+    }
+
+    .border-preview-item .reroll-btn {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 24px;
+      height: 24px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.9);
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 3;
+    }
+
+    .border-preview-item:hover .reroll-btn {
+      opacity: 1;
+    }
+
+    .border-preview-item .reroll-btn:hover {
+      background: #667eea;
+      color: white;
+    }
+
+    .border-preview-item .reroll-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .border-preview-empty {
+      text-align: center;
+      padding: 20px;
+      color: #999;
+      font-size: 0.9em;
+    }
+
+    .border-library-footer {
+      padding: 16px 20px;
+      border-top: 1px solid #eee;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .border-library-footer button {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.9em;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .border-library-footer .btn-cancel {
+      background: #e0e0e0;
+      color: #333;
+    }
+
+    .border-library-footer .btn-cancel:hover {
+      background: #d0d0d0;
+    }
+
+    .border-library-footer .btn-apply {
+      background: #667eea;
+      color: white;
+    }
+
+    .border-library-footer .btn-apply:hover {
+      background: #5a6fd6;
+    }
+
+    .border-library-footer .btn-apply:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    /* Border Margin Slider */
+    .border-margin-section {
+      border-top: 1px solid #eee;
+      padding-top: 16px;
+      margin-top: 16px;
+    }
+
+    .border-margin-section label {
+      display: block;
+      font-size: 0.95em;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .border-margin-section input[type="range"] {
+      width: 100%;
+      margin-bottom: 4px;
+    }
+
+    .margin-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8em;
+      color: #666;
+    }
+
+    /* Export Progress Modal */
+    .export-progress-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 3000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .export-progress-overlay.hidden {
+      display: none;
+    }
+
+    .export-progress-content {
+      background: white;
+      border-radius: 12px;
+      padding: 32px 48px;
+      text-align: center;
+      max-width: 400px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .export-progress-content h3 {
+      margin: 0 0 16px 0;
+      color: #333;
+    }
+
+    .export-progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #e0e0e0;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 12px;
+    }
+
+    .export-progress-fill {
+      height: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+
+    .export-progress-text {
+      color: #666;
+      font-size: 0.9em;
+      margin-bottom: 16px;
+    }
+
+    .export-progress-cancel {
+      padding: 8px 20px;
+      background: #e0e0e0;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9em;
+    }
+
+    .export-progress-cancel:hover {
+      background: #d0d0d0;
+    }
+
     .maze-area {
       position: relative;
       min-height: 100vh;
@@ -1898,54 +2708,243 @@
       position: relative;
       display: inline-block;
     }
+
+    /* Toast notifications */
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .toast {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      font-size: 14px;
+      max-width: 350px;
+      pointer-events: auto;
+      animation: toast-in 0.3s ease-out;
+    }
+
+    .toast.toast-out {
+      animation: toast-out 0.3s ease-in forwards;
+    }
+
+    .toast-success {
+      background: #f0fdf4;
+      border: 1px solid #22c55e;
+      color: #166534;
+    }
+
+    .toast-error {
+      background: #fef2f2;
+      border: 1px solid #ef4444;
+      color: #991b1b;
+    }
+
+    .toast-info {
+      background: #eff6ff;
+      border: 1px solid #3b82f6;
+      color: #1e40af;
+    }
+
+    .toast-icon {
+      flex-shrink: 0;
+      width: 20px;
+      height: 20px;
+    }
+
+    .toast-message {
+      flex: 1;
+    }
+
+    .toast-close {
+      flex-shrink: 0;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 2px;
+      opacity: 0.6;
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .toast-close:hover {
+      opacity: 1;
+    }
+
+    @keyframes toast-in {
+      from {
+        opacity: 0;
+        transform: translateX(100%);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes toast-out {
+      from {
+        opacity: 1;
+        transform: translateX(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateX(100%);
+      }
+    }
   </style>
 </head>
 
 <body>
-  <!-- Password Protection Overlay -->
-  <div class="password-overlay" id="password-overlay">
+  <!-- Login Overlay -->
+  <div class="password-overlay" id="login-overlay">
     <div class="password-box">
-      <h2>Enter Password</h2>
-      <input type="password" id="password-input" placeholder="Password" autocomplete="off" />
-      <button type="button" id="password-submit">Enter</button>
-      <div class="error" id="password-error"></div>
+      <h2>Sign In</h2>
+      <div>
+        <label for="login-email">Email</label>
+        <input type="email" id="login-email" placeholder="email@example.com" autocomplete="email" />
+      </div>
+      <div>
+        <label for="login-password">Password</label>
+        <input type="password" id="login-password" placeholder="Password" autocomplete="current-password" />
+      </div>
+      <button type="button" id="login-submit">Sign In</button>
+      <div class="error" id="login-error"></div>
     </div>
   </div>
   <script>
-    (function () {
-      var PASSWORD = "dungeon"; // Change this to your desired password
-      var AUTH_KEY = "maze-generator-authenticated";
+    // Auth initialization - runs early to check session
+    (async function() {
+      var overlay = document.getElementById("login-overlay");
+      var emailInput = document.getElementById("login-email");
+      var passwordInput = document.getElementById("login-password");
+      var submitBtn = document.getElementById("login-submit");
+      var errorDiv = document.getElementById("login-error");
 
-      var overlay = document.getElementById("password-overlay");
-      var input = document.getElementById("password-input");
-      var submit = document.getElementById("password-submit");
-      var error = document.getElementById("password-error");
-
-      // Check if already authenticated
-      if (localStorage.getItem(AUTH_KEY) === "true") {
-        overlay.classList.add("hidden");
-        return;
+      // Wait for Supabase to be available
+      function waitForSupabase() {
+        return new Promise(function(resolve) {
+          if (typeof SupabaseClient !== "undefined") {
+            resolve();
+          } else {
+            // Check every 50ms for up to 5 seconds
+            var attempts = 0;
+            var interval = setInterval(function() {
+              attempts++;
+              if (typeof SupabaseClient !== "undefined") {
+                clearInterval(interval);
+                resolve();
+              } else if (attempts > 100) {
+                clearInterval(interval);
+                resolve(); // Give up, let it fail gracefully
+              }
+            }, 50);
+          }
+        });
       }
 
-      function checkPassword() {
-        if (input.value === PASSWORD) {
-          localStorage.setItem(AUTH_KEY, "true");
+      await waitForSupabase();
+
+      // Initialize Supabase if not already done
+      if (typeof SupabaseClient !== "undefined" && SupabaseClient.init) {
+        SupabaseClient.init();
+      }
+
+      // Check for existing session
+      async function checkSession() {
+        if (typeof SupabaseClient === "undefined") {
+          console.error("Supabase not available");
+          return false;
+        }
+
+        var result = await SupabaseClient.getSession();
+        return result.data && result.data.session !== null;
+      }
+
+      // Handle login
+      async function handleLogin() {
+        var email = emailInput.value.trim();
+        var password = passwordInput.value;
+
+        if (!email || !password) {
+          errorDiv.textContent = "Please enter email and password";
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Signing in...";
+        errorDiv.textContent = "";
+
+        try {
+          var result = await SupabaseClient.signIn(email, password);
+
+          if (result.error) {
+            errorDiv.textContent = result.error.message || "Login failed";
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Sign In";
+            return;
+          }
+
+          // Success - hide overlay
           overlay.classList.add("hidden");
-        } else {
-          error.textContent = "Incorrect password";
-          input.value = "";
-          input.focus();
+        } catch (err) {
+          errorDiv.textContent = "An error occurred. Please try again.";
+          console.error("Login error:", err);
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Sign In";
         }
       }
 
-      submit.addEventListener("click", checkPassword);
-      input.addEventListener("keypress", function (e) {
+      // Check if already logged in
+      var isLoggedIn = await checkSession();
+      if (isLoggedIn) {
+        overlay.classList.add("hidden");
+      } else {
+        // Focus email input
+        emailInput.focus();
+      }
+
+      // Event listeners
+      submitBtn.addEventListener("click", handleLogin);
+
+      emailInput.addEventListener("keypress", function(e) {
         if (e.key === "Enter") {
-          checkPassword();
+          passwordInput.focus();
         }
       });
 
-      input.focus();
+      passwordInput.addEventListener("keypress", function(e) {
+        if (e.key === "Enter") {
+          handleLogin();
+        }
+      });
+
+      // Listen for auth state changes
+      if (typeof SupabaseClient !== "undefined") {
+        SupabaseClient.onAuthStateChange(function(event, session) {
+          if (event === "SIGNED_IN" && session) {
+            overlay.classList.add("hidden");
+          } else if (event === "SIGNED_OUT") {
+            overlay.classList.remove("hidden");
+            emailInput.value = "";
+            passwordInput.value = "";
+            errorDiv.textContent = "";
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Sign In";
+            emailInput.focus();
+          }
+        });
+      }
     })();
   </script>
 
@@ -1957,7 +2956,7 @@
   <div class="settings-panel hidden" id="settings-panel">
     <div class="settings-tabs">
       <button type="button" class="settings-tab active" data-tab="maps">
-        Saved Maps
+        Maps
       </button>
       <button type="button" class="settings-tab" data-tab="projects">
         Projects
@@ -2327,13 +3326,28 @@
           <label for="save-map-name">Save Current Map</label>
           <div class="save-map-row">
             <input type="text" id="save-map-name" placeholder="Floor 1" />
-            <button type="button" id="save-map-btn">Save New</button>
-            <button type="button" id="update-map-btn" disabled>Update</button>
+            <button type="button" id="save-map-btn" class="save-new-btn" title="Save as new map">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+              </svg>
+              <svg class="plus-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+            <button type="button" id="update-map-btn" class="update-btn" title="Update current map" disabled>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+              </svg>
+            </button>
           </div>
-          <div class="current-map-info" id="current-map-info"></div>
         </div>
         <div class="saved-maps-header">
-          <h4>Saved Maps</h4>
+          <h4>Maps</h4>
           <button type="button" id="download-all-btn" class="download-all-btn">
             Download All
           </button>
@@ -2347,7 +3361,6 @@
 
     <div class="settings-tab-content" data-tab-content="projects">
       <div class="map-browser">
-        <h4>Manage Projects</h4>
         <div class="add-project-row">
           <input type="text" id="new-project-name" placeholder="New project name..." />
           <button type="button" id="add-project-btn">Add</button>
@@ -2356,6 +3369,11 @@
       </div>
     </div>
     <!-- End projects tab content -->
+
+    <!-- Logout Button -->
+    <div class="settings-logout">
+      <button type="button" id="logout-btn">Sign Out</button>
+    </div>
   </div>
   <!-- End settings-panel -->
 
@@ -2541,6 +3559,117 @@
     </svg>
   </button>
 
+  <!-- FAB - Enter Publishing Mode -->
+  <button type="button" class="fab-publish" id="fab-publish" title="Enter Publishing Mode">
+    <span class="fab-tooltip">Publish</span>
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/>
+    </svg>
+  </button>
+
+  <!-- Publishing Mode Toolbar (hidden by default) -->
+  <div class="publishing-toolbar" id="publishing-toolbar" style="display: none;">
+    <div class="publishing-toolbar-content">
+      <span class="publishing-title">Publishing Mode</span>
+      <div class="publishing-controls">
+        <button type="button" id="publishing-accept" class="publishing-btn publishing-btn-primary">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+          Accept
+        </button>
+        <button type="button" id="publishing-cancel" class="publishing-btn publishing-btn-secondary">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          Cancel
+        </button>
+        <button type="button" id="publishing-borders" class="publishing-btn">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14c-3.31 0-6-2.69-6-6s2.69-6 6-6 6 2.69 6 6-2.69 6-6 6z"/></svg>
+          Borders
+        </button>
+        <button type="button" id="publishing-export" class="publishing-btn publishing-btn-export">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="currentColor" d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+          Export PNG
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Border Library Modal -->
+  <div class="border-library-modal hidden" id="border-library-modal">
+    <div class="border-library-content">
+      <div class="border-library-header">
+        <h3>Border Library</h3>
+        <button type="button" class="border-library-close" id="border-library-close">&times;</button>
+      </div>
+      <div class="border-library-body">
+        <div class="border-upload-zone" id="border-upload-zone">
+          <input type="file" id="border-file-input" accept="image/png,image/jpeg" multiple hidden />
+          <p>
+            Drop border images here (11x8.5" landscape at 300 DPI) or
+            <button type="button" id="browse-borders-btn">Browse</button>
+          </p>
+        </div>
+        <div class="border-library-grid" id="border-library-grid">
+          <div class="border-library-loading">Loading borders...</div>
+        </div>
+
+        <!-- Assignment Mode Section -->
+        <div class="border-assignment-section" id="border-assignment-section">
+          <h4>Assignment Mode</h4>
+          <div class="assignment-mode-toggle">
+            <label>
+              <input type="radio" name="assignment-mode" value="random" checked />
+              <span>Randomly assign from selected borders</span>
+            </label>
+            <label>
+              <input type="radio" name="assignment-mode" value="single" />
+              <span>Use single border for all maps</span>
+            </label>
+            <div class="single-border-select" id="single-border-select">
+              <select id="single-border-dropdown">
+                <option value="">Select a border...</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Margin Slider -->
+        <div class="border-margin-section">
+          <label for="border-margin-slider">Maze Margin: <span id="border-margin-value">1/2"</span></label>
+          <input type="range" id="border-margin-slider" min="0" max="16" step="1" value="8" />
+          <div class="margin-labels"><span>0"</span><span>1"</span></div>
+        </div>
+
+        <!-- Preview Section -->
+        <div class="border-preview-section" id="border-preview-section">
+          <h4>
+            <span>Map Assignments</span>
+            <div class="border-preview-actions">
+              <button type="button" id="preview-reroll-all">Re-roll All</button>
+            </div>
+          </h4>
+          <div class="border-preview-grid" id="border-preview-grid">
+            <div class="border-preview-empty">Select borders and maps will appear here</div>
+          </div>
+        </div>
+      </div>
+      <div class="border-library-footer">
+        <button type="button" class="btn-cancel" id="border-cancel-btn">Cancel</button>
+        <button type="button" class="btn-apply" id="border-apply-btn" disabled>Apply Borders</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export Progress Modal -->
+  <div class="export-progress-overlay hidden" id="export-progress-overlay">
+    <div class="export-progress-content">
+      <h3>Exporting Maps</h3>
+      <div class="export-progress-bar">
+        <div class="export-progress-fill" id="export-progress-fill"></div>
+      </div>
+      <div class="export-progress-text" id="export-progress-text">Preparing...</div>
+      <button type="button" class="export-progress-cancel" id="export-progress-cancel">Cancel</button>
+    </div>
+  </div>
+
   <!-- Floating free-form decoration controls (positioned under selected decoration) -->
   <div class="freeform-controls" id="freeform-controls" style="display: none">
     <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
@@ -2573,6 +3702,10 @@
     <button type="button" id="grid-decoration-delete" class="danger">Delete</button>
   </div>
 
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="text/javascript" src="src/supabase.js"></script>
+
   <script type="text/javascript" src="src/globals.js"></script>
   <script type="text/javascript" src="src/utils.js"></script>
   <script type="text/javascript" src="src/entries.js"></script>
@@ -2593,6 +3726,12 @@
       // Generate maze on page load
       if (typeof initMaze === "function") {
         initMaze();
+      }
+
+      // Initialize Supabase client
+      if (typeof SupabaseClient !== "undefined" && SupabaseClient.init) {
+        SupabaseClient.init();
+        console.log("Supabase client initialized");
       }
 
       // Initialize custom decoration library
@@ -2699,6 +3838,20 @@
         });
       }
 
+      // Logout button
+      var logoutBtn = document.getElementById("logout-btn");
+      if (logoutBtn) {
+        logoutBtn.addEventListener("click", async function () {
+          if (typeof SupabaseClient !== "undefined" && SupabaseClient.signOut) {
+            logoutBtn.disabled = true;
+            logoutBtn.textContent = "Signing out...";
+            await SupabaseClient.signOut();
+            logoutBtn.disabled = false;
+            logoutBtn.textContent = "Sign Out";
+          }
+        });
+      }
+
       // Settings panel tabs
       var tabs = document.querySelectorAll(".settings-tab");
       var tabContents = document.querySelectorAll(".settings-tab-content");
@@ -2730,479 +3883,455 @@
         });
       });
 
-      // Local Storage Map Management
-      var STORAGE_KEY = "maze-generator-saved-maps";
-      var PROJECTS_KEY = "maze-generator-projects";
-      var CURRENT_PROJECT_KEY = "maze-generator-current-project";
-      var DEFAULT_PROJECT_ID = "default";
-      var currentMapId = null; // Track currently loaded map for updates
+      // Toast notification system
+      function showToast(message, type, duration) {
+        type = type || "info";
+        duration = duration || 4000;
 
-      // Projects Management
-      function getProjects() {
-        try {
-          var data = localStorage.getItem(PROJECTS_KEY);
-          var projects = data ? JSON.parse(data) : [];
-          // Ensure default project exists
-          if (
-            !projects.find(function (p) {
-              return p.id === DEFAULT_PROJECT_ID;
-            })
-          ) {
-            projects.unshift({
-              id: DEFAULT_PROJECT_ID,
-              name: "Default",
-              timestamp: Date.now(),
-            });
-            saveProjectsToStorage(projects);
-          }
-          return projects;
-        } catch (e) {
-          console.warn("Failed to load projects:", e);
-          return [
-            {
-              id: DEFAULT_PROJECT_ID,
-              name: "Default",
-              timestamp: Date.now(),
-            },
-          ];
-        }
-      }
-
-      function saveProjectsToStorage(projects) {
-        try {
-          localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects));
-        } catch (e) {
-          console.warn("Failed to save projects:", e);
-        }
-      }
-
-      function getCurrentProjectId() {
-        return (
-          localStorage.getItem(CURRENT_PROJECT_KEY) || DEFAULT_PROJECT_ID
-        );
-      }
-
-      function setCurrentProjectId(projectId) {
-        localStorage.setItem(CURRENT_PROJECT_KEY, projectId);
-        renderProjectSelector();
-        renderSavedMapsList();
-      }
-
-      function createProject(name) {
-        var projects = getProjects();
-        var newProject = {
-          id: Date.now().toString(),
-          name: name,
-          timestamp: Date.now(),
-        };
-        projects.push(newProject);
-        saveProjectsToStorage(projects);
-        return newProject;
-      }
-
-      function renameProject(projectId, newName) {
-        var projects = getProjects();
-        var project = projects.find(function (p) {
-          return p.id === projectId;
-        });
-        if (project) {
-          project.name = newName;
-          saveProjectsToStorage(projects);
-        }
-      }
-
-      function deleteProject(projectId) {
-        if (projectId === DEFAULT_PROJECT_ID) {
-          alert("Cannot delete the default project");
-          return;
-        }
-        var projects = getProjects();
-        projects = projects.filter(function (p) {
-          return p.id !== projectId;
-        });
-        saveProjectsToStorage(projects);
-
-        // Move maps from deleted project to default
-        var maps = getAllMaps();
-        maps.forEach(function (map) {
-          if (map.projectId === projectId) {
-            map.projectId = DEFAULT_PROJECT_ID;
-          }
-        });
-        saveMapsToStorage(maps);
-
-        // Switch to default if current project was deleted
-        if (getCurrentProjectId() === projectId) {
-          setCurrentProjectId(DEFAULT_PROJECT_ID);
-        }
-      }
-
-      function getMapCountForProject(projectId) {
-        var maps = getAllMaps();
-        return maps.filter(function (m) {
-          return (m.projectId || DEFAULT_PROJECT_ID) === projectId;
-        }).length;
-      }
-
-      function renderProjectSelector() {
-        var select = document.getElementById("current-project");
-        if (!select) return;
-
-        var projects = getProjects();
-        var currentId = getCurrentProjectId();
-
-        select.innerHTML = projects
-          .map(function (p) {
-            var selected = p.id === currentId ? " selected" : "";
-            return (
-              '<option value="' +
-              p.id +
-              '"' +
-              selected +
-              ">" +
-              escapeHtml(p.name) +
-              "</option>"
-            );
-          })
-          .join("");
-      }
-
-      function renderProjectsList() {
-        var container = document.getElementById("project-list");
+        var container = document.getElementById("toast-container");
         if (!container) return;
 
-        var projects = getProjects();
+        var toast = document.createElement("div");
+        toast.className = "toast toast-" + type;
 
-        container.innerHTML = projects
-          .map(function (project) {
-            var mapCount = getMapCountForProject(project.id);
-            var isDefault = project.id === DEFAULT_PROJECT_ID;
-            var deleteBtn = isDefault
-              ? ""
-              : '<button type="button" class="delete-project-btn" data-project-id="' +
-              project.id +
-              '">Delete</button>';
-
-            return (
-              '<div class="project-item" data-project-id="' +
-              project.id +
-              '">' +
-              '<span class="project-name">' +
-              escapeHtml(project.name) +
-              "</span>" +
-              '<span class="project-count">' +
-              mapCount +
-              " map" +
-              (mapCount !== 1 ? "s" : "") +
-              "</span>" +
-              '<button type="button" class="rename-project-btn" data-project-id="' +
-              project.id +
-              '">Rename</button>' +
-              deleteBtn +
-              "</div>"
-            );
-          })
-          .join("");
-
-        // Add event listeners
-        container
-          .querySelectorAll(".rename-project-btn")
-          .forEach(function (btn) {
-            btn.addEventListener("click", function () {
-              var projectId = this.getAttribute("data-project-id");
-              var projects = getProjects();
-              var project = projects.find(function (p) {
-                return p.id === projectId;
-              });
-              if (!project) return;
-
-              var newName = prompt("Enter new name:", project.name);
-              if (newName && newName.trim()) {
-                renameProject(projectId, newName.trim());
-                renderProjectSelector();
-                renderProjectsList();
-              }
-            });
-          });
-
-        container
-          .querySelectorAll(".delete-project-btn")
-          .forEach(function (btn) {
-            btn.addEventListener("click", function () {
-              var projectId = this.getAttribute("data-project-id");
-              if (
-                confirm("Delete this project? Maps will be moved to Default.")
-              ) {
-                deleteProject(projectId);
-                renderProjectsList();
-              }
-            });
-          });
-      }
-
-      // Get all maps (unfiltered)
-      function getAllMaps() {
-        try {
-          var data = localStorage.getItem(STORAGE_KEY);
-          return data ? JSON.parse(data) : [];
-        } catch (e) {
-          console.warn("Failed to load saved maps:", e);
-          return [];
-        }
-      }
-
-      function generateMapName() {
-        var maps = getSavedMaps();
-        return "Floor " + (maps.length + 1);
-      }
-
-      function getSavedMaps() {
-        var currentProjectId = getCurrentProjectId();
-        var allMaps = getAllMaps();
-        return allMaps.filter(function (m) {
-          return (m.projectId || DEFAULT_PROJECT_ID) === currentProjectId;
-        });
-      }
-
-      function saveMapsToStorage(maps) {
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(maps));
-        } catch (e) {
-          console.warn("Failed to save maps:", e);
-          alert("Failed to save map. Local storage may be full.");
-        }
-      }
-
-      function generateThumbnail() {
-        var canvas = document.getElementById("maze");
-        if (!canvas) return null;
-
-        // Create a smaller thumbnail
-        var thumbCanvas = document.createElement("canvas");
-        var maxSize = 160;
-        var scale = Math.min(maxSize / canvas.width, maxSize / canvas.height);
-        thumbCanvas.width = canvas.width * scale;
-        thumbCanvas.height = canvas.height * scale;
-
-        var ctx = thumbCanvas.getContext("2d");
-        ctx.drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
-
-        return thumbCanvas.toDataURL("image/jpeg", 0.7);
-      }
-
-      function saveCurrentMap(name) {
-        if (typeof mazeNodes === "undefined" || !mazeNodes.exportMaze) {
-          alert("No maze to save");
-          return;
-        }
-
-        var maps = getAllMaps();
-        var mapData = {
-          id: Date.now().toString(),
-          name: name || generateMapName(),
-          data: mazeNodes.exportMaze(),
-          thumbnail: generateThumbnail(),
-          timestamp: Date.now(),
-          projectId: getCurrentProjectId(),
+        var icons = {
+          success: '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>',
+          error: '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>',
+          info: '<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>'
         };
 
-        maps.unshift(mapData); // Add to beginning
-        saveMapsToStorage(maps);
-        renderSavedMapsList();
+        toast.innerHTML =
+          (icons[type] || icons.info) +
+          '<span class="toast-message">' + message + '</span>' +
+          '<button class="toast-close" type="button">&times;</button>';
 
-        return mapData;
-      }
+        container.appendChild(toast);
 
-      function setCurrentMapDisplay(mapId, mapName) {
-        var updateBtn = document.getElementById("update-map-btn");
-        var infoDiv = document.getElementById("current-map-info");
-        var nameInput = document.getElementById("save-map-name");
+        var closeBtn = toast.querySelector(".toast-close");
+        var timeoutId;
 
-        currentMapId = mapId;
-
-        if (mapId && mapName) {
-          if (updateBtn) updateBtn.disabled = false;
-          if (infoDiv) {
-            infoDiv.textContent = "Editing: " + mapName;
-            infoDiv.classList.add("active");
-          }
-          if (nameInput) nameInput.value = mapName;
-        } else {
-          if (updateBtn) updateBtn.disabled = true;
-          if (infoDiv) {
-            infoDiv.textContent = "";
-            infoDiv.classList.remove("active");
-          }
-        }
-      }
-
-      function clearCurrentMap() {
-        setCurrentMapDisplay(null, null);
-        var nameInput = document.getElementById("save-map-name");
-        if (nameInput) {
-          nameInput.value = generateMapName();
-        }
-      }
-
-      function loadMap(mapId) {
-        var maps = getAllMaps();
-        var map = maps.find(function (m) {
-          return m.id === mapId;
-        });
-
-        if (!map) {
-          alert("Map not found");
-          return;
-        }
-
-        if (typeof mazeNodes === "undefined" || !mazeNodes.importMaze) {
-          alert("Maze not initialized");
-          return;
-        }
-
-        if (mazeNodes.importMaze(map.data)) {
-          mazeNodes.loadDecorations().then(function () {
-            mazeNodes.draw();
-            if (
-              typeof TilePlacement !== "undefined" &&
-              TilePlacement.saveCanvasState
-            ) {
-              TilePlacement.saveCanvasState();
+        function removeToast() {
+          if (timeoutId) clearTimeout(timeoutId);
+          toast.classList.add("toast-out");
+          setTimeout(function() {
+            if (toast.parentNode) {
+              toast.parentNode.removeChild(toast);
             }
-            // Set this as the current map for updates
-            setCurrentMapDisplay(map.id, map.name);
-          });
+          }, 300);
+        }
+
+        closeBtn.addEventListener("click", removeToast);
+        timeoutId = setTimeout(removeToast, duration);
+      }
+
+      // Supabase-based Map Management
+      var CURRENT_PROJECT_KEY = "maze-generator-current-project";
+      var currentMapId = null; // Track currently loaded map for updates
+      var projectsCache = []; // Cache of loaded projects
+      var mapsCache = []; // Cache of loaded maps for current project
+
+      // Get current project ID from localStorage (for session persistence)
+      function getCurrentProjectId() {
+        return localStorage.getItem(CURRENT_PROJECT_KEY) || null;
+      }
+
+      function setCurrentProjectIdLocal(projectId) {
+        if (projectId) {
+          localStorage.setItem(CURRENT_PROJECT_KEY, projectId);
         } else {
-          alert("Failed to load map");
+          localStorage.removeItem(CURRENT_PROJECT_KEY);
         }
       }
 
-      function updateCurrentMap() {
+      // Load projects from Supabase
+      async function loadProjects() {
+        if (typeof SupabaseClient === "undefined") {
+          console.error("Supabase not available");
+          return [];
+        }
+        var result = await SupabaseClient.getProjects();
+        if (result.error) {
+          console.error("Failed to load projects:", result.error);
+          return [];
+        }
+        projectsCache = result.data || [];
+        return projectsCache;
+      }
+
+      // Load maps for current project from Supabase
+      async function loadMapsForProject(projectId) {
+        if (!projectId || typeof SupabaseClient === "undefined") {
+          mapsCache = [];
+          return [];
+        }
+        var result = await SupabaseClient.getMapsForProject(projectId);
+        if (result.error) {
+          console.error("Failed to load maps:", result.error);
+          mapsCache = [];
+          return [];
+        }
+        mapsCache = result.data || [];
+        return mapsCache;
+      }
+
+      // Create a new project
+      async function createProjectAsync(name) {
+        if (typeof SupabaseClient === "undefined") {
+          showToast("Supabase not available", "error");
+          return null;
+        }
+        var result = await SupabaseClient.createProject(name);
+        if (result.error) {
+          showToast("Failed to create project: " + result.error.message, "error");
+          return null;
+        }
+        return result.data;
+      }
+
+      // Rename a project
+      async function renameProjectAsync(projectId, newName) {
+        if (typeof SupabaseClient === "undefined") return;
+        var result = await SupabaseClient.updateProject(projectId, { name: newName });
+        if (result.error) {
+          showToast("Failed to rename project: " + result.error.message, "error");
+        }
+      }
+
+      // Delete a project
+      async function deleteProjectAsync(projectId) {
+        if (typeof SupabaseClient === "undefined") return;
+        var result = await SupabaseClient.deleteProject(projectId);
+        if (result.error) {
+          showToast("Failed to delete project: " + result.error.message, "error");
+        }
+      }
+
+      // Set current project and refresh maps
+      async function setCurrentProjectId(projectId) {
+        setCurrentProjectIdLocal(projectId);
+        await loadMapsForProject(projectId);
+        await renderProjectSelector();
+        renderSavedMapsList();
+        updateMapNameInput();
+
+        // Load border settings for this project
+        await loadBorderSettingsForProject(projectId);
+
+        // Save state to Supabase
+        saveUserState();
+      }
+
+      // Load border settings for a project and restore them
+      async function loadBorderSettingsForProject(projectId) {
+        if (!projectId || typeof SupabaseClient === "undefined" || !SupabaseClient.getBorderSettings) {
+          return;
+        }
+
+        var result = await SupabaseClient.getBorderSettings(projectId);
+        if (!result.error && result.data) {
+          var settings = result.data;
+          window.borderAssignments = settings.assignments || {};
+          window.borderMarginSixteenths = settings.margin_sixteenths || 8;
+          window.bordersCache = window.bordersCache || [];
+
+          // Also update the local variables if the border library has been initialized
+          if (typeof borderMarginSixteenths !== "undefined") {
+            borderMarginSixteenths = settings.margin_sixteenths || 8;
+          }
+        } else {
+          // Clear border settings if none saved
+          window.borderAssignments = {};
+          window.borderMarginSixteenths = 8;
+        }
+      }
+
+      // Save user state to Supabase (debounced)
+      var saveUserStateTimeout = null;
+      function saveUserState() {
+        if (saveUserStateTimeout) clearTimeout(saveUserStateTimeout);
+        saveUserStateTimeout = setTimeout(async function() {
+          if (typeof SupabaseClient !== "undefined" && SupabaseClient.setUserState) {
+            await SupabaseClient.setUserState({
+              current_project_id: getCurrentProjectId(),
+              current_map_id: currentMapId
+            });
+          }
+        }, 500);
+      }
+
+      // Generate thumbnail as blob for upload
+      function generateThumbnailBlob() {
+        return new Promise(function(resolve) {
+          var canvas = document.getElementById("maze");
+          if (!canvas) {
+            resolve(null);
+            return;
+          }
+
+          var thumbCanvas = document.createElement("canvas");
+          var maxSize = 160;
+          var scale = Math.min(maxSize / canvas.width, maxSize / canvas.height);
+          thumbCanvas.width = canvas.width * scale;
+          thumbCanvas.height = canvas.height * scale;
+
+          var ctx = thumbCanvas.getContext("2d");
+          ctx.drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
+
+          thumbCanvas.toBlob(function(blob) {
+            resolve(blob);
+          }, "image/jpeg", 0.7);
+        });
+      }
+
+      // Generate map name based on existing maps
+      function generateMapName() {
+        return "Floor " + (mapsCache.length + 1);
+      }
+
+      // Save current map to Supabase
+      async function saveCurrentMapAsync(name) {
+        if (typeof mazeNodes === "undefined" || !mazeNodes.exportMaze) {
+          showToast("No maze to save", "error");
+          return null;
+        }
+
+        var projectId = getCurrentProjectId();
+        if (!projectId) {
+          showToast("Please select or create a project first", "error");
+          return null;
+        }
+
+        if (typeof SupabaseClient === "undefined") {
+          showToast("Supabase not available", "error");
+          return null;
+        }
+
+        var mapName = name || generateMapName();
+        var mazeJson = mazeNodes.exportMaze();
+        var thumbnail = await generateThumbnailBlob();
+
+        var result = await SupabaseClient.createMap(projectId, mapName, mazeJson, thumbnail);
+        if (result.error) {
+          showToast("Failed to save map: " + result.error.message, "error");
+          return null;
+        }
+
+        // Refresh maps cache
+        await loadMapsForProject(projectId);
+        renderSavedMapsList();
+        showToast('Map saved as "' + mapName + '"', "success");
+
+        return result.data;
+      }
+
+      // Update existing map
+      async function updateCurrentMapAsync() {
         if (!currentMapId) {
-          alert("No map loaded to update");
+          showToast("No map loaded to update", "error");
           return;
         }
 
         if (typeof mazeNodes === "undefined" || !mazeNodes.exportMaze) {
-          alert("No maze to save");
+          showToast("No maze to save", "error");
           return;
         }
 
-        var maps = getAllMaps();
-        var mapIndex = maps.findIndex(function (m) {
-          return m.id === currentMapId;
-        });
-
-        if (mapIndex === -1) {
-          alert("Map not found");
-          clearCurrentMap();
+        if (typeof SupabaseClient === "undefined") {
+          showToast("Supabase not available", "error");
           return;
         }
 
         var nameInput = document.getElementById("save-map-name");
         var newName = nameInput ? nameInput.value.trim() : "";
 
-        maps[mapIndex].data = mazeNodes.exportMaze();
-        maps[mapIndex].thumbnail = generateThumbnail();
-        maps[mapIndex].timestamp = Date.now();
+        var updates = {
+          maze_json: mazeNodes.exportMaze()
+        };
         if (newName) {
-          maps[mapIndex].name = newName;
+          updates.name = newName;
         }
 
-        saveMapsToStorage(maps);
-        renderSavedMapsList();
-        setCurrentMapDisplay(maps[mapIndex].id, maps[mapIndex].name);
-        alert('Map "' + maps[mapIndex].name + '" updated');
-      }
-
-      function deleteMap(mapId) {
-        if (!confirm("Delete this map?")) return;
-
-        var maps = getAllMaps();
-        maps = maps.filter(function (m) {
-          return m.id !== mapId;
-        });
-        saveMapsToStorage(maps);
-        renderSavedMapsList();
-      }
-
-      function renameMap(mapId) {
-        var maps = getAllMaps();
-        var map = maps.find(function (m) {
-          return m.id === mapId;
-        });
-        if (!map) return;
-
-        var newName = prompt("Enter new name:", map.name);
-        if (newName && newName.trim()) {
-          map.name = newName.trim();
-          saveMapsToStorage(maps);
-          renderSavedMapsList();
+        var result = await SupabaseClient.updateMap(currentMapId, updates);
+        if (result.error) {
+          showToast("Failed to update map: " + result.error.message, "error");
+          return;
         }
+
+        // Refresh maps cache
+        var projectId = getCurrentProjectId();
+        await loadMapsForProject(projectId);
+        renderSavedMapsList();
+
+        setCurrentMapDisplay(result.data.id, result.data.name);
+        showToast('Map "' + result.data.name + '" updated', "success");
       }
 
-      function downloadMap(mapId) {
-        var maps = getAllMaps();
-        var map = maps.find(function (m) {
-          return m.id === mapId;
-        });
+      // Load a map from cache
+      async function loadMapAsync(mapId) {
+        var map = mapsCache.find(function(m) { return m.id === mapId; });
 
         if (!map) {
-          alert("Map not found");
+          // Try fetching from Supabase
+          if (typeof SupabaseClient !== "undefined") {
+            var result = await SupabaseClient.getMap(mapId);
+            if (!result.error && result.data) {
+              map = result.data;
+            }
+          }
+        }
+
+        if (!map) {
+          showToast("Map not found", "error");
           return;
         }
 
         if (typeof mazeNodes === "undefined" || !mazeNodes.importMaze) {
-          alert("Maze not initialized");
+          showToast("Maze not initialized", "error");
           return;
         }
 
-        // Load and render the map, then export as PNG
-        if (mazeNodes.importMaze(map.data)) {
-          mazeNodes.loadDecorations().then(function () {
+        // maze_json is stored as JSONB, may be object or string
+        var mazeData = typeof map.maze_json === "string" ? map.maze_json : JSON.stringify(map.maze_json);
+
+        if (mazeNodes.importMaze(mazeData)) {
+          mazeNodes.loadDecorations().then(function() {
             mazeNodes.draw();
-            if (
-              typeof TilePlacement !== "undefined" &&
-              TilePlacement.saveCanvasState
-            ) {
+            if (typeof TilePlacement !== "undefined" && TilePlacement.saveCanvasState) {
+              TilePlacement.saveCanvasState();
+            }
+            setCurrentMapDisplay(map.id, map.name);
+          });
+        } else {
+          showToast("Failed to load map", "error");
+        }
+      }
+
+      // Delete a map
+      async function deleteMapAsync(mapId) {
+        if (!confirm("Delete this map?")) return;
+
+        if (typeof SupabaseClient === "undefined") {
+          showToast("Supabase not available", "error");
+          return;
+        }
+
+        var result = await SupabaseClient.deleteMap(mapId);
+        if (result.error) {
+          showToast("Failed to delete map: " + result.error.message, "error");
+          return;
+        }
+
+        // Clear current map if it was deleted
+        if (currentMapId === mapId) {
+          clearCurrentMap();
+        }
+
+        // Refresh maps cache
+        var projectId = getCurrentProjectId();
+        await loadMapsForProject(projectId);
+        renderSavedMapsList();
+        showToast("Map deleted", "success");
+      }
+
+      // Rename a map
+      async function renameMapAsync(mapId) {
+        var map = mapsCache.find(function(m) { return m.id === mapId; });
+        if (!map) return;
+
+        var newName = prompt("Enter new name:", map.name);
+        if (!newName || !newName.trim()) return;
+
+        if (typeof SupabaseClient === "undefined") {
+          showToast("Supabase not available", "error");
+          return;
+        }
+
+        var result = await SupabaseClient.updateMap(mapId, { name: newName.trim() });
+        if (result.error) {
+          showToast("Failed to rename map: " + result.error.message, "error");
+          return;
+        }
+
+        // Refresh maps cache
+        var projectId = getCurrentProjectId();
+        await loadMapsForProject(projectId);
+        renderSavedMapsList();
+      }
+
+      function setCurrentMapDisplay(mapId, mapName) {
+        var updateBtn = document.getElementById("update-map-btn");
+        var nameInput = document.getElementById("save-map-name");
+
+        currentMapId = mapId;
+
+        if (mapId && mapName) {
+          if (updateBtn) updateBtn.disabled = false;
+          if (nameInput) nameInput.value = mapName;
+        } else {
+          if (updateBtn) updateBtn.disabled = true;
+        }
+
+        // Re-render to update the editing highlight
+        renderSavedMapsList();
+
+        // Save state to Supabase
+        saveUserState();
+      }
+
+      function clearCurrentMap() {
+        setCurrentMapDisplay(null, null);
+        updateMapNameInput();
+      }
+
+      function downloadMap(mapId) {
+        var map = mapsCache.find(function(m) { return m.id === mapId; });
+        if (!map) {
+          showToast("Map not found", "error");
+          return;
+        }
+
+        if (typeof mazeNodes === "undefined" || !mazeNodes.importMaze) {
+          showToast("Maze not initialized", "error");
+          return;
+        }
+
+        var mazeData = typeof map.maze_json === "string" ? map.maze_json : JSON.stringify(map.maze_json);
+
+        if (mazeNodes.importMaze(mazeData)) {
+          mazeNodes.loadDecorations().then(function() {
+            mazeNodes.draw();
+            if (typeof TilePlacement !== "undefined" && TilePlacement.saveCanvasState) {
               TilePlacement.saveCanvasState();
             }
 
-            // Export canvas as PNG
             try {
               var canvas = document.getElementById("maze");
               var image = canvas.toDataURL("image/png");
-
               var link = document.createElement("a");
               link.href = image;
-              // Sanitize the map name for filename
-              var filename =
-                map.name.replace(/[^a-z0-9]/gi, "_").toLowerCase() + ".png";
+              var filename = map.name.replace(/[^a-z0-9]/gi, "_").toLowerCase() + ".png";
               link.download = filename;
               document.body.appendChild(link);
               link.click();
               document.body.removeChild(link);
             } catch (err) {
-              alert(
-                "Cannot export PNG: canvas contains cross-origin images. Try running from a local server.",
-              );
+              showToast("Cannot export PNG: canvas contains cross-origin images", "error");
               console.error("toDataURL failed:", err);
             }
           });
         } else {
-          alert("Failed to load map");
+          showToast("Failed to load map", "error");
         }
       }
 
       function downloadAllMaps() {
-        var maps = getSavedMaps();
-        if (maps.length === 0) {
-          alert("No maps to download");
+        if (mapsCache.length === 0) {
+          showToast("No maps to download", "info");
           return;
         }
 
         if (typeof mazeNodes === "undefined" || !mazeNodes.importMaze) {
-          alert("Maze not initialized");
+          showToast("Maze not initialized", "error");
           return;
         }
 
@@ -3213,11 +4342,10 @@
         }
 
         var currentIndex = 0;
-        var totalMaps = maps.length;
+        var totalMaps = mapsCache.length;
 
         function downloadNext() {
           if (currentIndex >= totalMaps) {
-            // All done
             if (downloadAllBtn) {
               downloadAllBtn.disabled = false;
               downloadAllBtn.textContent = "Download All";
@@ -3225,31 +4353,26 @@
             return;
           }
 
-          var map = maps[currentIndex];
+          var map = mapsCache[currentIndex];
           if (downloadAllBtn) {
-            downloadAllBtn.textContent =
-              "Downloading " + (currentIndex + 1) + "/" + totalMaps + "...";
+            downloadAllBtn.textContent = "Downloading " + (currentIndex + 1) + "/" + totalMaps + "...";
           }
 
-          if (mazeNodes.importMaze(map.data)) {
-            mazeNodes.loadDecorations().then(function () {
+          var mazeData = typeof map.maze_json === "string" ? map.maze_json : JSON.stringify(map.maze_json);
+
+          if (mazeNodes.importMaze(mazeData)) {
+            mazeNodes.loadDecorations().then(function() {
               mazeNodes.draw();
-              if (
-                typeof TilePlacement !== "undefined" &&
-                TilePlacement.saveCanvasState
-              ) {
+              if (typeof TilePlacement !== "undefined" && TilePlacement.saveCanvasState) {
                 TilePlacement.saveCanvasState();
               }
 
-              // Export canvas as PNG
               try {
                 var canvas = document.getElementById("maze");
                 var image = canvas.toDataURL("image/png");
-
                 var link = document.createElement("a");
                 link.href = image;
-                var filename =
-                  map.name.replace(/[^a-z0-9]/gi, "_").toLowerCase() + ".png";
+                var filename = map.name.replace(/[^a-z0-9]/gi, "_").toLowerCase() + ".png";
                 link.download = filename;
                 document.body.appendChild(link);
                 link.click();
@@ -3259,7 +4382,6 @@
               }
 
               currentIndex++;
-              // Small delay between downloads to avoid browser blocking
               setTimeout(downloadNext, 500);
             });
           } else {
@@ -3272,64 +4394,120 @@
         downloadNext();
       }
 
-      var draggedItem = null;
+      async function renderProjectSelector() {
+        var select = document.getElementById("current-project");
+        if (!select) return;
+
+        var currentId = getCurrentProjectId();
+
+        if (projectsCache.length === 0) {
+          select.innerHTML = '<option value="">No projects</option>';
+          return;
+        }
+
+        // If no current project selected, select the first one
+        if (!currentId && projectsCache.length > 0) {
+          currentId = projectsCache[0].id;
+          setCurrentProjectIdLocal(currentId);
+        }
+
+        select.innerHTML = projectsCache
+          .map(function(p) {
+            var selected = p.id === currentId ? " selected" : "";
+            return '<option value="' + p.id + '"' + selected + ">" + escapeHtml(p.name) + "</option>";
+          })
+          .join("");
+      }
+
+      async function renderProjectsList() {
+        var container = document.getElementById("project-list");
+        if (!container) return;
+
+        if (projectsCache.length === 0) {
+          container.innerHTML = '<div class="no-saved-maps">No projects yet</div>';
+          return;
+        }
+
+        container.innerHTML = projectsCache
+          .map(function(project) {
+            return (
+              '<div class="project-item" data-project-id="' + project.id + '">' +
+              '<span class="project-name">' + escapeHtml(project.name) + "</span>" +
+              '<button type="button" class="rename-project-btn" data-project-id="' + project.id + '">Rename</button>' +
+              '<button type="button" class="delete-project-btn" data-project-id="' + project.id + '">Delete</button>' +
+              "</div>"
+            );
+          })
+          .join("");
+
+        // Add event listeners
+        container.querySelectorAll(".rename-project-btn").forEach(function(btn) {
+          btn.addEventListener("click", async function() {
+            var projectId = this.getAttribute("data-project-id");
+            var project = projectsCache.find(function(p) { return p.id === projectId; });
+            if (!project) return;
+
+            var newName = prompt("Enter new name:", project.name);
+            if (newName && newName.trim()) {
+              await renameProjectAsync(projectId, newName.trim());
+              await loadProjects();
+              await renderProjectSelector();
+              await renderProjectsList();
+            }
+          });
+        });
+
+        container.querySelectorAll(".delete-project-btn").forEach(function(btn) {
+          btn.addEventListener("click", async function() {
+            var projectId = this.getAttribute("data-project-id");
+            if (confirm("Delete this project and all its maps?")) {
+              await deleteProjectAsync(projectId);
+              await loadProjects();
+
+              // If deleted project was current, switch to first available
+              if (getCurrentProjectId() === projectId) {
+                var newProjectId = projectsCache.length > 0 ? projectsCache[0].id : null;
+                await setCurrentProjectId(newProjectId);
+              }
+
+              await renderProjectSelector();
+              await renderProjectsList();
+            }
+          });
+        });
+      }
 
       function renderSavedMapsList() {
         var container = document.getElementById("saved-maps-list");
         if (!container) return;
 
-        var maps = getSavedMaps();
-
-        if (maps.length === 0) {
-          container.innerHTML =
-            '<div class="no-saved-maps">No saved maps yet</div>';
+        if (mapsCache.length === 0) {
+          container.innerHTML = '<div class="no-saved-maps">No saved maps yet</div>';
           return;
         }
 
-        var dragHandleSvg =
-          '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 6a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0 7.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0 7.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm6-15a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0 7.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm0 7.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/></svg>';
-
-        container.innerHTML = maps
-          .map(function (map) {
-            var date = new Date(map.timestamp);
-            var dateStr = date.toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            });
+        container.innerHTML = mapsCache
+          .map(function(map) {
+            var date = new Date(map.created_at);
+            var dateStr = date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+            var isEditing = currentMapId === map.id;
+            var editingClass = isEditing ? " editing" : "";
 
             return (
-              '<div class="saved-map-item" data-map-id="' +
-              map.id +
-              '" draggable="true">' +
+              '<div class="saved-map-item' + editingClass + '" data-map-id="' + map.id + '">' +
               '<div class="saved-map-content">' +
-              '<div class="drag-handle">' +
-              dragHandleSvg +
-              "</div>" +
               '<div class="saved-map-thumbnail">' +
-              (map.thumbnail
-                ? '<img src="' + map.thumbnail + '" alt="">'
-                : "") +
+              (map.thumbnail_url ? '<img src="' + map.thumbnail_url + '" alt="">' : "") +
               "</div>" +
               '<div class="saved-map-info">' +
-              '<div class="saved-map-name">' +
-              escapeHtml(map.name) +
-              "</div>" +
-              '<div class="saved-map-meta">' +
-              dateStr +
-              "</div>" +
+              '<div class="saved-map-name">' + escapeHtml(map.name) + "</div>" +
+              '<div class="saved-map-meta">' + dateStr + "</div>" +
               "</div>" +
               "</div>" +
               '<div class="saved-map-actions">' +
-              '<button type="button" class="download-btn" data-map-id="' +
-              map.id +
-              '">Download</button>' +
-              '<button type="button" class="rename-btn" data-map-id="' +
-              map.id +
-              '">Rename</button>' +
-              '<button type="button" class="delete-btn" data-map-id="' +
-              map.id +
-              '">Delete</button>' +
+              '<button type="button" class="download-btn" data-map-id="' + map.id + '">Download</button>' +
+              '<button type="button" class="rename-btn" data-map-id="' + map.id + '">Rename</button>' +
+              '<button type="button" class="delete-btn" data-map-id="' + map.id + '">Delete</button>' +
               "</div>" +
               "</div>"
             );
@@ -3337,107 +4515,40 @@
           .join("");
 
         // Add click handlers
-        container
-          .querySelectorAll(".saved-map-item")
-          .forEach(function (item) {
-            item.addEventListener("click", function (e) {
-              if (
-                e.target.classList.contains("download-btn") ||
-                e.target.classList.contains("rename-btn") ||
-                e.target.classList.contains("delete-btn") ||
-                e.target.closest(".drag-handle")
-              ) {
-                return; // Handle separately
-              }
-              var mapId = this.getAttribute("data-map-id");
-              loadMap(mapId);
-            });
-
-            // Drag and drop handlers
-            item.addEventListener("dragstart", function (e) {
-              draggedItem = this;
-              this.classList.add("dragging");
-              e.dataTransfer.effectAllowed = "move";
-              e.dataTransfer.setData(
-                "text/plain",
-                this.getAttribute("data-map-id"),
-              );
-            });
-
-            item.addEventListener("dragend", function () {
-              this.classList.remove("dragging");
-              draggedItem = null;
-              container
-                .querySelectorAll(".saved-map-item")
-                .forEach(function (i) {
-                  i.classList.remove("drag-over");
-                });
-            });
-
-            item.addEventListener("dragover", function (e) {
-              e.preventDefault();
-              e.dataTransfer.dropEffect = "move";
-              if (draggedItem && draggedItem !== this) {
-                this.classList.add("drag-over");
-              }
-            });
-
-            item.addEventListener("dragleave", function () {
-              this.classList.remove("drag-over");
-            });
-
-            item.addEventListener("drop", function (e) {
-              e.preventDefault();
-              this.classList.remove("drag-over");
-
-              if (!draggedItem || draggedItem === this) return;
-
-              var draggedId = draggedItem.getAttribute("data-map-id");
-              var targetId = this.getAttribute("data-map-id");
-
-              reorderMaps(draggedId, targetId);
-            });
-          });
-
-        container.querySelectorAll(".rename-btn").forEach(function (btn) {
-          btn.addEventListener("click", function (e) {
-            e.stopPropagation();
-            renameMap(this.getAttribute("data-map-id"));
+        container.querySelectorAll(".saved-map-item").forEach(function(item) {
+          item.addEventListener("click", function(e) {
+            if (
+              e.target.classList.contains("download-btn") ||
+              e.target.classList.contains("rename-btn") ||
+              e.target.classList.contains("delete-btn")
+            ) {
+              return;
+            }
+            var mapId = this.getAttribute("data-map-id");
+            loadMapAsync(mapId);
           });
         });
 
-        container.querySelectorAll(".delete-btn").forEach(function (btn) {
-          btn.addEventListener("click", function (e) {
+        container.querySelectorAll(".rename-btn").forEach(function(btn) {
+          btn.addEventListener("click", function(e) {
             e.stopPropagation();
-            deleteMap(this.getAttribute("data-map-id"));
+            renameMapAsync(this.getAttribute("data-map-id"));
           });
         });
 
-        container.querySelectorAll(".download-btn").forEach(function (btn) {
-          btn.addEventListener("click", function (e) {
+        container.querySelectorAll(".delete-btn").forEach(function(btn) {
+          btn.addEventListener("click", function(e) {
+            e.stopPropagation();
+            deleteMapAsync(this.getAttribute("data-map-id"));
+          });
+        });
+
+        container.querySelectorAll(".download-btn").forEach(function(btn) {
+          btn.addEventListener("click", function(e) {
             e.stopPropagation();
             downloadMap(this.getAttribute("data-map-id"));
           });
         });
-      }
-
-      function reorderMaps(draggedId, targetId) {
-        var allMaps = getAllMaps();
-        var draggedIndex = allMaps.findIndex(function (m) {
-          return m.id === draggedId;
-        });
-        var targetIndex = allMaps.findIndex(function (m) {
-          return m.id === targetId;
-        });
-
-        if (draggedIndex === -1 || targetIndex === -1) return;
-
-        // Remove dragged item and insert at target position
-        var draggedMap = allMaps.splice(draggedIndex, 1)[0];
-        allMaps.splice(targetIndex, 0, draggedMap);
-
-        saveMapsToStorage(allMaps);
-        renderSavedMapsList();
       }
 
       function escapeHtml(text) {
@@ -3457,13 +4568,16 @@
       }
 
       if (saveMapBtn) {
-        saveMapBtn.addEventListener("click", function () {
+        saveMapBtn.addEventListener("click", async function() {
           var name = saveMapNameInput ? saveMapNameInput.value.trim() : "";
-          var saved = saveCurrentMap(name);
+          saveMapBtn.disabled = true;
+
+          var saved = await saveCurrentMapAsync(name);
+
+          saveMapBtn.disabled = false;
+
           if (saved) {
-            // Set the newly saved map as current for updates
             setCurrentMapDisplay(saved.id, saved.name);
-            alert('Map saved as "' + saved.name + '"');
           }
         });
       }
@@ -3477,31 +4591,35 @@
       // Update map button
       var updateMapBtn = document.getElementById("update-map-btn");
       if (updateMapBtn) {
-        updateMapBtn.addEventListener("click", updateCurrentMap);
-      }
+        updateMapBtn.addEventListener("click", async function() {
+          updateMapBtn.disabled = true;
 
-      // Initialize map name input
-      updateMapNameInput();
+          await updateCurrentMapAsync();
+
+          updateMapBtn.disabled = false;
+        });
+      }
 
       // Project selector event listeners
       var projectSelector = document.getElementById("current-project");
       if (projectSelector) {
-        projectSelector.addEventListener("change", function () {
-          setCurrentProjectId(this.value);
-          updateMapNameInput();
+        projectSelector.addEventListener("change", async function() {
+          await setCurrentProjectId(this.value);
         });
       }
 
       // New project button (in maps tab)
       var newProjectBtn = document.getElementById("new-project-btn");
       if (newProjectBtn) {
-        newProjectBtn.addEventListener("click", function () {
+        newProjectBtn.addEventListener("click", async function() {
           var name = prompt("Enter project name:");
           if (name && name.trim()) {
-            var project = createProject(name.trim());
-            setCurrentProjectId(project.id);
-            renderProjectsList();
-            updateMapNameInput();
+            var project = await createProjectAsync(name.trim());
+            if (project) {
+              await loadProjects();
+              await setCurrentProjectId(project.id);
+              await renderProjectsList();
+            }
           }
         });
       }
@@ -3510,34 +4628,93 @@
       var addProjectBtn = document.getElementById("add-project-btn");
       var newProjectNameInput = document.getElementById("new-project-name");
       if (addProjectBtn) {
-        addProjectBtn.addEventListener("click", function () {
-          var name = newProjectNameInput
-            ? newProjectNameInput.value.trim()
-            : "";
+        addProjectBtn.addEventListener("click", async function() {
+          var name = newProjectNameInput ? newProjectNameInput.value.trim() : "";
           if (name) {
-            createProject(name);
-            if (newProjectNameInput) newProjectNameInput.value = "";
-            renderProjectSelector();
-            renderProjectsList();
+            var project = await createProjectAsync(name);
+            if (project) {
+              if (newProjectNameInput) newProjectNameInput.value = "";
+              await loadProjects();
+              await renderProjectSelector();
+              await renderProjectsList();
+            }
           } else {
-            alert("Please enter a project name");
+            showToast("Please enter a project name", "error");
           }
         });
       }
 
-      // Initial render of projects and saved maps
-      renderProjectSelector();
-      renderProjectsList();
-      renderSavedMapsList();
+      // Initial load of projects and maps
+      (async function initProjectsAndMaps() {
+        await loadProjects();
+
+        // Try to restore state from Supabase first
+        var savedState = null;
+        var savedMapId = null;
+        if (typeof SupabaseClient !== "undefined" && SupabaseClient.getUserState) {
+          var stateResult = await SupabaseClient.getUserState();
+          if (!stateResult.error && stateResult.data) {
+            savedState = stateResult.data;
+          }
+        }
+
+        // Determine current project
+        var currentProjectId = savedState?.current_project_id || getCurrentProjectId();
+
+        // If we have a saved project ID, verify it exists
+        if (currentProjectId) {
+          var projectExists = projectsCache.some(function(p) { return p.id === currentProjectId; });
+          if (!projectExists) {
+            currentProjectId = null;
+          }
+        }
+
+        // If no valid project, select first one if available
+        if (!currentProjectId && projectsCache.length > 0) {
+          currentProjectId = projectsCache[0].id;
+        }
+
+        if (currentProjectId) {
+          setCurrentProjectIdLocal(currentProjectId);
+          await loadMapsForProject(currentProjectId);
+          await loadBorderSettingsForProject(currentProjectId);
+        }
+
+        await renderProjectSelector();
+        await renderProjectsList();
+        renderSavedMapsList();
+        updateMapNameInput();
+
+        // Restore the map that was being edited
+        if (savedState?.current_map_id) {
+          var mapToLoad = mapsCache.find(function(m) { return m.id === savedState.current_map_id; });
+          if (mapToLoad) {
+            await loadMapAsync(savedState.current_map_id);
+          }
+        }
+      })();
 
       // Database Export/Import
-      function exportDatabase() {
+      async function exportDatabase() {
+        // Fetch all projects and maps from Supabase
+        var projectsResult = await SupabaseClient.getProjects();
+        var allProjects = projectsResult.data || [];
+
+        // Fetch maps for each project
+        var allMaps = [];
+        for (var i = 0; i < allProjects.length; i++) {
+          var mapsResult = await SupabaseClient.getMapsForProject(allProjects[i].id);
+          if (mapsResult.data) {
+            allMaps = allMaps.concat(mapsResult.data);
+          }
+        }
+
         var data = {
-          version: 2,
+          version: 3,
           exportDate: new Date().toISOString(),
-          projects: getProjects(),
-          maps: getAllMaps(),
-          currentProject: getCurrentProjectId(),
+          projects: allProjects,
+          maps: allMaps,
+          currentProject: currentProjectId,
           customDecorations:
             typeof DecorationLibrary !== "undefined"
               ? DecorationLibrary.exportLibrary()
@@ -3558,14 +4735,14 @@
         URL.revokeObjectURL(url);
       }
 
-      function importDatabase(file) {
+      async function importDatabase(file) {
         var reader = new FileReader();
-        reader.onload = function (e) {
+        reader.onload = async function (e) {
           try {
             var data = JSON.parse(e.target.result);
 
             if (!data.projects || !data.maps) {
-              alert("Invalid backup file format");
+              showToast("Invalid backup file format", "error");
               return;
             }
 
@@ -3586,29 +4763,62 @@
               return;
             }
 
-            // Merge projects (avoid duplicates by ID)
-            var existingProjects = getProjects();
+            // Get existing project IDs to avoid duplicates
+            var existingResult = await SupabaseClient.getProjects();
+            var existingProjects = existingResult.data || [];
             var existingProjectIds = existingProjects.map(function (p) {
               return p.id;
             });
-            data.projects.forEach(function (project) {
-              if (existingProjectIds.indexOf(project.id) === -1) {
-                existingProjects.push(project);
-              }
-            });
-            saveProjectsToStorage(existingProjects);
 
-            // Merge maps (avoid duplicates by ID)
-            var existingMaps = getAllMaps();
-            var existingMapIds = existingMaps.map(function (m) {
+            // Import new projects
+            var projectIdMap = {}; // Map old IDs to new IDs for imported projects
+            var importedProjects = 0;
+            for (var i = 0; i < data.projects.length; i++) {
+              var project = data.projects[i];
+              if (existingProjectIds.indexOf(project.id) === -1) {
+                var result = await SupabaseClient.createProject(project.name);
+                if (result.data) {
+                  projectIdMap[project.id] = result.data.id;
+                  importedProjects++;
+                }
+              } else {
+                // Project already exists, use existing ID
+                projectIdMap[project.id] = project.id;
+              }
+            }
+
+            // Get existing map IDs
+            var allExistingMaps = [];
+            for (var i = 0; i < existingProjects.length; i++) {
+              var mapsResult = await SupabaseClient.getMapsForProject(existingProjects[i].id);
+              if (mapsResult.data) {
+                allExistingMaps = allExistingMaps.concat(mapsResult.data);
+              }
+            }
+            var existingMapIds = allExistingMaps.map(function (m) {
               return m.id;
             });
-            data.maps.forEach(function (map) {
+
+            // Import new maps
+            var importedMaps = 0;
+            for (var i = 0; i < data.maps.length; i++) {
+              var map = data.maps[i];
               if (existingMapIds.indexOf(map.id) === -1) {
-                existingMaps.push(map);
+                var newProjectId = projectIdMap[map.project_id] || map.project_id;
+                var mazeJson = typeof map.maze_json === "string"
+                  ? map.maze_json
+                  : JSON.stringify(map.maze_json);
+                var result = await SupabaseClient.createMap({
+                  project_id: newProjectId,
+                  name: map.name,
+                  maze_json: mazeJson,
+                  thumbnail_url: map.thumbnail_url
+                });
+                if (result.data) {
+                  importedMaps++;
+                }
               }
-            });
-            saveMapsToStorage(existingMaps);
+            }
 
             // Import custom decorations if present
             if (
@@ -3618,27 +4828,31 @@
               DecorationLibrary.importLibrary(data.customDecorations);
             }
 
-            // Refresh UI
-            renderProjectSelector();
-            renderProjectsList();
+            // Refresh caches and UI
+            await loadProjects();
+            if (currentProjectId) {
+              await loadMapsForProject(currentProjectId);
+            }
+            await renderProjectSelector();
+            await renderProjectsList();
             renderSavedMapsList();
             updateMapNameInput();
 
             var decorationMsg = data.customDecorations
               ? " and custom decorations"
               : "";
-            alert(
+            showToast(
               "Import complete! Added " +
-              mapCount +
+              importedMaps +
               " maps and " +
-              projectCount +
+              importedProjects +
               " projects" +
-              decorationMsg +
-              ".",
+              decorationMsg,
+              "success"
             );
           } catch (err) {
             console.error("Import failed:", err);
-            alert("Failed to import: " + err.message);
+            showToast("Failed to import: " + err.message, "error");
           }
         };
         reader.readAsText(file);
@@ -3691,11 +4905,802 @@
             link.click();
             document.body.removeChild(link);
           } catch (err) {
-            alert(
-              "Cannot export PNG: canvas contains cross-origin images. Try running from a local server.",
-            );
+            showToast("Cannot export PNG: canvas contains cross-origin images", "error");
             console.error("toDataURL failed:", err);
           }
+        });
+      }
+
+      // ============================================
+      // Publishing Mode
+      // ============================================
+      var publishingMode = false;
+      var prePublishState = null; // Store state before publishing for cancel
+
+      var fabPublish = document.getElementById("fab-publish");
+      var publishingToolbar = document.getElementById("publishing-toolbar");
+      var publishingAccept = document.getElementById("publishing-accept");
+      var publishingCancel = document.getElementById("publishing-cancel");
+      var publishingExport = document.getElementById("publishing-export");
+
+      function enterPublishingMode() {
+        if (publishingMode) return;
+
+        // Save current state for potential cancel
+        if (typeof mazeNodes !== "undefined" && mazeNodes.exportMaze) {
+          prePublishState = mazeNodes.exportMaze();
+        }
+
+        publishingMode = true;
+        document.body.classList.add("publishing-mode");
+        if (publishingToolbar) publishingToolbar.style.display = "block";
+      }
+
+      function exitPublishingMode(accept) {
+        if (!publishingMode) return;
+
+        if (!accept && prePublishState) {
+          // Cancel - restore previous state
+          if (typeof mazeNodes !== "undefined" && mazeNodes.importMaze) {
+            mazeNodes.importMaze(prePublishState);
+            mazeNodes.loadDecorations().then(function() {
+              mazeNodes.draw();
+            });
+          }
+        }
+
+        publishingMode = false;
+        prePublishState = null;
+        document.body.classList.remove("publishing-mode");
+        if (publishingToolbar) publishingToolbar.style.display = "none";
+      }
+
+      function exportPublishedMap() {
+        // Check if we have border assignments for batch export
+        if (window.borderAssignments && Object.keys(window.borderAssignments).length > 0) {
+          batchExportWithBorders();
+        } else {
+          // Single map export (no borders)
+          try {
+            var canvas = document.getElementById("maze");
+            var image = canvas.toDataURL("image/png");
+            var link = document.createElement("a");
+            link.href = image;
+            link.download = "maze-published.png";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          } catch (err) {
+            showToast("Cannot export PNG: canvas contains cross-origin images", "error");
+            console.error("toDataURL failed:", err);
+          }
+        }
+      }
+
+      // Batch export with borders - 11x8.5" landscape at 300 DPI = 3300x2550 pixels
+      var PRINT_WIDTH = 3300;
+      var PRINT_HEIGHT = 2550;
+      var exportCancelled = false;
+      var borderMarginSixteenths = 8; // Default 8/16 = 1/2 inch
+
+      // Margin slider elements
+      var borderMarginSlider = document.getElementById("border-margin-slider");
+      var borderMarginValue = document.getElementById("border-margin-value");
+
+      function formatMarginFraction(sixteenths) {
+        if (sixteenths === 0) return '0"';
+        if (sixteenths === 16) return '1"';
+        // Simplify the fraction
+        var gcd = function(a, b) { return b ? gcd(b, a % b) : a; };
+        var divisor = gcd(sixteenths, 16);
+        var num = sixteenths / divisor;
+        var den = 16 / divisor;
+        return num + "/" + den + '"';
+      }
+
+      if (borderMarginSlider) {
+        borderMarginSlider.addEventListener("input", function() {
+          borderMarginSixteenths = parseInt(this.value, 10);
+          if (borderMarginValue) {
+            borderMarginValue.textContent = formatMarginFraction(borderMarginSixteenths);
+          }
+        });
+      }
+
+      // Progress modal elements
+      var exportProgressOverlay = document.getElementById("export-progress-overlay");
+      var exportProgressFill = document.getElementById("export-progress-fill");
+      var exportProgressText = document.getElementById("export-progress-text");
+      var exportProgressCancel = document.getElementById("export-progress-cancel");
+
+      function showExportProgress() {
+        exportCancelled = false;
+        if (exportProgressOverlay) exportProgressOverlay.classList.remove("hidden");
+        if (exportProgressFill) exportProgressFill.style.width = "0%";
+        if (exportProgressText) exportProgressText.textContent = "Preparing...";
+      }
+
+      function hideExportProgress() {
+        if (exportProgressOverlay) exportProgressOverlay.classList.add("hidden");
+      }
+
+      function updateExportProgress(current, total, mapName) {
+        var percent = Math.round((current / total) * 100);
+        if (exportProgressFill) exportProgressFill.style.width = percent + "%";
+        if (exportProgressText) exportProgressText.textContent = "Exporting " + current + " of " + total + ": " + mapName;
+      }
+
+      if (exportProgressCancel) {
+        exportProgressCancel.addEventListener("click", function() {
+          exportCancelled = true;
+          hideExportProgress();
+        });
+      }
+
+      async function batchExportWithBorders() {
+        var assignments = window.borderAssignments;
+        var borders = window.bordersCache || [];
+
+        if (!assignments || Object.keys(assignments).length === 0) {
+          showToast("No border assignments. Open Borders panel first.", "error");
+          return;
+        }
+
+        var mapIds = Object.keys(assignments);
+        var totalMaps = mapIds.length;
+
+        showExportProgress();
+
+        // Store current map state to restore later
+        var currentState = null;
+        if (typeof mazeNodes !== "undefined" && mazeNodes.exportMaze) {
+          currentState = mazeNodes.exportMaze();
+        }
+
+        var exportedCount = 0;
+        var failedCount = 0;
+
+        for (var i = 0; i < mapIds.length; i++) {
+          if (exportCancelled) {
+            showToast("Export cancelled", "info");
+            break;
+          }
+
+          var mapId = mapIds[i];
+          var borderId = assignments[mapId];
+          var map = mapsCache.find(function(m) { return m.id === mapId; });
+          var border = borders.find(function(b) { return b.id === borderId; });
+
+          if (!map) {
+            console.warn("Map not found:", mapId);
+            failedCount++;
+            continue;
+          }
+
+          updateExportProgress(i + 1, totalMaps, map.name || "Map " + (i + 1));
+
+          try {
+            // Load the map
+            var mazeData = typeof map.maze_json === "string" ? map.maze_json : JSON.stringify(map.maze_json);
+            mazeNodes.importMaze(mazeData);
+            await mazeNodes.loadDecorations();
+            mazeNodes.draw();
+
+            // Wait for canvas to be fully painted
+            await new Promise(function(resolve) {
+              requestAnimationFrame(function() {
+                requestAnimationFrame(resolve);
+              });
+            });
+
+            // Create composite image
+            var compositeCanvas = document.createElement("canvas");
+            compositeCanvas.width = PRINT_WIDTH;
+            compositeCanvas.height = PRINT_HEIGHT;
+            var ctx = compositeCanvas.getContext("2d");
+
+            // Fill with white background
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, PRINT_WIDTH, PRINT_HEIGHT);
+
+            // Draw border FIRST (as background frame)
+            if (border && border.image_url) {
+              await new Promise(function(resolve, reject) {
+                var borderImg = new Image();
+                borderImg.crossOrigin = "anonymous";
+                borderImg.onload = function() {
+                  ctx.drawImage(borderImg, 0, 0, PRINT_WIDTH, PRINT_HEIGHT);
+                  resolve();
+                };
+                borderImg.onerror = function() {
+                  console.warn("Failed to load border image:", border.image_url);
+                  resolve(); // Continue without border
+                };
+                borderImg.src = border.image_url;
+              });
+            }
+
+            // Draw maze centered on top of border
+            var mazeCanvas = document.getElementById("maze");
+            console.log("Maze canvas dimensions:", mazeCanvas.width, "x", mazeCanvas.height);
+            // Calculate padding: 1/16" = 18.75px at 300 DPI
+            var marginValue = window.borderMarginSixteenths !== undefined ? window.borderMarginSixteenths : borderMarginSixteenths;
+            var padding = Math.round(marginValue * 18.75);
+            var maxMazeWidth = PRINT_WIDTH - padding * 2;
+            var maxMazeHeight = PRINT_HEIGHT - padding * 2;
+
+            var mazeAspect = mazeCanvas.width / mazeCanvas.height;
+            var targetAspect = maxMazeWidth / maxMazeHeight;
+
+            var drawWidth, drawHeight;
+            if (mazeAspect > targetAspect) {
+              // Maze is wider - fit to width
+              drawWidth = maxMazeWidth;
+              drawHeight = maxMazeWidth / mazeAspect;
+            } else {
+              // Maze is taller - fit to height
+              drawHeight = maxMazeHeight;
+              drawWidth = maxMazeHeight * mazeAspect;
+            }
+
+            var drawX = (PRINT_WIDTH - drawWidth) / 2;
+            var drawY = (PRINT_HEIGHT - drawHeight) / 2;
+
+            ctx.drawImage(mazeCanvas, drawX, drawY, drawWidth, drawHeight);
+
+            // Download the composite
+            var filename = (map.name || "maze-" + (i + 1)).replace(/[^a-zA-Z0-9-_ ]/g, "") + ".png";
+            var link = document.createElement("a");
+            link.href = compositeCanvas.toDataURL("image/png");
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            exportedCount++;
+
+            // Small delay between downloads to avoid browser throttling
+            if (i < mapIds.length - 1) {
+              await new Promise(function(resolve) { setTimeout(resolve, 500); });
+            }
+
+          } catch (err) {
+            console.error("Failed to export map:", map.name, err);
+            failedCount++;
+          }
+        }
+
+        hideExportProgress();
+
+        // Restore original map state
+        if (currentState) {
+          mazeNodes.importMaze(currentState);
+          await mazeNodes.loadDecorations();
+          mazeNodes.draw();
+        }
+
+        if (!exportCancelled) {
+          if (failedCount > 0) {
+            showToast("Exported " + exportedCount + " maps (" + failedCount + " failed)", "info");
+          } else {
+            showToast("Exported " + exportedCount + " maps successfully!", "success");
+          }
+        }
+      }
+
+      // Event listeners
+      if (fabPublish) {
+        fabPublish.addEventListener("click", enterPublishingMode);
+      }
+      if (publishingAccept) {
+        publishingAccept.addEventListener("click", function() {
+          exitPublishingMode(true);
+        });
+      }
+      if (publishingCancel) {
+        publishingCancel.addEventListener("click", function() {
+          exitPublishingMode(false);
+        });
+      }
+      if (publishingExport) {
+        publishingExport.addEventListener("click", exportPublishedMap);
+      }
+
+      // ============================================
+      // Border Library
+      // ============================================
+      var borderLibraryModal = document.getElementById("border-library-modal");
+      var borderLibraryClose = document.getElementById("border-library-close");
+      var borderLibraryGrid = document.getElementById("border-library-grid");
+      var borderUploadZone = document.getElementById("border-upload-zone");
+      var borderFileInput = document.getElementById("border-file-input");
+      var browseBordersBtn = document.getElementById("browse-borders-btn");
+      var publishingBordersBtn = document.getElementById("publishing-borders");
+      var singleBorderSelect = document.getElementById("single-border-select");
+      var singleBorderDropdown = document.getElementById("single-border-dropdown");
+      var borderPreviewGrid = document.getElementById("border-preview-grid");
+      var borderApplyBtn = document.getElementById("border-apply-btn");
+      var borderCancelBtn = document.getElementById("border-cancel-btn");
+      var previewRerollAllBtn = document.getElementById("preview-reroll-all");
+
+      var bordersCache = []; // Cache of loaded borders
+      var selectedBorderIds = []; // IDs of selected borders for assignment
+      var borderAssignments = {}; // { mapId: borderId }
+      var assignmentMode = "random"; // "random" or "single"
+
+      async function openBorderLibrary() {
+        if (borderLibraryModal) {
+          borderLibraryModal.classList.remove("hidden");
+
+          // Try to load saved settings for this project
+          var projectId = getCurrentProjectId();
+          var savedSettings = null;
+
+          if (projectId && typeof SupabaseClient !== "undefined" && SupabaseClient.getBorderSettings) {
+            var result = await SupabaseClient.getBorderSettings(projectId);
+            if (!result.error && result.data) {
+              savedSettings = result.data;
+            }
+          }
+
+          if (savedSettings) {
+            // Restore saved settings
+            selectedBorderIds = savedSettings.selected_border_ids || [];
+            borderAssignments = savedSettings.assignments || {};
+            assignmentMode = savedSettings.assignment_mode || "random";
+            borderMarginSixteenths = savedSettings.margin_sixteenths || 8;
+
+            // Update UI to reflect saved settings
+            var radioToCheck = document.querySelector('input[name="assignment-mode"][value="' + assignmentMode + '"]');
+            if (radioToCheck) radioToCheck.checked = true;
+            if (singleBorderSelect) singleBorderSelect.classList.toggle("visible", assignmentMode === "single");
+            if (borderMarginSlider) borderMarginSlider.value = borderMarginSixteenths;
+            if (borderMarginValue) borderMarginValue.textContent = formatMarginFraction(borderMarginSixteenths);
+
+            // Also restore window values
+            window.borderAssignments = borderAssignments;
+            window.borderMarginSixteenths = borderMarginSixteenths;
+          } else {
+            // Reset to defaults
+            selectedBorderIds = [];
+            borderAssignments = {};
+            assignmentMode = "random";
+            borderMarginSixteenths = 8;
+            var radioRandom = document.querySelector('input[name="assignment-mode"][value="random"]');
+            if (radioRandom) radioRandom.checked = true;
+            if (singleBorderSelect) singleBorderSelect.classList.remove("visible");
+            if (borderMarginSlider) borderMarginSlider.value = 8;
+            if (borderMarginValue) borderMarginValue.textContent = '1/2"';
+          }
+
+          await loadBorders();
+
+          // After borders load, set single border dropdown if saved
+          if (savedSettings && savedSettings.single_border_id && singleBorderDropdown) {
+            singleBorderDropdown.value = savedSettings.single_border_id;
+          }
+
+          updatePreview();
+          updateApplyButton();
+        }
+      }
+
+      function closeBorderLibrary() {
+        if (borderLibraryModal) {
+          borderLibraryModal.classList.add("hidden");
+        }
+      }
+
+      async function loadBorders() {
+        if (!borderLibraryGrid) return;
+
+        borderLibraryGrid.innerHTML = '<div class="border-library-loading">Loading borders...</div>';
+
+        if (typeof SupabaseClient === "undefined") {
+          borderLibraryGrid.innerHTML = '<div class="border-library-empty">Supabase not initialized. Please check your configuration.</div>';
+          return;
+        }
+
+        var result = await SupabaseClient.getBorders();
+
+        if (result.error) {
+          console.error("Error loading borders:", result.error);
+          borderLibraryGrid.innerHTML = '<div class="border-library-empty">Error loading borders: ' + result.error.message + '</div>';
+          return;
+        }
+
+        bordersCache = result.data || [];
+
+        if (bordersCache.length === 0) {
+          borderLibraryGrid.innerHTML = '<div class="border-library-empty">No borders uploaded yet. Upload some border images to get started!</div>';
+          updateSingleBorderDropdown();
+          updatePreview();
+          return;
+        }
+
+        renderBorders();
+        updateSingleBorderDropdown();
+        updatePreview();
+      }
+
+      function renderBorders() {
+        if (!borderLibraryGrid) return;
+
+        borderLibraryGrid.innerHTML = "";
+
+        bordersCache.forEach(function(border) {
+          var item = document.createElement("div");
+          item.className = "border-item selectable";
+          item.dataset.borderId = border.id;
+          if (selectedBorderIds.indexOf(border.id) !== -1) {
+            item.classList.add("selected");
+          }
+
+          // Checkbox overlay
+          var checkbox = document.createElement("div");
+          checkbox.className = "border-item-checkbox";
+          checkbox.innerHTML = '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+
+          var img = document.createElement("img");
+          img.src = border.image_url;
+          img.alt = border.name;
+          img.loading = "lazy";
+
+          var actions = document.createElement("div");
+          actions.className = "border-item-actions";
+
+          var deleteBtn = document.createElement("button");
+          deleteBtn.className = "border-item-delete";
+          deleteBtn.innerHTML = "&times;";
+          deleteBtn.title = "Delete border";
+          deleteBtn.addEventListener("click", function(e) {
+            e.stopPropagation();
+            deleteBorder(border.id, border.name);
+          });
+
+          var nameLabel = document.createElement("div");
+          nameLabel.className = "border-item-name";
+          nameLabel.textContent = border.name;
+
+          actions.appendChild(deleteBtn);
+          item.appendChild(checkbox);
+          item.appendChild(img);
+          item.appendChild(actions);
+          item.appendChild(nameLabel);
+
+          item.addEventListener("click", function() {
+            toggleBorderSelection(border.id);
+          });
+
+          borderLibraryGrid.appendChild(item);
+        });
+      }
+
+      function toggleBorderSelection(borderId) {
+        var idx = selectedBorderIds.indexOf(borderId);
+        if (idx === -1) {
+          selectedBorderIds.push(borderId);
+        } else {
+          selectedBorderIds.splice(idx, 1);
+        }
+
+        // Update visual state
+        var item = borderLibraryGrid.querySelector('[data-border-id="' + borderId + '"]');
+        if (item) {
+          item.classList.toggle("selected", idx === -1);
+        }
+
+        // Regenerate assignments and update preview
+        generateBorderAssignments();
+        updatePreview();
+        updateApplyButton();
+      }
+
+      function updateSingleBorderDropdown() {
+        if (!singleBorderDropdown) return;
+
+        singleBorderDropdown.innerHTML = '<option value="">Select a border...</option>';
+        bordersCache.forEach(function(border) {
+          var option = document.createElement("option");
+          option.value = border.id;
+          option.textContent = border.name;
+          singleBorderDropdown.appendChild(option);
+        });
+      }
+
+      function generateBorderAssignments() {
+        borderAssignments = {};
+
+        if (mapsCache.length === 0) return;
+
+        if (assignmentMode === "single") {
+          var singleId = singleBorderDropdown ? singleBorderDropdown.value : null;
+          if (singleId) {
+            mapsCache.forEach(function(map) {
+              borderAssignments[map.id] = singleId;
+            });
+          }
+        } else {
+          // Random assignment from selected borders
+          if (selectedBorderIds.length === 0) return;
+
+          mapsCache.forEach(function(map) {
+            var randomIdx = Math.floor(Math.random() * selectedBorderIds.length);
+            borderAssignments[map.id] = selectedBorderIds[randomIdx];
+          });
+        }
+      }
+
+      function rerollSingleAssignment(mapId) {
+        if (assignmentMode === "single") return; // Can't reroll in single mode
+        if (selectedBorderIds.length === 0) return;
+
+        var randomIdx = Math.floor(Math.random() * selectedBorderIds.length);
+        borderAssignments[mapId] = selectedBorderIds[randomIdx];
+        updatePreview();
+      }
+
+      function rerollAllAssignments() {
+        generateBorderAssignments();
+        updatePreview();
+      }
+
+      function updatePreview() {
+        if (!borderPreviewGrid) return;
+
+        if (mapsCache.length === 0) {
+          borderPreviewGrid.innerHTML = '<div class="border-preview-empty">No maps in current project</div>';
+          return;
+        }
+
+        var hasAssignments = Object.keys(borderAssignments).length > 0;
+        if (!hasAssignments) {
+          borderPreviewGrid.innerHTML = '<div class="border-preview-empty">Select borders to see preview</div>';
+          return;
+        }
+
+        borderPreviewGrid.innerHTML = "";
+
+        mapsCache.forEach(function(map) {
+          var borderId = borderAssignments[map.id];
+          var border = bordersCache.find(function(b) { return b.id === borderId; });
+
+          var item = document.createElement("div");
+          item.className = "border-preview-item";
+          item.dataset.mapId = map.id;
+
+          // Map thumbnail (placeholder - we'll use a simple background)
+          var mapThumb = document.createElement("div");
+          mapThumb.className = "map-thumbnail";
+          mapThumb.style.background = "#fff";
+          mapThumb.style.display = "flex";
+          mapThumb.style.alignItems = "center";
+          mapThumb.style.justifyContent = "center";
+          mapThumb.style.fontSize = "10px";
+          mapThumb.style.color = "#999";
+          mapThumb.textContent = "Map";
+
+          // Border image overlay
+          if (border) {
+            var borderImg = document.createElement("img");
+            borderImg.className = "border-img";
+            borderImg.src = border.image_url;
+            borderImg.alt = border.name;
+            item.appendChild(borderImg);
+          }
+
+          // Map name label
+          var nameLabel = document.createElement("div");
+          nameLabel.className = "map-name";
+          nameLabel.textContent = map.name;
+
+          // Re-roll button (only in random mode)
+          if (assignmentMode === "random") {
+            var rerollBtn = document.createElement("button");
+            rerollBtn.className = "reroll-btn";
+            rerollBtn.title = "Re-roll border";
+            rerollBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>';
+            rerollBtn.addEventListener("click", function(e) {
+              e.stopPropagation();
+              rerollSingleAssignment(map.id);
+            });
+            item.appendChild(rerollBtn);
+          }
+
+          item.appendChild(mapThumb);
+          item.appendChild(nameLabel);
+
+          borderPreviewGrid.appendChild(item);
+        });
+      }
+
+      function updateApplyButton() {
+        if (!borderApplyBtn) return;
+
+        var canApply = Object.keys(borderAssignments).length > 0;
+        borderApplyBtn.disabled = !canApply;
+      }
+
+      async function applyBorderAssignments() {
+        // Store assignments for export/batch processing
+        window.borderAssignments = borderAssignments;
+        window.bordersCache = bordersCache;
+        window.borderMarginSixteenths = borderMarginSixteenths;
+
+        // Save to Supabase
+        var projectId = getCurrentProjectId();
+        if (projectId && typeof SupabaseClient !== "undefined" && SupabaseClient.saveBorderSettings) {
+          var singleId = singleBorderDropdown ? singleBorderDropdown.value : null;
+          var settings = {
+            margin_sixteenths: borderMarginSixteenths,
+            assignment_mode: assignmentMode,
+            single_border_id: singleId || null,
+            selected_border_ids: selectedBorderIds,
+            assignments: borderAssignments
+          };
+          var result = await SupabaseClient.saveBorderSettings(projectId, settings);
+          if (result.error) {
+            console.warn("Failed to save border settings:", result.error);
+          }
+        }
+
+        var marginText = formatMarginFraction(borderMarginSixteenths);
+        var assignmentCount = Object.keys(borderAssignments).length;
+        showToast("Border assignments saved (" + assignmentCount + " maps, " + marginText + " margin)", "success");
+        closeBorderLibrary();
+      }
+
+      async function deleteBorder(id, name) {
+        if (!confirm('Delete border "' + name + '"? This cannot be undone.')) {
+          return;
+        }
+
+        if (typeof SupabaseClient === "undefined") {
+          showToast("Supabase not initialized", "error");
+          return;
+        }
+
+        var result = await SupabaseClient.deleteBorder(id);
+
+        if (result.error) {
+          showToast("Error deleting border: " + result.error.message, "error");
+          return;
+        }
+
+        // Remove from selected if was selected
+        var idx = selectedBorderIds.indexOf(id);
+        if (idx !== -1) {
+          selectedBorderIds.splice(idx, 1);
+        }
+
+        showToast("Border deleted", "success");
+        loadBorders();
+      }
+
+      async function uploadBorders(files) {
+        if (!files || files.length === 0) return;
+
+        if (typeof SupabaseClient === "undefined") {
+          showToast("Supabase not initialized", "error");
+          return;
+        }
+
+        var uploadedCount = 0;
+        for (var i = 0; i < files.length; i++) {
+          var file = files[i];
+
+          // Validate file type
+          if (!file.type.match(/^image\/(png|jpeg)$/)) {
+            showToast("Invalid file type: " + file.name + ". Only PNG and JPEG allowed.", "error");
+            continue;
+          }
+
+          // Use filename without extension as name
+          var name = file.name.replace(/\.[^/.]+$/, "");
+
+          var result = await SupabaseClient.uploadBorder(file, name);
+
+          if (result.error) {
+            showToast("Error uploading " + file.name + ": " + result.error.message, "error");
+          } else {
+            uploadedCount++;
+          }
+        }
+
+        if (uploadedCount > 0) {
+          showToast("Uploaded " + uploadedCount + " border" + (uploadedCount > 1 ? "s" : ""), "success");
+        }
+
+        loadBorders();
+      }
+
+      // Event listeners for border library
+      if (publishingBordersBtn) {
+        publishingBordersBtn.addEventListener("click", openBorderLibrary);
+      }
+
+      if (borderLibraryClose) {
+        borderLibraryClose.addEventListener("click", closeBorderLibrary);
+      }
+
+      if (borderCancelBtn) {
+        borderCancelBtn.addEventListener("click", closeBorderLibrary);
+      }
+
+      if (borderApplyBtn) {
+        borderApplyBtn.addEventListener("click", applyBorderAssignments);
+      }
+
+      if (previewRerollAllBtn) {
+        previewRerollAllBtn.addEventListener("click", rerollAllAssignments);
+      }
+
+      // Assignment mode toggle
+      var assignmentModeRadios = document.querySelectorAll('input[name="assignment-mode"]');
+      assignmentModeRadios.forEach(function(radio) {
+        radio.addEventListener("change", function() {
+          assignmentMode = this.value;
+          if (singleBorderSelect) {
+            singleBorderSelect.classList.toggle("visible", assignmentMode === "single");
+          }
+          generateBorderAssignments();
+          updatePreview();
+          updateApplyButton();
+        });
+      });
+
+      // Single border dropdown change
+      if (singleBorderDropdown) {
+        singleBorderDropdown.addEventListener("change", function() {
+          generateBorderAssignments();
+          updatePreview();
+          updateApplyButton();
+        });
+      }
+
+      // Close modal when clicking outside
+      if (borderLibraryModal) {
+        borderLibraryModal.addEventListener("click", function(e) {
+          if (e.target === borderLibraryModal) {
+            closeBorderLibrary();
+          }
+        });
+      }
+
+      // Browse button
+      if (browseBordersBtn && borderFileInput) {
+        browseBordersBtn.addEventListener("click", function() {
+          borderFileInput.click();
+        });
+      }
+
+      // File input change
+      if (borderFileInput) {
+        borderFileInput.addEventListener("change", function() {
+          uploadBorders(this.files);
+          this.value = "";
+        });
+      }
+
+      // Drag and drop
+      if (borderUploadZone) {
+        borderUploadZone.addEventListener("dragover", function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          this.classList.add("dragover");
+        });
+
+        borderUploadZone.addEventListener("dragleave", function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          this.classList.remove("dragover");
+        });
+
+        borderUploadZone.addEventListener("drop", function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          this.classList.remove("dragover");
+          uploadBorders(e.dataTransfer.files);
         });
       }
 
@@ -3933,6 +5938,9 @@
     <span class="scale-value" id="placement-scale-value">0.04x</span>
     <span class="hint">Click to place</span>
   </div>
+
+  <!-- Toast notifications container -->
+  <div class="toast-container" id="toast-container"></div>
 </body>
 
 </html>

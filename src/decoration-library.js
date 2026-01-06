@@ -1,94 +1,62 @@
 /**
  * Custom Decoration Library Module
- * Manages user-uploaded PNG decorations stored in localStorage
+ * Manages user-uploaded PNG decorations stored in Supabase
  */
 
 (function (root) {
   "use strict";
 
   // Constants
-  var STORAGE_KEY = "maze-generator-custom-decorations";
   var MAX_IMAGE_SIZE = 512; // px - max dimension for uploaded images
-  var DEFAULT_CATEGORIES = ["monsters", "props", "npcs", "effects"];
-  var STORAGE_WARNING_THRESHOLD = 4 * 1024 * 1024; // 4MB warning threshold
+  var SUPPORTED_IMAGE_TYPES = ["image/png", "image/svg+xml", "image/jpeg", "image/gif", "image/webp"];
 
   // In-memory library cache
-  var library = null;
+  var decorationsCache = null;
+  var isLoading = false;
 
   /**
-   * Load library from localStorage
+   * Load decorations from Supabase
    */
-  function loadLibrary() {
-    if (library !== null) return library;
+  async function loadLibrary() {
+    if (decorationsCache !== null) return decorationsCache;
+    if (isLoading) return [];
 
+    isLoading = true;
     try {
-      var data = localStorage.getItem(STORAGE_KEY);
-      if (data) {
-        library = JSON.parse(data);
-        // Ensure structure is valid
-        if (!library.decorations) library.decorations = [];
-        if (!library.categories) library.categories = DEFAULT_CATEGORIES.slice();
+      if (typeof SupabaseClient === "undefined" || !SupabaseClient.getDecorations) {
+        console.warn("Supabase not available for decorations");
+        decorationsCache = [];
+        return decorationsCache;
+      }
+
+      var result = await SupabaseClient.getDecorations();
+      if (result.error) {
+        console.warn("Failed to load decorations:", result.error);
+        decorationsCache = [];
       } else {
-        library = {
-          decorations: [],
-          categories: DEFAULT_CATEGORIES.slice(),
-        };
+        decorationsCache = result.data || [];
       }
     } catch (e) {
       console.warn("Failed to load decoration library:", e);
-      library = {
-        decorations: [],
-        categories: DEFAULT_CATEGORIES.slice(),
-      };
+      decorationsCache = [];
+    } finally {
+      isLoading = false;
     }
 
-    return library;
+    return decorationsCache;
   }
 
   /**
-   * Save library to localStorage
+   * Refresh the cache from Supabase
    */
-  function saveLibrary() {
-    if (!library) return false;
-
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(library));
-      return true;
-    } catch (e) {
-      console.warn("Failed to save decoration library:", e);
-      if (e.name === "QuotaExceededError") {
-        alert(
-          "Storage is full! Please delete some decorations to make room."
-        );
-      }
-      return false;
-    }
-  }
-
-  /**
-   * Get estimated storage size in bytes
-   */
-  function getStorageSize() {
-    try {
-      var data = localStorage.getItem(STORAGE_KEY);
-      return data ? data.length * 2 : 0; // UTF-16 = 2 bytes per char
-    } catch (e) {
-      return 0;
-    }
-  }
-
-  /**
-   * Format bytes as human-readable string
-   */
-  function formatBytes(bytes) {
-    if (bytes < 1024) return bytes + " B";
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
-    return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+  async function refreshLibrary() {
+    decorationsCache = null;
+    return await loadLibrary();
   }
 
   /**
    * Resize image to max dimensions while preserving aspect ratio
-   * Returns Promise<{dataUrl, width, height}>
+   * Returns Promise<{blob, width, height}>
    */
   function resizeImage(file, maxSize) {
     return new Promise(function (resolve, reject) {
@@ -115,11 +83,13 @@
           var ctx = canvas.getContext("2d");
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-          resolve({
-            dataUrl: canvas.toDataURL("image/png"),
-            width: canvas.width,
-            height: canvas.height,
-          });
+          canvas.toBlob(function (blob) {
+            resolve({
+              blob: blob,
+              width: canvas.width,
+              height: canvas.height,
+            });
+          }, "image/png");
         };
 
         img.src = e.target.result;
@@ -130,14 +100,17 @@
   }
 
   /**
-   * Process uploaded files and add to library
+   * Process uploaded files and add to Supabase
    */
-  // Supported image types for decoration uploads
-  var SUPPORTED_IMAGE_TYPES = ["image/png", "image/svg+xml", "image/jpeg", "image/gif", "image/webp"];
+  async function processUpload(files) {
+    if (typeof SupabaseClient === "undefined" || !SupabaseClient.uploadDecoration) {
+      if (typeof showToast !== "undefined") {
+        showToast("Supabase not available", "error");
+      }
+      return 0;
+    }
 
-  function processUpload(files, category) {
-    var lib = loadLibrary();
-    var promises = [];
+    var uploadedCount = 0;
 
     for (var i = 0; i < files.length; i++) {
       var file = files[i];
@@ -146,295 +119,93 @@
         continue;
       }
 
-      promises.push(
-        resizeImage(file, MAX_IMAGE_SIZE).then(
-          (function (fileName) {
-            return function (result) {
-              return {
-                fileName: fileName,
-                dataUrl: result.dataUrl,
-                width: result.width,
-                height: result.height,
-              };
-            };
-          })(file.name)
-        )
-      );
-    }
+      try {
+        // Resize image
+        var resized = await resizeImage(file, MAX_IMAGE_SIZE);
 
-    return Promise.all(promises).then(function (results) {
-      results.forEach(function (result) {
+        // Create a File object from the blob for upload
+        var resizedFile = new File([resized.blob], file.name, { type: "image/png" });
+
         // Remove common image extensions from display name
-        var name = result.fileName.replace(/\.(png|svg|jpe?g|gif|webp)$/i, "");
-        var decoration = {
-          id: "dec_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5),
-          name: name,
-          category: category || "props",
-          dataUrl: result.dataUrl,
-          width: result.width,
-          height: result.height,
-          created: Date.now(),
-        };
-        lib.decorations.push(decoration);
-      });
+        var name = file.name.replace(/\.(png|svg|jpe?g|gif|webp)$/i, "");
 
-      saveLibrary();
-      renderLibraryGrid();
-      updateStorageIndicator();
+        // Upload to Supabase
+        var result = await SupabaseClient.uploadDecoration(resizedFile, name);
 
-      return results.length;
-    });
-  }
-
-  /**
-   * Add a single decoration to the library
-   */
-  function addDecoration(name, category, dataUrl, width, height) {
-    var lib = loadLibrary();
-
-    var decoration = {
-      id: "dec_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5),
-      name: name,
-      category: category || "props",
-      dataUrl: dataUrl,
-      width: width,
-      height: height,
-      created: Date.now(),
-    };
-
-    lib.decorations.push(decoration);
-    saveLibrary();
-
-    return decoration;
-  }
-
-  /**
-   * Remove a decoration from the library
-   */
-  function removeDecoration(id) {
-    var lib = loadLibrary();
-    var index = lib.decorations.findIndex(function (d) {
-      return d.id === id;
-    });
-
-    if (index !== -1) {
-      lib.decorations.splice(index, 1);
-      saveLibrary();
-      renderLibraryGrid();
-      updateStorageIndicator();
-      return true;
-    }
-
-    return false;
-  }
-
-  /**
-   * Update a decoration's properties
-   */
-  function updateDecoration(id, updates) {
-    var lib = loadLibrary();
-    var decoration = lib.decorations.find(function (d) {
-      return d.id === id;
-    });
-
-    if (decoration) {
-      Object.keys(updates).forEach(function (key) {
-        if (key !== "id" && key !== "dataUrl") {
-          decoration[key] = updates[key];
+        if (result.error) {
+          console.error("Failed to upload " + file.name + ":", result.error);
+          if (typeof showToast !== "undefined") {
+            showToast("Failed to upload " + file.name, "error");
+          }
+        } else {
+          uploadedCount++;
         }
-      });
-      saveLibrary();
-      return decoration;
+      } catch (e) {
+        console.error("Error processing " + file.name + ":", e);
+      }
     }
 
-    return null;
+    if (uploadedCount > 0) {
+      await refreshLibrary();
+      renderLibraryGrid();
+      if (typeof showToast !== "undefined") {
+        showToast("Uploaded " + uploadedCount + " decoration" + (uploadedCount > 1 ? "s" : ""), "success");
+      }
+    }
+
+    return uploadedCount;
   }
 
   /**
-   * Get decorations, optionally filtered by category
+   * Remove a decoration from Supabase
    */
-  function getDecorations(category) {
-    var lib = loadLibrary();
-
-    if (!category || category === "all") {
-      return lib.decorations;
+  async function removeDecoration(id) {
+    if (typeof SupabaseClient === "undefined" || !SupabaseClient.deleteDecoration) {
+      return false;
     }
 
-    return lib.decorations.filter(function (d) {
-      return d.category === category;
-    });
+    var result = await SupabaseClient.deleteDecoration(id);
+
+    if (result.error) {
+      console.error("Failed to delete decoration:", result.error);
+      if (typeof showToast !== "undefined") {
+        showToast("Failed to delete decoration", "error");
+      }
+      return false;
+    }
+
+    await refreshLibrary();
+    renderLibraryGrid();
+
+    if (typeof showToast !== "undefined") {
+      showToast("Decoration deleted", "success");
+    }
+
+    return true;
+  }
+
+  /**
+   * Get decorations from cache
+   */
+  function getDecorations() {
+    return decorationsCache || [];
   }
 
   /**
    * Get a single decoration by ID
    */
   function getDecoration(id) {
-    var lib = loadLibrary();
-    return lib.decorations.find(function (d) {
+    var decorations = getDecorations();
+    return decorations.find(function (d) {
       return d.id === id;
     });
   }
 
   /**
-   * Get all categories
-   */
-  function getCategories() {
-    var lib = loadLibrary();
-    return lib.categories;
-  }
-
-  /**
-   * Add a new category
-   */
-  function addCategory(name) {
-    var lib = loadLibrary();
-    var normalized = name.toLowerCase().trim();
-
-    if (normalized && lib.categories.indexOf(normalized) === -1) {
-      lib.categories.push(normalized);
-      saveLibrary();
-      updateCategoryDropdown();
-      return true;
-    }
-
-    return false;
-  }
-
-  /**
-   * Remove a category (moves decorations to 'props')
-   */
-  function removeCategory(name) {
-    var lib = loadLibrary();
-    var index = lib.categories.indexOf(name);
-
-    if (index !== -1 && DEFAULT_CATEGORIES.indexOf(name) === -1) {
-      lib.categories.splice(index, 1);
-
-      // Move decorations in this category to 'props'
-      lib.decorations.forEach(function (d) {
-        if (d.category === name) {
-          d.category = "props";
-        }
-      });
-
-      saveLibrary();
-      updateCategoryDropdown();
-      renderLibraryGrid();
-      return true;
-    }
-
-    return false;
-  }
-
-  /**
-   * Export library as JSON
+   * Export library as JSON (for backup)
    */
   function exportLibrary() {
-    var lib = loadLibrary();
-    return JSON.stringify(lib, null, 2);
-  }
-
-  /**
-   * Import library from JSON (merges with existing)
-   */
-  function importLibrary(json) {
-    try {
-      var imported = JSON.parse(json);
-      var lib = loadLibrary();
-
-      // Merge categories
-      if (imported.categories) {
-        imported.categories.forEach(function (cat) {
-          if (lib.categories.indexOf(cat) === -1) {
-            lib.categories.push(cat);
-          }
-        });
-      }
-
-      // Merge decorations (skip duplicates by id)
-      if (imported.decorations) {
-        var existingIds = lib.decorations.map(function (d) {
-          return d.id;
-        });
-
-        imported.decorations.forEach(function (dec) {
-          if (existingIds.indexOf(dec.id) === -1) {
-            lib.decorations.push(dec);
-          }
-        });
-      }
-
-      saveLibrary();
-      renderLibraryGrid();
-      updateCategoryDropdown();
-      updateStorageIndicator();
-
-      return true;
-    } catch (e) {
-      console.error("Failed to import library:", e);
-      return false;
-    }
-  }
-
-  /**
-   * Update storage indicator in UI
-   */
-  function updateStorageIndicator() {
-    var indicator = document.getElementById("storage-used");
-    if (!indicator) return;
-
-    var size = getStorageSize();
-    indicator.textContent = formatBytes(size);
-
-    var container = indicator.parentElement;
-    if (container) {
-      if (size > STORAGE_WARNING_THRESHOLD) {
-        container.classList.add("storage-warning");
-      } else {
-        container.classList.remove("storage-warning");
-      }
-    }
-  }
-
-  /**
-   * Update category dropdown
-   */
-  function updateCategoryDropdown() {
-    var select = document.getElementById("decoration-category-filter");
-    var uploadSelect = document.getElementById("decoration-upload-category");
-    if (!select) return;
-
-    var categories = getCategories();
-    var currentValue = select.value;
-
-    // Clear and rebuild options
-    select.innerHTML = '<option value="all">All Categories</option>';
-    categories.forEach(function (cat) {
-      var option = document.createElement("option");
-      option.value = cat;
-      option.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
-      select.appendChild(option);
-    });
-
-    // Restore selection if still valid
-    if (currentValue && categories.indexOf(currentValue) !== -1) {
-      select.value = currentValue;
-    }
-
-    // Update upload category select if it exists
-    if (uploadSelect) {
-      var uploadValue = uploadSelect.value;
-      uploadSelect.innerHTML = "";
-      categories.forEach(function (cat) {
-        var option = document.createElement("option");
-        option.value = cat;
-        option.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
-        uploadSelect.appendChild(option);
-      });
-      if (uploadValue && categories.indexOf(uploadValue) !== -1) {
-        uploadSelect.value = uploadValue;
-      }
-    }
+    return JSON.stringify(getDecorations(), null, 2);
   }
 
   /**
@@ -444,16 +215,14 @@
     var grid = document.getElementById("custom-decoration-grid");
     if (!grid) return;
 
-    var filter = document.getElementById("decoration-category-filter");
-    var category = filter ? filter.value : "all";
-    var decorations = getDecorations(category);
+    var decorations = getDecorations();
 
     grid.innerHTML = "";
 
     if (decorations.length === 0) {
       var empty = document.createElement("div");
       empty.className = "library-empty";
-      empty.textContent = "No custom decorations yet. Upload some PNGs!";
+      empty.textContent = "No custom decorations yet. Upload some images!";
       grid.appendChild(empty);
       return;
     }
@@ -462,10 +231,10 @@
       var item = document.createElement("div");
       item.className = "custom-decoration-item";
       item.dataset.id = dec.id;
-      item.title = dec.name + " (" + dec.category + ")";
+      item.title = dec.name;
 
       var img = document.createElement("img");
-      img.src = dec.dataUrl;
+      img.src = dec.image_url;
       img.alt = dec.name;
       item.appendChild(img);
 
@@ -501,7 +270,7 @@
         ? root.TilePlacement.getSelectedDecoration()
         : null;
 
-      if (currentSelection === decoration.dataUrl) {
+      if (currentSelection === decoration.image_url) {
         // Same decoration - deselect it
         if (root.TilePlacement.clearSelectedDecoration) {
           root.TilePlacement.clearSelectedDecoration();
@@ -515,16 +284,13 @@
       }
 
       if (root.TilePlacement.setSelectedDecoration) {
-        root.TilePlacement.setSelectedDecoration(decoration.dataUrl);
+        root.TilePlacement.setSelectedDecoration(decoration.image_url);
       }
       // Enable free-form mode for custom decorations
       if (root.TilePlacement.setFreeFormMode) {
         root.TilePlacement.setFreeFormMode(true);
       }
     }
-
-    // Deselect built-in palette items (done by setSelectedDecoration via updatePaletteSelection)
-    // But we need to re-add selection to custom item after that clears it
 
     // Update visual selection state for custom items
     var items = document.querySelectorAll(".custom-decoration-item");
@@ -547,8 +313,6 @@
     var uploadZone = document.getElementById("decoration-upload-zone");
     var fileInput = document.getElementById("decoration-file-input");
     var browseBtn = document.getElementById("browse-decorations-btn");
-    var addCategoryBtn = document.getElementById("add-category-btn");
-    var categoryFilter = document.getElementById("decoration-category-filter");
 
     if (!uploadZone) return;
 
@@ -563,13 +327,8 @@
     if (fileInput) {
       fileInput.addEventListener("change", function () {
         if (fileInput.files.length > 0) {
-          var categorySelect = document.getElementById("decoration-upload-category");
-          var category = categorySelect ? categorySelect.value : "props";
-          processUpload(fileInput.files, category).then(function (count) {
+          processUpload(fileInput.files).then(function () {
             fileInput.value = "";
-            if (count > 0) {
-              console.log("Uploaded " + count + " decoration(s)");
-            }
           });
         }
       });
@@ -595,40 +354,14 @@
       });
 
       if (files.length > 0) {
-        var categorySelect = document.getElementById("decoration-upload-category");
-        var category = categorySelect ? categorySelect.value : "props";
-        processUpload(files, category);
+        processUpload(files);
       }
     });
 
-    // Add category button
-    if (addCategoryBtn) {
-      addCategoryBtn.addEventListener("click", function () {
-        var name = prompt("Enter new category name:");
-        if (name) {
-          if (addCategory(name)) {
-            var categorySelect = document.getElementById("decoration-upload-category");
-            if (categorySelect) {
-              categorySelect.value = name.toLowerCase().trim();
-            }
-          } else {
-            alert("Category already exists or invalid name.");
-          }
-        }
-      });
-    }
-
-    // Category filter change
-    if (categoryFilter) {
-      categoryFilter.addEventListener("change", function () {
-        renderLibraryGrid();
-      });
-    }
-
-    // Initial render
-    updateCategoryDropdown();
-    renderLibraryGrid();
-    updateStorageIndicator();
+    // Initial load and render
+    loadLibrary().then(function () {
+      renderLibraryGrid();
+    });
   }
 
   // ============================================
@@ -637,7 +370,6 @@
 
   /**
    * Seeded random number generator (mulberry32)
-   * Returns a function that generates random numbers 0-1
    */
   function createSeededRandom(seed) {
     return function () {
@@ -650,7 +382,6 @@
 
   /**
    * Get all valid floor cell positions from maze matrix
-   * Returns array of {gridX, gridY} for cells with value 0
    */
   function getFloorCells(maze) {
     var cells = [];
@@ -670,32 +401,24 @@
 
   /**
    * Convert grid position to logical canvas coordinates
-   * Must match the offset calculation in maze-iso.js draw()
    */
   function gridToLogical(gridX, gridY, maze) {
     var tileWidth = maze.wallSize;
     var tileHeight = maze.wallSize * maze.isoRatio;
     var matrixCols = maze.matrix[0].length;
 
-    // Calculate isoWidth (same as in draw())
     var isoWidth = matrixCols * tileWidth * 0.5;
-
-    // Calculate stroke margin (same as in draw())
     var strokeMargin = (maze.showStroke && !maze.tightSpacing) ? maze.strokeWidth : 0;
     var halfStrokeMargin = strokeMargin * 0.5;
 
-    // Offset must match draw() exactly
     var offsetX = isoWidth + halfStrokeMargin;
     var offsetY = tileHeight + halfStrokeMargin;
 
-    // Calculate isometric position at the CENTER of the tile (add 0.5 to grid coords)
-    // This places the decoration anchor at the bottom-center of the floor diamond
     var centerX = gridX + 0.5;
     var centerY = gridY + 0.5;
     var isoX = (centerX - centerY) * tileWidth * 0.5 + offsetX;
     var isoY = (centerX + centerY) * tileHeight * 0.5 + offsetY;
 
-    // Add the cube height offset so decoration sits on the floor surface, not the tile top
     var cubeHeight = tileHeight * (maze.wallHeight || 1);
     isoY += cubeHeight;
 
@@ -703,7 +426,7 @@
   }
 
   /**
-   * Get currently selected decorations from library grid AND built-in palette
+   * Get currently selected decorations
    */
   function getSelectedDecorations() {
     var selected = [];
@@ -714,7 +437,13 @@
       var id = item.dataset.id;
       var dec = getDecoration(id);
       if (dec) {
-        selected.push(dec);
+        selected.push({
+          id: dec.id,
+          name: dec.name,
+          dataUrl: dec.image_url,
+          width: dec.width || 64,
+          height: dec.height || 64,
+        });
       }
     });
 
@@ -737,75 +466,39 @@
   }
 
   /**
-   * Toggle multi-selection for auto-placement
-   */
-  var multiSelectMode = false;
-
-  function enableMultiSelect() {
-    multiSelectMode = true;
-    var grid = document.getElementById("custom-decoration-grid");
-    if (grid) {
-      grid.classList.add("multi-select-mode");
-    }
-  }
-
-  function disableMultiSelect() {
-    multiSelectMode = false;
-    var grid = document.getElementById("custom-decoration-grid");
-    if (grid) {
-      grid.classList.remove("multi-select-mode");
-    }
-  }
-
-  function toggleDecorationSelection(decorationId) {
-    var item = document.querySelector(
-      '.custom-decoration-item[data-id="' + decorationId + '"]'
-    );
-    if (item) {
-      item.classList.toggle("selected");
-    }
-  }
-
-  /**
    * Auto-place decorations on the maze
    */
   function autoPlaceDecorations(options) {
     options = options || {};
 
-    // mazeNodes is a global variable
     var maze = typeof mazeNodes !== "undefined" ? mazeNodes : null;
     if (!maze || !maze.matrix || !maze.matrix.length) {
       console.warn("No maze available for auto-placement");
       return { placed: 0 };
     }
 
-    // Get selected decorations
     var decorations = options.decorations || getSelectedDecorations();
     if (decorations.length === 0) {
-      alert("Please select at least one decoration from the library first.");
+      if (typeof showToast !== "undefined") {
+        showToast("Please select at least one decoration first", "info");
+      }
       return { placed: 0 };
     }
 
-    // Options
     var density = options.density || 10;
     var seed = options.seed || Math.floor(Math.random() * 1000000);
     var scaleMin = options.scaleMin || 0.5;
     var scaleMax = options.scaleMax || 1.5;
 
-    // Clear any existing auto-placed decorations first
     clearAutoPlacedDecorations();
 
-    // Create seeded random
     var random = createSeededRandom(seed);
-
-    // Get all floor cells
     var floorCells = getFloorCells(maze);
     if (floorCells.length === 0) {
-      console.warn("No floor cells found");
       return { placed: 0, seed: seed };
     }
 
-    // Shuffle floor cells using Fisher-Yates
+    // Shuffle floor cells
     for (var i = floorCells.length - 1; i > 0; i--) {
       var j = Math.floor(random() * (i + 1));
       var temp = floorCells[i];
@@ -813,40 +506,30 @@
       floorCells[j] = temp;
     }
 
-    // Calculate how many decorations to place
     var numToPlace = Math.min(density, floorCells.length);
-
-    // Track placed positions to avoid overlap (using grid cells)
     var usedCells = {};
     var placedCount = 0;
-
-    console.log("Auto-placement: found " + floorCells.length + " floor cells, placing " + numToPlace);
 
     for (var k = 0; k < floorCells.length && placedCount < numToPlace; k++) {
       var cell = floorCells[k];
       var cellKey = cell.gridX + "," + cell.gridY;
 
-      // Skip if cell already used
       if (usedCells[cellKey]) continue;
 
-      // Verify this is actually a floor cell (value 0)
       var cellValue = parseInt(maze.matrix[cell.gridY].charAt(cell.gridX), 10);
-      if (cellValue !== 0) {
-        continue;
-      }
+      if (cellValue !== 0) continue;
 
-      // Skip cells adjacent to walls - decorations there look visually wrong
-      // Check all 8 neighbors plus the cell behind in isometric view
+      // Skip cells adjacent to walls
       var hasAdjacentWall = false;
       var checkPositions = [
-        { x: cell.gridX - 1, y: cell.gridY },     // left
-        { x: cell.gridX + 1, y: cell.gridY },     // right
-        { x: cell.gridX, y: cell.gridY - 1 },     // above (behind in iso)
-        { x: cell.gridX, y: cell.gridY + 1 },     // below (front in iso)
-        { x: cell.gridX - 1, y: cell.gridY - 1 }, // top-left
-        { x: cell.gridX + 1, y: cell.gridY - 1 }, // top-right
-        { x: cell.gridX - 1, y: cell.gridY + 1 }, // bottom-left
-        { x: cell.gridX + 1, y: cell.gridY + 1 }, // bottom-right
+        { x: cell.gridX - 1, y: cell.gridY },
+        { x: cell.gridX + 1, y: cell.gridY },
+        { x: cell.gridX, y: cell.gridY - 1 },
+        { x: cell.gridX, y: cell.gridY + 1 },
+        { x: cell.gridX - 1, y: cell.gridY - 1 },
+        { x: cell.gridX + 1, y: cell.gridY - 1 },
+        { x: cell.gridX - 1, y: cell.gridY + 1 },
+        { x: cell.gridX + 1, y: cell.gridY + 1 },
       ];
       for (var c = 0; c < checkPositions.length; c++) {
         var pos = checkPositions[c];
@@ -859,63 +542,42 @@
           }
         }
       }
-      if (hasAdjacentWall) {
-        continue;
-      }
+      if (hasAdjacentWall) continue;
 
-      // Mark cell and neighbors as used (simple spacing)
       usedCells[cellKey] = true;
 
-      // Pick a random decoration
       var dec = decorations[Math.floor(random() * decorations.length)];
-
-      // Random scale within range
       var scale = scaleMin + random() * (scaleMax - scaleMin);
-
-      // Convert grid to logical coordinates
       var logical = gridToLogical(cell.gridX, cell.gridY, maze);
 
-      // Add small random offset within the tile for variety
       var tileWidth = maze.wallSize;
       var tileHeight = maze.wallSize * maze.isoRatio;
       logical.logicalX += (random() - 0.5) * tileWidth * 0.3;
       logical.logicalY += (random() - 0.5) * tileHeight * 0.3;
 
-      console.log("Placing #" + (placedCount + 1) + " at grid(" + cell.gridX + "," + cell.gridY + ") scale=" + scale.toFixed(3));
-
-      // Scale decoration to fit within a tile (use wallSize as reference)
       var tileSize = maze.wallSize;
       var imgAspect = dec.height / dec.width;
-      var baseWidth = tileSize;  // Fit to tile width
+      var baseWidth = tileSize;
       var baseHeight = tileSize * imgAspect;
 
-      // Create free-form decoration
       var decoration = {
         tileUrl: dec.dataUrl,
-        layer: "overlay",  // Use overlay layer so decorations appear on top of walls
+        layer: "overlay",
         logicalX: logical.logicalX,
         logicalY: logical.logicalY,
         scale: scale,
         baseWidth: baseWidth,
         baseHeight: baseHeight,
-        autoPlaced: true, // Mark as auto-placed for easy clearing
+        autoPlaced: true,
       };
 
-      var id = maze.addFreeFormDecoration(decoration);
-      console.log("  -> Added with id: " + id + ", tileUrl: " + dec.dataUrl);
-
+      maze.addFreeFormDecoration(decoration);
       placedCount++;
     }
 
-    // Load decoration images then redraw
     if (maze.loadDecorations) {
       maze.loadDecorations().then(function () {
-        console.log("Decoration images loaded, redrawing...");
-        console.log("  decorationImages keys:", Object.keys(maze.decorationImages));
-        console.log("  freeFormDecorations count:", Object.keys(maze.freeFormDecorations || {}).length);
         maze.draw();
-
-        // Save state if TilePlacement available
         if (typeof TilePlacement !== "undefined" && TilePlacement.saveCanvasState) {
           TilePlacement.saveCanvasState();
         }
@@ -967,14 +629,12 @@
     var autoPlaceBtn = document.getElementById("auto-place-btn");
     var clearAutoPlacedBtn = document.getElementById("clear-auto-placed-btn");
 
-    // Density slider
     if (densitySlider && densityValue) {
       densitySlider.addEventListener("input", function () {
         densityValue.textContent = densitySlider.value;
       });
     }
 
-    // Auto-place button
     if (autoPlaceBtn) {
       autoPlaceBtn.addEventListener("click", function () {
         var density = densitySlider ? parseInt(densitySlider.value, 10) : 10;
@@ -989,27 +649,21 @@
           scaleMax: scaleMax,
         });
 
-        // Update seed input with used seed for reproducibility
         if (seedInput && result.seed) {
           seedInput.value = result.seed;
         }
-
-        console.log("Auto-placed " + result.placed + " decorations (seed: " + result.seed + ")");
       });
     }
 
-    // Clear auto-placed button
     if (clearAutoPlacedBtn) {
       clearAutoPlacedBtn.addEventListener("click", function () {
-        var count = clearAutoPlacedDecorations();
-        console.log("Cleared " + count + " auto-placed decorations");
+        clearAutoPlacedDecorations();
       });
     }
 
-    // Enable multi-select on custom decorations for auto-placement
+    // Enable multi-select with shift key
     var grid = document.getElementById("custom-decoration-grid");
     if (grid) {
-      // Override click behavior when shift is held for multi-select
       grid.addEventListener("click", function (e) {
         var item = e.target.closest(".custom-decoration-item");
         if (!item) return;
@@ -1017,10 +671,9 @@
         if (e.shiftKey) {
           e.stopPropagation();
           item.classList.toggle("selected");
-          // Don't trigger normal selection/placement
           e.preventDefault();
         }
-      }, true); // Capture phase to intercept before normal handler
+      }, true);
     }
   }
 
@@ -1034,18 +687,12 @@
   root.DecorationLibrary = {
     init: init,
     loadLibrary: loadLibrary,
+    refreshLibrary: refreshLibrary,
     getDecorations: getDecorations,
     getDecoration: getDecoration,
-    addDecoration: addDecoration,
     removeDecoration: removeDecoration,
-    updateDecoration: updateDecoration,
-    getCategories: getCategories,
-    addCategory: addCategory,
-    removeCategory: removeCategory,
     processUpload: processUpload,
     exportLibrary: exportLibrary,
-    importLibrary: importLibrary,
-    getStorageSize: getStorageSize,
     renderLibraryGrid: renderLibraryGrid,
     autoPlaceDecorations: autoPlaceDecorations,
     clearAutoPlacedDecorations: clearAutoPlacedDecorations,
