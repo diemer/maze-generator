@@ -5447,7 +5447,7 @@
       }
 
       // ============================================
-      // Border Library
+      // Border Library (Group-based Assignment System)
       // ============================================
       var borderLibraryModal = document.getElementById("border-library-modal");
       var borderLibraryClose = document.getElementById("border-library-close");
@@ -5456,64 +5456,65 @@
       var borderFileInput = document.getElementById("border-file-input");
       var browseBordersBtn = document.getElementById("browse-borders-btn");
       var publishingBordersBtn = document.getElementById("publishing-borders");
-      var singleModeHint = document.getElementById("single-mode-hint");
+      var borderGroupsList = document.getElementById("border-groups-list");
+      var unassignedMapsGrid = document.getElementById("unassigned-maps-grid");
+      var btnNewGroup = document.getElementById("btn-new-group");
+      var btnSelectAllMaps = document.getElementById("btn-select-all-maps");
       var borderPreviewGrid = document.getElementById("border-preview-grid");
       var borderApplyBtn = document.getElementById("border-apply-btn");
       var borderCancelBtn = document.getElementById("border-cancel-btn");
-      var previewRerollAllBtn = document.getElementById("preview-reroll-all");
 
       var bordersCache = []; // Cache of loaded borders
-      var selectedBorderIds = []; // IDs of selected borders for assignment
-      var borderAssignments = {}; // { mapId: borderId }
-      var assignmentMode = "random"; // "random" or "single"
+      var borderGroups = []; // Array of group objects
+      var selectedGroupId = null; // Currently selected group for editing
+      var borderAssignments = {}; // Computed: { mapId: borderId }
 
       async function openBorderLibrary() {
         if (borderLibraryModal) {
           borderLibraryModal.classList.remove("hidden");
 
-          // Try to load saved settings for this project
           var projectId = getCurrentProjectId();
-          var savedSettings = null;
 
+          // Load margin setting
           if (projectId && typeof SupabaseClient !== "undefined" && SupabaseClient.getBorderSettings) {
-            var result = await SupabaseClient.getBorderSettings(projectId);
-            if (!result.error && result.data) {
-              savedSettings = result.data;
+            var settingsResult = await SupabaseClient.getBorderSettings(projectId);
+            if (!settingsResult.error && settingsResult.data) {
+              borderMarginSixteenths = settingsResult.data.margin_sixteenths || 8;
+            } else {
+              borderMarginSixteenths = 8;
             }
           }
+          if (borderMarginSlider) borderMarginSlider.value = borderMarginSixteenths;
+          if (borderMarginValue) borderMarginValue.textContent = formatMarginFraction(borderMarginSixteenths);
+          window.borderMarginSixteenths = borderMarginSixteenths;
 
-          if (savedSettings) {
-            // Restore saved settings
-            selectedBorderIds = savedSettings.selected_border_ids || [];
-            borderAssignments = savedSettings.assignments || {};
-            assignmentMode = savedSettings.assignment_mode || "random";
-            borderMarginSixteenths = savedSettings.margin_sixteenths || 8;
-
-            // Update UI to reflect saved settings
-            var radioToCheck = document.querySelector('input[name="assignment-mode"][value="' + assignmentMode + '"]');
-            if (radioToCheck) radioToCheck.checked = true;
-            if (singleModeHint) singleModeHint.style.display = assignmentMode === "single" ? "block" : "none";
-            if (borderMarginSlider) borderMarginSlider.value = borderMarginSixteenths;
-            if (borderMarginValue) borderMarginValue.textContent = formatMarginFraction(borderMarginSixteenths);
-
-            // Also restore window values
-            window.borderAssignments = borderAssignments;
-            window.borderMarginSixteenths = borderMarginSixteenths;
+          // Load border groups
+          if (projectId && typeof SupabaseClient !== "undefined" && SupabaseClient.getBorderGroups) {
+            var groupsResult = await SupabaseClient.getBorderGroups(projectId);
+            if (!groupsResult.error && groupsResult.data) {
+              borderGroups = groupsResult.data.map(function(g) {
+                return {
+                  id: g.id,
+                  name: g.name,
+                  borderIds: g.border_ids || [],
+                  mapIds: g.map_ids || [],
+                  assignments: g.assignments || {},
+                  sortOrder: g.sort_order || 0
+                };
+              });
+            } else {
+              borderGroups = [];
+            }
           } else {
-            // Reset to defaults
-            selectedBorderIds = [];
-            borderAssignments = {};
-            assignmentMode = "random";
-            borderMarginSixteenths = 8;
-            var radioRandom = document.querySelector('input[name="assignment-mode"][value="random"]');
-            if (radioRandom) radioRandom.checked = true;
-            if (singleModeHint) singleModeHint.style.display = "none";
-            if (borderMarginSlider) borderMarginSlider.value = 8;
-            if (borderMarginValue) borderMarginValue.textContent = '1/2"';
+            borderGroups = [];
           }
 
-          await loadBorders();
+          selectedGroupId = borderGroups.length > 0 ? borderGroups[0].id : null;
 
+          await loadBorders();
+          renderGroups();
+          renderUnassignedMaps();
+          computeAllAssignments();
           updatePreview();
           updateApplyButton();
         }
@@ -5531,7 +5532,7 @@
         borderLibraryGrid.innerHTML = '<div class="border-library-loading">Loading borders...</div>';
 
         if (typeof SupabaseClient === "undefined") {
-          borderLibraryGrid.innerHTML = '<div class="border-library-empty">Supabase not initialized. Please check your configuration.</div>';
+          borderLibraryGrid.innerHTML = '<div class="border-library-empty">Supabase not initialized.</div>';
           return;
         }
 
@@ -5539,32 +5540,35 @@
 
         if (result.error) {
           console.error("Error loading borders:", result.error);
-          borderLibraryGrid.innerHTML = '<div class="border-library-empty">Error loading borders: ' + result.error.message + '</div>';
+          borderLibraryGrid.innerHTML = '<div class="border-library-empty">Error loading borders.</div>';
           return;
         }
 
         bordersCache = result.data || [];
 
         if (bordersCache.length === 0) {
-          borderLibraryGrid.innerHTML = '<div class="border-library-empty">No borders uploaded yet. Upload some border images to get started!</div>';
-          updatePreview();
+          borderLibraryGrid.innerHTML = '<div class="border-library-empty">No borders uploaded yet.</div>';
           return;
         }
 
         renderBorders();
-        updatePreview();
       }
 
       function renderBorders() {
         if (!borderLibraryGrid) return;
-
         borderLibraryGrid.innerHTML = "";
+
+        // Get borders in selected group
+        var selectedGroup = borderGroups.find(function(g) { return g.id === selectedGroupId; });
+        var bordersInGroup = selectedGroup ? selectedGroup.borderIds : [];
 
         bordersCache.forEach(function(border) {
           var item = document.createElement("div");
           item.className = "border-item selectable";
           item.dataset.borderId = border.id;
-          if (selectedBorderIds.indexOf(border.id) !== -1) {
+
+          var isInGroup = bordersInGroup.indexOf(border.id) !== -1;
+          if (isInGroup) {
             item.classList.add("selected");
           }
 
@@ -5585,10 +5589,12 @@
           deleteBtn.className = "border-item-delete";
           deleteBtn.innerHTML = "&times;";
           deleteBtn.title = "Delete border";
-          deleteBtn.addEventListener("click", function(e) {
-            e.stopPropagation();
-            deleteBorder(border.id, border.name);
-          });
+          (function(borderId, borderName) {
+            deleteBtn.addEventListener("click", function(e) {
+              e.stopPropagation();
+              deleteBorder(borderId, borderName);
+            });
+          })(border.id, border.name);
 
           var nameLabel = document.createElement("div");
           nameLabel.className = "border-item-name";
@@ -5600,100 +5606,400 @@
           item.appendChild(actions);
           item.appendChild(nameLabel);
 
-          item.addEventListener("click", function() {
-            toggleBorderSelection(border.id);
-          });
+          (function(borderId) {
+            item.addEventListener("click", function() {
+              toggleBorderInGroup(borderId);
+            });
+          })(border.id);
 
           borderLibraryGrid.appendChild(item);
         });
       }
 
-      function toggleBorderSelection(borderId) {
-        var idx = selectedBorderIds.indexOf(borderId);
-        var isSelecting = idx === -1;
+      function toggleBorderInGroup(borderId) {
+        if (!selectedGroupId) {
+          showToast("Select or create a group first", "info");
+          return;
+        }
 
-        if (assignmentMode === "single") {
-          // In single mode, only allow one selection at a time
-          if (isSelecting) {
-            // Deselect all others first
-            selectedBorderIds.forEach(function(oldId) {
-              var oldItem = borderLibraryGrid.querySelector('[data-border-id="' + oldId + '"]');
-              if (oldItem) oldItem.classList.remove("selected");
-            });
-            selectedBorderIds = [borderId];
-          } else {
-            // Clicking the selected one deselects it
-            selectedBorderIds = [];
-          }
+        var group = borderGroups.find(function(g) { return g.id === selectedGroupId; });
+        if (!group) return;
+
+        var idx = group.borderIds.indexOf(borderId);
+        if (idx === -1) {
+          group.borderIds.push(borderId);
         } else {
-          // Random mode - allow multiple selections
-          if (isSelecting) {
-            selectedBorderIds.push(borderId);
-          } else {
-            selectedBorderIds.splice(idx, 1);
-          }
+          group.borderIds.splice(idx, 1);
+          // Remove any assignments using this border
+          Object.keys(group.assignments).forEach(function(mapId) {
+            if (group.assignments[mapId] === borderId) {
+              delete group.assignments[mapId];
+            }
+          });
         }
 
-        // Update visual state
-        var item = borderLibraryGrid.querySelector('[data-border-id="' + borderId + '"]');
-        if (item) {
-          item.classList.toggle("selected", isSelecting);
-        }
+        // Regenerate assignments for maps without one
+        generateGroupAssignments(group);
 
-        // Regenerate assignments and update preview
-        generateBorderAssignments();
+        renderBorders();
+        renderGroups();
+        computeAllAssignments();
         updatePreview();
         updateApplyButton();
       }
 
-      function generateBorderAssignments() {
+      function createGroup(name) {
+        var newGroup = {
+          id: "temp_" + Date.now(),
+          name: name || "New Group",
+          borderIds: [],
+          mapIds: [],
+          assignments: {},
+          sortOrder: borderGroups.length
+        };
+        borderGroups.push(newGroup);
+        selectedGroupId = newGroup.id;
+
+        renderGroups();
+        renderBorders();
+        renderUnassignedMaps();
+        updateApplyButton();
+      }
+
+      function deleteGroup(groupId) {
+        var idx = borderGroups.findIndex(function(g) { return g.id === groupId; });
+        if (idx !== -1) {
+          borderGroups.splice(idx, 1);
+        }
+
+        if (selectedGroupId === groupId) {
+          selectedGroupId = borderGroups.length > 0 ? borderGroups[0].id : null;
+        }
+
+        renderGroups();
+        renderBorders();
+        renderUnassignedMaps();
+        computeAllAssignments();
+        updatePreview();
+        updateApplyButton();
+      }
+
+      function selectGroup(groupId) {
+        selectedGroupId = groupId;
+        renderGroups();
+        renderBorders();
+        renderUnassignedMaps();
+      }
+
+      function toggleGroupExpand(groupId) {
+        var groupEl = document.querySelector('.border-group[data-group-id="' + groupId + '"]');
+        if (groupEl) {
+          groupEl.classList.toggle("expanded");
+        }
+      }
+
+      function addMapToGroup(groupId, mapId) {
+        // Remove from any other group first
+        borderGroups.forEach(function(g) {
+          var idx = g.mapIds.indexOf(mapId);
+          if (idx !== -1) {
+            g.mapIds.splice(idx, 1);
+            delete g.assignments[mapId];
+          }
+        });
+
+        var group = borderGroups.find(function(g) { return g.id === groupId; });
+        if (group) {
+          group.mapIds.push(mapId);
+          // Generate assignment for this map
+          if (group.borderIds.length > 0) {
+            var randomIdx = Math.floor(Math.random() * group.borderIds.length);
+            group.assignments[mapId] = group.borderIds[randomIdx];
+          }
+        }
+
+        renderGroups();
+        renderUnassignedMaps();
+        computeAllAssignments();
+        updatePreview();
+        updateApplyButton();
+      }
+
+      function removeMapFromGroup(groupId, mapId) {
+        var group = borderGroups.find(function(g) { return g.id === groupId; });
+        if (group) {
+          var idx = group.mapIds.indexOf(mapId);
+          if (idx !== -1) {
+            group.mapIds.splice(idx, 1);
+          }
+          delete group.assignments[mapId];
+        }
+
+        renderGroups();
+        renderUnassignedMaps();
+        computeAllAssignments();
+        updatePreview();
+        updateApplyButton();
+      }
+
+      function addAllUnassignedToGroup(groupId) {
+        var unassigned = getUnassignedMaps();
+        unassigned.forEach(function(map) {
+          addMapToGroup(groupId, map.id);
+        });
+      }
+
+      function getUnassignedMaps() {
+        var assignedMapIds = [];
+        borderGroups.forEach(function(g) {
+          assignedMapIds = assignedMapIds.concat(g.mapIds);
+        });
+
+        return mapsCache.filter(function(map) {
+          return assignedMapIds.indexOf(map.id) === -1;
+        });
+      }
+
+      function generateGroupAssignments(group) {
+        if (!group || group.borderIds.length === 0) return;
+
+        group.mapIds.forEach(function(mapId) {
+          if (!group.assignments[mapId] || group.borderIds.indexOf(group.assignments[mapId]) === -1) {
+            var randomIdx = Math.floor(Math.random() * group.borderIds.length);
+            group.assignments[mapId] = group.borderIds[randomIdx];
+          }
+        });
+      }
+
+      function rerollGroup(groupId) {
+        var group = borderGroups.find(function(g) { return g.id === groupId; });
+        if (!group || group.borderIds.length === 0) return;
+
+        group.mapIds.forEach(function(mapId) {
+          var randomIdx = Math.floor(Math.random() * group.borderIds.length);
+          group.assignments[mapId] = group.borderIds[randomIdx];
+        });
+
+        renderGroups();
+        computeAllAssignments();
+        updatePreview();
+      }
+
+      function computeAllAssignments() {
         borderAssignments = {};
+        borderGroups.forEach(function(group) {
+          Object.keys(group.assignments).forEach(function(mapId) {
+            borderAssignments[mapId] = group.assignments[mapId];
+          });
+        });
+        window.borderAssignments = borderAssignments;
+      }
 
-        if (mapsCache.length === 0) return;
+      function renderGroups() {
+        if (!borderGroupsList) return;
 
-        if (assignmentMode === "single") {
-          // Use the first (and only) selected border in single mode
-          var singleId = selectedBorderIds.length > 0 ? selectedBorderIds[0] : null;
-          if (singleId) {
-            mapsCache.forEach(function(map) {
-              borderAssignments[map.id] = singleId;
+        if (borderGroups.length === 0) {
+          borderGroupsList.innerHTML = '<div class="border-groups-empty">No groups yet. Create a group to start assigning borders to maps.</div>';
+          return;
+        }
+
+        borderGroupsList.innerHTML = "";
+
+        borderGroups.forEach(function(group) {
+          var groupEl = document.createElement("div");
+          groupEl.className = "border-group";
+          groupEl.dataset.groupId = group.id;
+          if (group.id === selectedGroupId) {
+            groupEl.classList.add("selected");
+            groupEl.classList.add("expanded");
+          }
+
+          // Header
+          var header = document.createElement("div");
+          header.className = "border-group-header";
+
+          var titleDiv = document.createElement("div");
+          titleDiv.className = "border-group-title";
+          var expandIcon = document.createElement("span");
+          expandIcon.className = "expand-icon";
+          expandIcon.textContent = groupEl.classList.contains("expanded") ? "▼" : "▶";
+          var titleText = document.createElement("span");
+          titleText.textContent = group.name;
+          titleDiv.appendChild(expandIcon);
+          titleDiv.appendChild(titleText);
+
+          var infoDiv = document.createElement("div");
+          infoDiv.className = "border-group-info";
+          infoDiv.textContent = group.borderIds.length + " border" + (group.borderIds.length !== 1 ? "s" : "") +
+                               ", " + group.mapIds.length + " map" + (group.mapIds.length !== 1 ? "s" : "");
+
+          var actionsDiv = document.createElement("div");
+          actionsDiv.className = "border-group-actions";
+
+          var rerollBtn = document.createElement("button");
+          rerollBtn.textContent = "Re-roll";
+          rerollBtn.title = "Re-randomize border assignments";
+          (function(gid) {
+            rerollBtn.addEventListener("click", function(e) {
+              e.stopPropagation();
+              rerollGroup(gid);
+            });
+          })(group.id);
+
+          var deleteBtn = document.createElement("button");
+          deleteBtn.className = "danger";
+          deleteBtn.textContent = "Delete";
+          (function(gid) {
+            deleteBtn.addEventListener("click", function(e) {
+              e.stopPropagation();
+              if (confirm("Delete this group? Maps will become unassigned.")) {
+                deleteGroup(gid);
+              }
+            });
+          })(group.id);
+
+          actionsDiv.appendChild(rerollBtn);
+          actionsDiv.appendChild(deleteBtn);
+
+          header.appendChild(titleDiv);
+          header.appendChild(infoDiv);
+          header.appendChild(actionsDiv);
+
+          (function(gid) {
+            header.addEventListener("click", function() {
+              if (selectedGroupId !== gid) {
+                selectGroup(gid);
+              }
+              toggleGroupExpand(gid);
+            });
+          })(group.id);
+
+          // Content
+          var content = document.createElement("div");
+          content.className = "border-group-content";
+
+          // Borders in group
+          var bordersSection = document.createElement("div");
+          bordersSection.className = "border-group-borders";
+          var bordersHeader = document.createElement("div");
+          bordersHeader.className = "border-group-section-header";
+          bordersHeader.innerHTML = "<span>Borders:</span>";
+          var bordersItems = document.createElement("div");
+          bordersItems.className = "border-group-items";
+
+          if (group.borderIds.length === 0) {
+            bordersItems.innerHTML = '<span style="color:#999;font-size:0.8em;">Click borders above to add</span>';
+          } else {
+            group.borderIds.forEach(function(bid) {
+              var border = bordersCache.find(function(b) { return b.id === bid; });
+              if (border) {
+                var tag = document.createElement("span");
+                tag.className = "border-group-item";
+                tag.innerHTML = border.name + ' <span class="remove-item" title="Remove">&times;</span>';
+                (function(borderId) {
+                  tag.querySelector(".remove-item").addEventListener("click", function(e) {
+                    e.stopPropagation();
+                    toggleBorderInGroup(borderId);
+                  });
+                })(bid);
+                bordersItems.appendChild(tag);
+              }
             });
           }
-        } else {
-          // Random assignment from selected borders
-          if (selectedBorderIds.length === 0) return;
 
-          mapsCache.forEach(function(map) {
-            var randomIdx = Math.floor(Math.random() * selectedBorderIds.length);
-            borderAssignments[map.id] = selectedBorderIds[randomIdx];
-          });
-        }
+          bordersSection.appendChild(bordersHeader);
+          bordersSection.appendChild(bordersItems);
+
+          // Maps in group
+          var mapsSection = document.createElement("div");
+          mapsSection.className = "border-group-maps";
+          var mapsHeader = document.createElement("div");
+          mapsHeader.className = "border-group-section-header";
+          var mapsLabel = document.createElement("span");
+          mapsLabel.textContent = "Maps:";
+          var selectAllBtn = document.createElement("button");
+          selectAllBtn.textContent = "Add All Unassigned";
+          (function(gid) {
+            selectAllBtn.addEventListener("click", function(e) {
+              e.stopPropagation();
+              addAllUnassignedToGroup(gid);
+            });
+          })(group.id);
+          mapsHeader.appendChild(mapsLabel);
+          mapsHeader.appendChild(selectAllBtn);
+
+          var mapsItems = document.createElement("div");
+          mapsItems.className = "border-group-items";
+
+          if (group.mapIds.length === 0) {
+            mapsItems.innerHTML = '<span style="color:#999;font-size:0.8em;">Click maps below to add</span>';
+          } else {
+            group.mapIds.forEach(function(mid) {
+              var map = mapsCache.find(function(m) { return m.id === mid; });
+              if (map) {
+                var tag = document.createElement("span");
+                tag.className = "border-group-item";
+                tag.innerHTML = map.name + ' <span class="remove-item" title="Remove">&times;</span>';
+                (function(groupId, mapId) {
+                  tag.querySelector(".remove-item").addEventListener("click", function(e) {
+                    e.stopPropagation();
+                    removeMapFromGroup(groupId, mapId);
+                  });
+                })(group.id, mid);
+                mapsItems.appendChild(tag);
+              }
+            });
+          }
+
+          mapsSection.appendChild(mapsHeader);
+          mapsSection.appendChild(mapsItems);
+
+          content.appendChild(bordersSection);
+          content.appendChild(mapsSection);
+
+          groupEl.appendChild(header);
+          groupEl.appendChild(content);
+          borderGroupsList.appendChild(groupEl);
+        });
       }
 
-      function rerollSingleAssignment(mapId) {
-        console.log("[reroll] Called for mapId:", mapId);
-        console.log("[reroll] assignmentMode:", assignmentMode);
-        console.log("[reroll] selectedBorderIds:", selectedBorderIds);
+      function renderUnassignedMaps() {
+        if (!unassignedMapsGrid) return;
 
-        if (assignmentMode === "single") {
-          console.log("[reroll] Skipping - single mode");
-          return;
-        }
-        if (selectedBorderIds.length === 0) {
-          console.log("[reroll] Skipping - no borders selected");
-          return;
+        var unassigned = getUnassignedMaps();
+
+        if (btnSelectAllMaps) {
+          btnSelectAllMaps.disabled = unassigned.length === 0 || !selectedGroupId;
         }
 
-        var oldBorderId = borderAssignments[mapId];
-        var randomIdx = Math.floor(Math.random() * selectedBorderIds.length);
-        borderAssignments[mapId] = selectedBorderIds[randomIdx];
-        console.log("[reroll] Changed border from", oldBorderId, "to", borderAssignments[mapId]);
-        updatePreview();
-      }
+        if (unassigned.length === 0) {
+          unassignedMapsGrid.innerHTML = '<div class="unassigned-maps-empty">All maps are assigned to groups</div>';
+          return;
+        }
 
-      function rerollAllAssignments() {
-        generateBorderAssignments();
-        updatePreview();
+        unassignedMapsGrid.innerHTML = "";
+
+        unassigned.forEach(function(map) {
+          var item = document.createElement("div");
+          item.className = "unassigned-map-item";
+          if (!selectedGroupId) {
+            item.classList.add("disabled");
+          }
+          item.textContent = map.name;
+          item.title = selectedGroupId ? "Click to add to selected group" : "Select a group first";
+
+          (function(mapId) {
+            item.addEventListener("click", function() {
+              if (selectedGroupId) {
+                addMapToGroup(selectedGroupId, mapId);
+              } else {
+                showToast("Select or create a group first", "info");
+              }
+            });
+          })(map.id);
+
+          unassignedMapsGrid.appendChild(item);
+        });
       }
 
       function updatePreview() {
@@ -5706,29 +6012,32 @@
 
         var hasAssignments = Object.keys(borderAssignments).length > 0;
         if (!hasAssignments) {
-          borderPreviewGrid.innerHTML = '<div class="border-preview-empty">Select borders to see preview</div>';
+          borderPreviewGrid.innerHTML = '<div class="border-preview-empty">Add borders and maps to groups to see preview</div>';
           return;
         }
 
-        // Calculate margin percentages from borderMarginSixteenths
-        // Print size: 11" x 8.5" (landscape)
+        // Calculate margin percentages
         var marginInches = borderMarginSixteenths / 16;
-        var marginPercentH = (marginInches / 11) * 100;  // Horizontal margin %
-        var marginPercentV = (marginInches / 8.5) * 100; // Vertical margin %
+        var marginPercentH = (marginInches / 11) * 100;
+        var marginPercentV = (marginInches / 8.5) * 100;
         var mapWidth = 100 - (marginPercentH * 2);
         var mapHeight = 100 - (marginPercentV * 2);
 
         borderPreviewGrid.innerHTML = "";
 
-        mapsCache.forEach(function(map) {
-          var borderId = borderAssignments[map.id];
+        // Show previews for all assigned maps
+        Object.keys(borderAssignments).forEach(function(mapId) {
+          var borderId = borderAssignments[mapId];
+          var map = mapsCache.find(function(m) { return m.id === mapId; });
           var border = bordersCache.find(function(b) { return b.id === borderId; });
+
+          if (!map) return;
 
           var item = document.createElement("div");
           item.className = "border-preview-item";
-          item.dataset.mapId = map.id;
+          item.dataset.mapId = mapId;
 
-          // Map thumbnail - positioned based on margin settings
+          // Map thumbnail
           var mapThumb = document.createElement("div");
           mapThumb.className = "map-thumbnail";
           mapThumb.style.position = "absolute";
@@ -5743,14 +6052,12 @@
           mapThumb.style.color = "#999";
           mapThumb.style.zIndex = "2";
 
-          // Show map thumbnail
           var thumbImg = document.createElement("img");
           thumbImg.style.width = "100%";
           thumbImg.style.height = "100%";
           thumbImg.style.objectFit = "contain";
 
           if (map.id === currentMapId && typeof mazeNodes !== "undefined" && mazeNodes) {
-            // Use the current canvas as the thumbnail for the active map
             var mazeCanvas = document.getElementById("maze");
             if (mazeCanvas) {
               thumbImg.src = mazeCanvas.toDataURL("image/png");
@@ -5759,15 +6066,13 @@
               mapThumb.textContent = map.name.substring(0, 10);
             }
           } else if (map.thumbnail_url) {
-            // Use stored thumbnail for other maps
             thumbImg.src = map.thumbnail_url;
             mapThumb.appendChild(thumbImg);
           } else {
-            // Fallback to text placeholder
             mapThumb.textContent = map.name.substring(0, 10);
           }
 
-          // Border image overlay
+          // Border image
           if (border) {
             var borderImg = document.createElement("img");
             borderImg.className = "border-img";
@@ -5776,61 +6081,51 @@
             item.appendChild(borderImg);
           }
 
-          // Map name label
+          // Map name
           var nameLabel = document.createElement("div");
           nameLabel.className = "map-name";
           nameLabel.textContent = map.name;
 
-          // Re-roll button (only in random mode)
-          if (assignmentMode === "random") {
-            var rerollBtn = document.createElement("button");
-            rerollBtn.className = "reroll-btn";
-            rerollBtn.title = "Re-roll border";
-            rerollBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>';
-            (function(mapId) {
-              rerollBtn.addEventListener("click", function(e) {
-                console.log("[reroll-btn] Clicked for map:", mapId);
-                e.stopPropagation();
-                rerollSingleAssignment(mapId);
-              });
-            })(map.id);
-            item.appendChild(rerollBtn);
-          }
-
           item.appendChild(mapThumb);
           item.appendChild(nameLabel);
-
           borderPreviewGrid.appendChild(item);
         });
       }
 
       function updateApplyButton() {
         if (!borderApplyBtn) return;
-
         var canApply = Object.keys(borderAssignments).length > 0;
         borderApplyBtn.disabled = !canApply;
       }
 
       async function applyBorderAssignments() {
-        // Store assignments for export/batch processing
         window.borderAssignments = borderAssignments;
         window.bordersCache = bordersCache;
         window.borderMarginSixteenths = borderMarginSixteenths;
 
-        // Save to Supabase
         var projectId = getCurrentProjectId();
+
+        // Save margin to border settings
         if (projectId && typeof SupabaseClient !== "undefined" && SupabaseClient.saveBorderSettings) {
-          var singleId = assignmentMode === "single" && selectedBorderIds.length > 0 ? selectedBorderIds[0] : null;
-          var settings = {
-            margin_sixteenths: borderMarginSixteenths,
-            assignment_mode: assignmentMode,
-            single_border_id: singleId,
-            selected_border_ids: selectedBorderIds,
-            assignments: borderAssignments
-          };
-          var result = await SupabaseClient.saveBorderSettings(projectId, settings);
+          await SupabaseClient.saveBorderSettings(projectId, {
+            margin_sixteenths: borderMarginSixteenths
+          });
+        }
+
+        // Save groups
+        if (projectId && typeof SupabaseClient !== "undefined" && SupabaseClient.saveBorderGroups) {
+          var groupsToSave = borderGroups.map(function(g) {
+            return {
+              id: g.id.startsWith("temp_") ? undefined : g.id,
+              name: g.name,
+              border_ids: g.borderIds,
+              map_ids: g.mapIds,
+              assignments: g.assignments
+            };
+          });
+          var result = await SupabaseClient.saveBorderGroups(projectId, groupsToSave);
           if (result.error) {
-            console.warn("Failed to save border settings:", result.error);
+            console.warn("Failed to save border groups:", result.error);
           }
         }
 
@@ -5857,11 +6152,19 @@
           return;
         }
 
-        // Remove from selected if was selected
-        var idx = selectedBorderIds.indexOf(id);
-        if (idx !== -1) {
-          selectedBorderIds.splice(idx, 1);
-        }
+        // Remove from all groups
+        borderGroups.forEach(function(group) {
+          var idx = group.borderIds.indexOf(id);
+          if (idx !== -1) {
+            group.borderIds.splice(idx, 1);
+          }
+          // Remove any assignments using this border
+          Object.keys(group.assignments).forEach(function(mapId) {
+            if (group.assignments[mapId] === id) {
+              delete group.assignments[mapId];
+            }
+          });
+        });
 
         showToast("Border deleted", "success");
         loadBorders();
@@ -5921,34 +6224,26 @@
         borderApplyBtn.addEventListener("click", applyBorderAssignments);
       }
 
-      if (previewRerollAllBtn) {
-        previewRerollAllBtn.addEventListener("click", rerollAllAssignments);
+      // New Group button
+      if (btnNewGroup) {
+        btnNewGroup.addEventListener("click", function() {
+          var name = prompt("Enter group name:", "New Group");
+          if (name && name.trim()) {
+            createGroup(name.trim());
+          }
+        });
       }
 
-      // Assignment mode toggle
-      var assignmentModeRadios = document.querySelectorAll('input[name="assignment-mode"]');
-      assignmentModeRadios.forEach(function(radio) {
-        radio.addEventListener("change", function() {
-          assignmentMode = this.value;
-          if (singleModeHint) {
-            singleModeHint.style.display = assignmentMode === "single" ? "block" : "none";
+      // Select All Unassigned Maps button
+      if (btnSelectAllMaps) {
+        btnSelectAllMaps.addEventListener("click", function() {
+          if (selectedGroupId) {
+            addAllUnassignedToGroup(selectedGroupId);
+          } else {
+            showToast("Select or create a group first", "info");
           }
-          // When switching to single mode with multiple selected, keep only the first
-          if (assignmentMode === "single" && selectedBorderIds.length > 1) {
-            var keepId = selectedBorderIds[0];
-            selectedBorderIds.forEach(function(id) {
-              if (id !== keepId) {
-                var item = borderLibraryGrid.querySelector('[data-border-id="' + id + '"]');
-                if (item) item.classList.remove("selected");
-              }
-            });
-            selectedBorderIds = [keepId];
-          }
-          generateBorderAssignments();
-          updatePreview();
-          updateApplyButton();
         });
-      });
+      }
 
       // Close modal when clicking outside
       if (borderLibraryModal) {
