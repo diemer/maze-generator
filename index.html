@@ -2377,14 +2377,9 @@
     }
 
     .border-preview-item .map-thumbnail {
-      position: absolute;
-      top: 10%;
-      left: 10%;
-      width: 80%;
-      height: 80%;
+      /* Position and size set dynamically by updatePreview() based on margin */
       object-fit: contain;
-      z-index: 0;
-      background: white;
+      box-sizing: border-box;
     }
 
     .border-preview-item .map-name {
@@ -4984,6 +4979,8 @@
           if (borderMarginValue) {
             borderMarginValue.textContent = formatMarginFraction(borderMarginSixteenths);
           }
+          // Update preview to show new margin
+          updatePreview();
         });
       }
 
@@ -5438,6 +5435,14 @@
           return;
         }
 
+        // Calculate margin percentages from borderMarginSixteenths
+        // Print size: 11" x 8.5" (landscape)
+        var marginInches = borderMarginSixteenths / 16;
+        var marginPercentH = (marginInches / 11) * 100;  // Horizontal margin %
+        var marginPercentV = (marginInches / 8.5) * 100; // Vertical margin %
+        var mapWidth = 100 - (marginPercentH * 2);
+        var mapHeight = 100 - (marginPercentV * 2);
+
         borderPreviewGrid.innerHTML = "";
 
         mapsCache.forEach(function(map) {
@@ -5448,16 +5453,39 @@
           item.className = "border-preview-item";
           item.dataset.mapId = map.id;
 
-          // Map thumbnail (placeholder - we'll use a simple background)
+          // Map thumbnail - positioned based on margin settings
           var mapThumb = document.createElement("div");
           mapThumb.className = "map-thumbnail";
+          mapThumb.style.position = "absolute";
+          mapThumb.style.left = marginPercentH + "%";
+          mapThumb.style.top = marginPercentV + "%";
+          mapThumb.style.width = mapWidth + "%";
+          mapThumb.style.height = mapHeight + "%";
           mapThumb.style.background = "#fff";
           mapThumb.style.display = "flex";
           mapThumb.style.alignItems = "center";
           mapThumb.style.justifyContent = "center";
           mapThumb.style.fontSize = "10px";
           mapThumb.style.color = "#999";
-          mapThumb.textContent = "Map";
+          mapThumb.style.zIndex = "0";
+
+          // If this is the currently loaded map, try to render a thumbnail
+          if (map.id === currentMapId && typeof mazeNodes !== "undefined" && mazeNodes) {
+            // Use the current canvas as the thumbnail
+            var mazeCanvas = document.getElementById("maze-canvas");
+            if (mazeCanvas) {
+              var thumbImg = document.createElement("img");
+              thumbImg.src = mazeCanvas.toDataURL("image/png");
+              thumbImg.style.width = "100%";
+              thumbImg.style.height = "100%";
+              thumbImg.style.objectFit = "contain";
+              mapThumb.appendChild(thumbImg);
+            } else {
+              mapThumb.textContent = "Map";
+            }
+          } else {
+            mapThumb.textContent = map.name.substring(0, 10);
+          }
 
           // Border image overlay
           if (border) {
