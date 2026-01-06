@@ -444,11 +444,33 @@
    * Update a map
    * @param {string} id - Map UUID
    * @param {Object} updates - Fields to update
+   * @param {Blob} thumbnail - Optional new thumbnail image
    * @returns {Promise<{data: Object, error: Object}>}
    */
-  async function updateMap(id, updates) {
+  async function updateMap(id, updates, thumbnail) {
     var client = getClient();
     if (!client) return { data: null, error: { message: "Supabase not initialized" } };
+
+    // Handle thumbnail upload if provided
+    if (thumbnail) {
+      // First, delete old thumbnail if exists
+      var mapResult = await client.from("maze_maps").select("thumbnail_url").eq("id", id).single();
+      if (mapResult.data && mapResult.data.thumbnail_url) {
+        var oldFilename = mapResult.data.thumbnail_url.split("/").pop();
+        await client.storage.from("maze-thumbnails").remove([oldFilename]);
+      }
+
+      // Upload new thumbnail
+      var filename = "thumb_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9) + ".png";
+      var uploadResult = await client.storage.from("maze-thumbnails").upload(filename, thumbnail, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+      if (!uploadResult.error) {
+        var urlResult = client.storage.from("maze-thumbnails").getPublicUrl(filename);
+        updates.thumbnail_url = urlResult.data.publicUrl;
+      }
+    }
 
     return await client.from("maze_maps").update(updates).eq("id", id).select().single();
   }

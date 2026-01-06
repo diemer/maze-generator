@@ -4034,7 +4034,7 @@
         }, 500);
       }
 
-      // Generate thumbnail as blob for upload
+      // Generate thumbnail as blob for upload (PNG for transparency)
       function generateThumbnailBlob() {
         return new Promise(function(resolve) {
           var canvas = document.getElementById("maze");
@@ -4044,17 +4044,24 @@
           }
 
           var thumbCanvas = document.createElement("canvas");
-          var maxSize = 160;
-          var scale = Math.min(maxSize / canvas.width, maxSize / canvas.height);
-          thumbCanvas.width = canvas.width * scale;
-          thumbCanvas.height = canvas.height * scale;
+          // Target size matching border preview aspect ratio (11:8.5 landscape)
+          var targetWidth = 137;
+          var targetHeight = 106;
+          thumbCanvas.width = targetWidth;
+          thumbCanvas.height = targetHeight;
 
           var ctx = thumbCanvas.getContext("2d");
-          ctx.drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
+          // Keep transparent background, scale maze to fit
+          var scale = Math.min(targetWidth / canvas.width, targetHeight / canvas.height);
+          var drawWidth = canvas.width * scale;
+          var drawHeight = canvas.height * scale;
+          var offsetX = (targetWidth - drawWidth) / 2;
+          var offsetY = (targetHeight - drawHeight) / 2;
+          ctx.drawImage(canvas, offsetX, offsetY, drawWidth, drawHeight);
 
           thumbCanvas.toBlob(function(blob) {
             resolve(blob);
-          }, "image/jpeg", 0.7);
+          }, "image/png");
         });
       }
 
@@ -4126,7 +4133,10 @@
           updates.name = newName;
         }
 
-        var result = await SupabaseClient.updateMap(currentMapId, updates);
+        // Regenerate thumbnail
+        var thumbnail = await generateThumbnailBlob();
+
+        var result = await SupabaseClient.updateMap(currentMapId, updates, thumbnail);
         if (result.error) {
           showToast("Failed to update map: " + result.error.message, "error");
           return;
@@ -5469,21 +5479,27 @@
           mapThumb.style.color = "#999";
           mapThumb.style.zIndex = "0";
 
-          // If this is the currently loaded map, try to render a thumbnail
+          // Show map thumbnail
+          var thumbImg = document.createElement("img");
+          thumbImg.style.width = "100%";
+          thumbImg.style.height = "100%";
+          thumbImg.style.objectFit = "contain";
+
           if (map.id === currentMapId && typeof mazeNodes !== "undefined" && mazeNodes) {
-            // Use the current canvas as the thumbnail
-            var mazeCanvas = document.getElementById("maze-canvas");
+            // Use the current canvas as the thumbnail for the active map
+            var mazeCanvas = document.getElementById("maze");
             if (mazeCanvas) {
-              var thumbImg = document.createElement("img");
               thumbImg.src = mazeCanvas.toDataURL("image/png");
-              thumbImg.style.width = "100%";
-              thumbImg.style.height = "100%";
-              thumbImg.style.objectFit = "contain";
               mapThumb.appendChild(thumbImg);
             } else {
-              mapThumb.textContent = "Map";
+              mapThumb.textContent = map.name.substring(0, 10);
             }
+          } else if (map.thumbnail_url) {
+            // Use stored thumbnail for other maps
+            thumbImg.src = map.thumbnail_url;
+            mapThumb.appendChild(thumbImg);
           } else {
+            // Fallback to text placeholder
             mapThumb.textContent = map.name.substring(0, 10);
           }
 
