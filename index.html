@@ -4033,10 +4033,15 @@
       function generateThumbnailBlob() {
         return new Promise(function(resolve) {
           var canvas = document.getElementById("maze");
-          if (!canvas) {
+          if (!canvas || typeof mazeNodes === "undefined" || !mazeNodes) {
             resolve(null);
             return;
           }
+
+          // Temporarily set transparent background and redraw
+          var originalBg = mazeNodes.backgroundColor;
+          mazeNodes.backgroundColor = "transparent";
+          mazeNodes.draw();
 
           var thumbCanvas = document.createElement("canvas");
           // Target size matching border preview aspect ratio (11:8.5 landscape)
@@ -4046,13 +4051,17 @@
           thumbCanvas.height = targetHeight;
 
           var ctx = thumbCanvas.getContext("2d");
-          // Keep transparent background, scale maze to fit
+          // Scale maze to fit
           var scale = Math.min(targetWidth / canvas.width, targetHeight / canvas.height);
           var drawWidth = canvas.width * scale;
           var drawHeight = canvas.height * scale;
           var offsetX = (targetWidth - drawWidth) / 2;
           var offsetY = (targetHeight - drawHeight) / 2;
           ctx.drawImage(canvas, offsetX, offsetY, drawWidth, drawHeight);
+
+          // Restore original background and redraw
+          mazeNodes.backgroundColor = originalBg;
+          mazeNodes.draw();
 
           thumbCanvas.toBlob(function(blob) {
             resolve(blob);
@@ -5466,7 +5475,6 @@
           mapThumb.style.top = marginPercentV + "%";
           mapThumb.style.width = mapWidth + "%";
           mapThumb.style.height = mapHeight + "%";
-          mapThumb.style.background = "#fff";
           mapThumb.style.display = "flex";
           mapThumb.style.alignItems = "center";
           mapThumb.style.justifyContent = "center";
