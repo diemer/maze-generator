@@ -656,6 +656,132 @@
   }
 
   // ============================================
+  // Border Groups Functions
+  // ============================================
+
+  /**
+   * Get all border groups for a project
+   * @param {string} projectId - Project UUID
+   * @returns {Promise<{data: Array, error: Object}>}
+   */
+  async function getBorderGroups(projectId) {
+    var client = getClient();
+    if (!client) return { data: null, error: { message: "Supabase not initialized" } };
+
+    return await client
+      .from("maze_border_groups")
+      .select("*")
+      .eq("project_id", projectId)
+      .order("sort_order", { ascending: true });
+  }
+
+  /**
+   * Create a new border group
+   * @param {string} projectId - Project UUID
+   * @param {string} name - Group name
+   * @returns {Promise<{data: Object, error: Object}>}
+   */
+  async function createBorderGroup(projectId, name) {
+    var client = getClient();
+    if (!client) return { data: null, error: { message: "Supabase not initialized" } };
+
+    // Get current max sort_order
+    var existing = await client
+      .from("maze_border_groups")
+      .select("sort_order")
+      .eq("project_id", projectId)
+      .order("sort_order", { ascending: false })
+      .limit(1);
+
+    var nextOrder = existing.data && existing.data.length > 0
+      ? existing.data[0].sort_order + 1
+      : 0;
+
+    return await client
+      .from("maze_border_groups")
+      .insert({
+        project_id: projectId,
+        name: name,
+        sort_order: nextOrder
+      })
+      .select()
+      .single();
+  }
+
+  /**
+   * Update a border group
+   * @param {string} groupId - Group UUID
+   * @param {Object} updates - Fields to update (name, border_ids, map_ids, assignments, sort_order)
+   * @returns {Promise<{data: Object, error: Object}>}
+   */
+  async function updateBorderGroup(groupId, updates) {
+    var client = getClient();
+    if (!client) return { data: null, error: { message: "Supabase not initialized" } };
+
+    return await client
+      .from("maze_border_groups")
+      .update(updates)
+      .eq("id", groupId)
+      .select()
+      .single();
+  }
+
+  /**
+   * Delete a border group
+   * @param {string} groupId - Group UUID
+   * @returns {Promise<{data: Object, error: Object}>}
+   */
+  async function deleteBorderGroup(groupId) {
+    var client = getClient();
+    if (!client) return { data: null, error: { message: "Supabase not initialized" } };
+
+    return await client
+      .from("maze_border_groups")
+      .delete()
+      .eq("id", groupId);
+  }
+
+  /**
+   * Save all border groups for a project (bulk upsert)
+   * @param {string} projectId - Project UUID
+   * @param {Array} groups - Array of group objects
+   * @returns {Promise<{data: Array, error: Object}>}
+   */
+  async function saveBorderGroups(projectId, groups) {
+    var client = getClient();
+    if (!client) return { data: null, error: { message: "Supabase not initialized" } };
+
+    // First delete all existing groups for this project
+    await client
+      .from("maze_border_groups")
+      .delete()
+      .eq("project_id", projectId);
+
+    // If no groups to save, we're done
+    if (!groups || groups.length === 0) {
+      return { data: [], error: null };
+    }
+
+    // Insert all groups with project_id
+    var groupsToInsert = groups.map(function(group, index) {
+      return {
+        id: group.id || undefined, // Let DB generate if not provided
+        project_id: projectId,
+        name: group.name,
+        border_ids: group.border_ids || group.borderIds || [],
+        map_ids: group.map_ids || group.mapIds || [],
+        assignments: group.assignments || {},
+        sort_order: index
+      };
+    });
+
+    return await client
+      .from("maze_border_groups")
+      .insert(groupsToInsert)
+      .select();
+  }
+
+  // ============================================
   // Utility Functions
   // ============================================
 
@@ -719,5 +845,11 @@
     // Border Settings
     getBorderSettings: getBorderSettings,
     saveBorderSettings: saveBorderSettings,
+    // Border Groups
+    getBorderGroups: getBorderGroups,
+    createBorderGroup: createBorderGroup,
+    updateBorderGroup: updateBorderGroup,
+    deleteBorderGroup: deleteBorderGroup,
+    saveBorderGroups: saveBorderGroups,
   };
 })(typeof window !== "undefined" ? window : this);

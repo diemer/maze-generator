@@ -2241,35 +2241,285 @@
       color: #333;
     }
 
-    .assignment-mode-toggle {
+    /* Border Groups Section */
+    .border-groups-section {
+      border-top: 1px solid #eee;
+      padding-top: 16px;
+      margin-top: 16px;
+    }
+
+    .border-groups-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .border-groups-header h4 {
+      margin: 0;
+      font-size: 0.95em;
+      color: #333;
+    }
+
+    .btn-new-group {
+      padding: 6px 12px;
+      font-size: 0.85em;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .btn-new-group:hover {
+      background: #5a6fd6;
+    }
+
+    .border-groups-list {
       display: flex;
       flex-direction: column;
       gap: 8px;
-      margin-bottom: 16px;
+      max-height: 300px;
+      overflow-y: auto;
     }
 
-    .assignment-mode-toggle label {
+    .border-groups-empty {
+      text-align: center;
+      padding: 20px;
+      color: #999;
+      font-size: 0.9em;
+    }
+
+    .border-group {
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .border-group.selected {
+      border-color: #667eea;
+    }
+
+    .border-group-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      background: #f8f9fa;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .border-group.selected .border-group-header {
+      background: #e8ebfc;
+    }
+
+    .border-group-header:hover {
+      background: #f0f0f0;
+    }
+
+    .border-group.selected .border-group-header:hover {
+      background: #dde1fa;
+    }
+
+    .border-group-title {
       display: flex;
       align-items: center;
       gap: 8px;
+      font-weight: 500;
+    }
+
+    .border-group-title .expand-icon {
+      font-size: 0.8em;
+      color: #666;
+    }
+
+    .border-group-info {
+      font-size: 0.8em;
+      color: #666;
+    }
+
+    .border-group-actions {
+      display: flex;
+      gap: 4px;
+    }
+
+    .border-group-actions button {
+      padding: 4px 8px;
+      font-size: 0.75em;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: white;
       cursor: pointer;
-      padding: 8px 12px;
-      border-radius: 6px;
-      transition: background 0.2s;
     }
 
-    .assignment-mode-toggle label:hover {
-      background: #f5f5f5;
+    .border-group-actions button:hover {
+      background: #f0f0f0;
     }
 
-    .assignment-mode-toggle input[type="radio"] {
-      margin: 0;
+    .border-group-actions button.danger {
+      color: #dc3545;
+      border-color: #dc3545;
     }
 
-    .assignment-mode-toggle .mode-description {
+    .border-group-actions button.danger:hover {
+      background: #dc3545;
+      color: white;
+    }
+
+    .border-group-content {
+      display: none;
+      padding: 12px;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    .border-group.expanded .border-group-content {
+      display: block;
+    }
+
+    .border-group-borders,
+    .border-group-maps {
+      margin-bottom: 12px;
+    }
+
+    .border-group-borders:last-child,
+    .border-group-maps:last-child {
+      margin-bottom: 0;
+    }
+
+    .border-group-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
       font-size: 0.85em;
       color: #666;
-      margin-left: 20px;
+    }
+
+    .border-group-section-header button {
+      padding: 2px 8px;
+      font-size: 0.8em;
+      border: 1px solid #667eea;
+      border-radius: 4px;
+      background: white;
+      color: #667eea;
+      cursor: pointer;
+    }
+
+    .border-group-section-header button:hover {
+      background: #667eea;
+      color: white;
+    }
+
+    .border-group-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .border-group-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      background: #f0f0f0;
+      border-radius: 4px;
+      font-size: 0.8em;
+    }
+
+    .border-group-item .remove-item {
+      cursor: pointer;
+      color: #999;
+      font-weight: bold;
+    }
+
+    .border-group-item .remove-item:hover {
+      color: #dc3545;
+    }
+
+    .border-group-preview {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    /* Unassigned Maps Section */
+    .unassigned-maps-section {
+      border-top: 1px solid #eee;
+      padding-top: 16px;
+      margin-top: 16px;
+    }
+
+    .unassigned-maps-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .unassigned-maps-header h4 {
+      margin: 0;
+      font-size: 0.95em;
+      color: #333;
+    }
+
+    .btn-select-all-maps {
+      padding: 6px 12px;
+      font-size: 0.85em;
+      background: white;
+      color: #667eea;
+      border: 1px solid #667eea;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .btn-select-all-maps:hover:not(:disabled) {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-select-all-maps:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .unassigned-maps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 8px;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    .unassigned-maps-empty {
+      text-align: center;
+      padding: 16px;
+      color: #999;
+      font-size: 0.85em;
+      grid-column: 1 / -1;
+    }
+
+    .unassigned-map-item {
+      position: relative;
+      padding: 8px;
+      background: #f8f9fa;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: center;
+      font-size: 0.8em;
+      transition: all 0.2s;
+    }
+
+    .unassigned-map-item:hover {
+      border-color: #667eea;
+      background: #f0f4ff;
+    }
+
+    .unassigned-map-item.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
     }
 
     .border-item.selectable {
@@ -3583,21 +3833,25 @@
           <div class="border-library-loading">Loading borders...</div>
         </div>
 
-        <!-- Assignment Mode Section -->
-        <div class="border-assignment-section" id="border-assignment-section">
-          <h4>Assignment Mode</h4>
-          <div class="assignment-mode-toggle">
-            <label>
-              <input type="radio" name="assignment-mode" value="random" checked />
-              <span>Randomly assign from selected borders</span>
-            </label>
-            <label>
-              <input type="radio" name="assignment-mode" value="single" />
-              <span>Use single border for all maps</span>
-            </label>
-            <div class="mode-description" id="single-mode-hint" style="display: none;">
-              <em>Select one border above</em>
-            </div>
+        <!-- Groups Section -->
+        <div class="border-groups-section" id="border-groups-section">
+          <div class="border-groups-header">
+            <h4>Groups</h4>
+            <button type="button" class="btn-new-group" id="btn-new-group">+ New Group</button>
+          </div>
+          <div class="border-groups-list" id="border-groups-list">
+            <div class="border-groups-empty">No groups yet. Create a group to start assigning borders to maps.</div>
+          </div>
+        </div>
+
+        <!-- Unassigned Maps Section -->
+        <div class="unassigned-maps-section" id="unassigned-maps-section">
+          <div class="unassigned-maps-header">
+            <h4>Unassigned Maps</h4>
+            <button type="button" class="btn-select-all-maps" id="btn-select-all-maps" disabled>Add All to Group</button>
+          </div>
+          <div class="unassigned-maps-grid" id="unassigned-maps-grid">
+            <div class="unassigned-maps-empty">All maps are assigned to groups</div>
           </div>
         </div>
 
@@ -3610,14 +3864,9 @@
 
         <!-- Preview Section -->
         <div class="border-preview-section" id="border-preview-section">
-          <h4>
-            <span>Map Assignments</span>
-            <div class="border-preview-actions">
-              <button type="button" id="preview-reroll-all">Re-roll All</button>
-            </div>
-          </h4>
+          <h4>Preview</h4>
           <div class="border-preview-grid" id="border-preview-grid">
-            <div class="border-preview-empty">Select borders and maps will appear here</div>
+            <div class="border-preview-empty">Add borders and maps to groups to see preview</div>
           </div>
         </div>
       </div>
@@ -5422,11 +5671,23 @@
       }
 
       function rerollSingleAssignment(mapId) {
-        if (assignmentMode === "single") return; // Can't reroll in single mode
-        if (selectedBorderIds.length === 0) return;
+        console.log("[reroll] Called for mapId:", mapId);
+        console.log("[reroll] assignmentMode:", assignmentMode);
+        console.log("[reroll] selectedBorderIds:", selectedBorderIds);
 
+        if (assignmentMode === "single") {
+          console.log("[reroll] Skipping - single mode");
+          return;
+        }
+        if (selectedBorderIds.length === 0) {
+          console.log("[reroll] Skipping - no borders selected");
+          return;
+        }
+
+        var oldBorderId = borderAssignments[mapId];
         var randomIdx = Math.floor(Math.random() * selectedBorderIds.length);
         borderAssignments[mapId] = selectedBorderIds[randomIdx];
+        console.log("[reroll] Changed border from", oldBorderId, "to", borderAssignments[mapId]);
         updatePreview();
       }
 
@@ -5526,10 +5787,13 @@
             rerollBtn.className = "reroll-btn";
             rerollBtn.title = "Re-roll border";
             rerollBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>';
-            rerollBtn.addEventListener("click", function(e) {
-              e.stopPropagation();
-              rerollSingleAssignment(map.id);
-            });
+            (function(mapId) {
+              rerollBtn.addEventListener("click", function(e) {
+                console.log("[reroll-btn] Clicked for map:", mapId);
+                e.stopPropagation();
+                rerollSingleAssignment(mapId);
+              });
+            })(map.id);
             item.appendChild(rerollBtn);
           }
 
