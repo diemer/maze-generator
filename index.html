@@ -2272,24 +2272,6 @@
       margin-left: 20px;
     }
 
-    .single-border-select {
-      margin-left: 24px;
-      margin-top: 8px;
-      display: none;
-    }
-
-    .single-border-select.visible {
-      display: block;
-    }
-
-    .single-border-select select {
-      padding: 6px 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      font-size: 0.9em;
-      min-width: 200px;
-    }
-
     .border-item.selectable {
       position: relative;
     }
@@ -3623,10 +3605,8 @@
               <input type="radio" name="assignment-mode" value="single" />
               <span>Use single border for all maps</span>
             </label>
-            <div class="single-border-select" id="single-border-select">
-              <select id="single-border-dropdown">
-                <option value="">Select a border...</option>
-              </select>
+            <div class="mode-description" id="single-mode-hint" style="display: none;">
+              <em>Select one border above</em>
             </div>
           </div>
         </div>
@@ -5216,8 +5196,7 @@
       var borderFileInput = document.getElementById("border-file-input");
       var browseBordersBtn = document.getElementById("browse-borders-btn");
       var publishingBordersBtn = document.getElementById("publishing-borders");
-      var singleBorderSelect = document.getElementById("single-border-select");
-      var singleBorderDropdown = document.getElementById("single-border-dropdown");
+      var singleModeHint = document.getElementById("single-mode-hint");
       var borderPreviewGrid = document.getElementById("border-preview-grid");
       var borderApplyBtn = document.getElementById("border-apply-btn");
       var borderCancelBtn = document.getElementById("border-cancel-btn");
@@ -5253,7 +5232,7 @@
             // Update UI to reflect saved settings
             var radioToCheck = document.querySelector('input[name="assignment-mode"][value="' + assignmentMode + '"]');
             if (radioToCheck) radioToCheck.checked = true;
-            if (singleBorderSelect) singleBorderSelect.classList.toggle("visible", assignmentMode === "single");
+            if (singleModeHint) singleModeHint.style.display = assignmentMode === "single" ? "block" : "none";
             if (borderMarginSlider) borderMarginSlider.value = borderMarginSixteenths;
             if (borderMarginValue) borderMarginValue.textContent = formatMarginFraction(borderMarginSixteenths);
 
@@ -5268,17 +5247,12 @@
             borderMarginSixteenths = 8;
             var radioRandom = document.querySelector('input[name="assignment-mode"][value="random"]');
             if (radioRandom) radioRandom.checked = true;
-            if (singleBorderSelect) singleBorderSelect.classList.remove("visible");
+            if (singleModeHint) singleModeHint.style.display = "none";
             if (borderMarginSlider) borderMarginSlider.value = 8;
             if (borderMarginValue) borderMarginValue.textContent = '1/2"';
           }
 
           await loadBorders();
-
-          // After borders load, set single border dropdown if saved
-          if (savedSettings && savedSettings.single_border_id && singleBorderDropdown) {
-            singleBorderDropdown.value = savedSettings.single_border_id;
-          }
 
           updatePreview();
           updateApplyButton();
@@ -5313,13 +5287,11 @@
 
         if (bordersCache.length === 0) {
           borderLibraryGrid.innerHTML = '<div class="border-library-empty">No borders uploaded yet. Upload some border images to get started!</div>';
-          updateSingleBorderDropdown();
           updatePreview();
           return;
         }
 
         renderBorders();
-        updateSingleBorderDropdown();
         updatePreview();
       }
 
@@ -5378,16 +5350,34 @@
 
       function toggleBorderSelection(borderId) {
         var idx = selectedBorderIds.indexOf(borderId);
-        if (idx === -1) {
-          selectedBorderIds.push(borderId);
+        var isSelecting = idx === -1;
+
+        if (assignmentMode === "single") {
+          // In single mode, only allow one selection at a time
+          if (isSelecting) {
+            // Deselect all others first
+            selectedBorderIds.forEach(function(oldId) {
+              var oldItem = borderLibraryGrid.querySelector('[data-border-id="' + oldId + '"]');
+              if (oldItem) oldItem.classList.remove("selected");
+            });
+            selectedBorderIds = [borderId];
+          } else {
+            // Clicking the selected one deselects it
+            selectedBorderIds = [];
+          }
         } else {
-          selectedBorderIds.splice(idx, 1);
+          // Random mode - allow multiple selections
+          if (isSelecting) {
+            selectedBorderIds.push(borderId);
+          } else {
+            selectedBorderIds.splice(idx, 1);
+          }
         }
 
         // Update visual state
         var item = borderLibraryGrid.querySelector('[data-border-id="' + borderId + '"]');
         if (item) {
-          item.classList.toggle("selected", idx === -1);
+          item.classList.toggle("selected", isSelecting);
         }
 
         // Regenerate assignments and update preview
@@ -5396,25 +5386,14 @@
         updateApplyButton();
       }
 
-      function updateSingleBorderDropdown() {
-        if (!singleBorderDropdown) return;
-
-        singleBorderDropdown.innerHTML = '<option value="">Select a border...</option>';
-        bordersCache.forEach(function(border) {
-          var option = document.createElement("option");
-          option.value = border.id;
-          option.textContent = border.name;
-          singleBorderDropdown.appendChild(option);
-        });
-      }
-
       function generateBorderAssignments() {
         borderAssignments = {};
 
         if (mapsCache.length === 0) return;
 
         if (assignmentMode === "single") {
-          var singleId = singleBorderDropdown ? singleBorderDropdown.value : null;
+          // Use the first (and only) selected border in single mode
+          var singleId = selectedBorderIds.length > 0 ? selectedBorderIds[0] : null;
           if (singleId) {
             mapsCache.forEach(function(map) {
               borderAssignments[map.id] = singleId;
@@ -5530,11 +5509,11 @@
         // Save to Supabase
         var projectId = getCurrentProjectId();
         if (projectId && typeof SupabaseClient !== "undefined" && SupabaseClient.saveBorderSettings) {
-          var singleId = singleBorderDropdown ? singleBorderDropdown.value : null;
+          var singleId = assignmentMode === "single" && selectedBorderIds.length > 0 ? selectedBorderIds[0] : null;
           var settings = {
             margin_sixteenths: borderMarginSixteenths,
             assignment_mode: assignmentMode,
-            single_border_id: singleId || null,
+            single_border_id: singleId,
             selected_border_ids: selectedBorderIds,
             assignments: borderAssignments
           };
@@ -5640,23 +5619,25 @@
       assignmentModeRadios.forEach(function(radio) {
         radio.addEventListener("change", function() {
           assignmentMode = this.value;
-          if (singleBorderSelect) {
-            singleBorderSelect.classList.toggle("visible", assignmentMode === "single");
+          if (singleModeHint) {
+            singleModeHint.style.display = assignmentMode === "single" ? "block" : "none";
+          }
+          // When switching to single mode with multiple selected, keep only the first
+          if (assignmentMode === "single" && selectedBorderIds.length > 1) {
+            var keepId = selectedBorderIds[0];
+            selectedBorderIds.forEach(function(id) {
+              if (id !== keepId) {
+                var item = borderLibraryGrid.querySelector('[data-border-id="' + id + '"]');
+                if (item) item.classList.remove("selected");
+              }
+            });
+            selectedBorderIds = [keepId];
           }
           generateBorderAssignments();
           updatePreview();
           updateApplyButton();
         });
       });
-
-      // Single border dropdown change
-      if (singleBorderDropdown) {
-        singleBorderDropdown.addEventListener("change", function() {
-          generateBorderAssignments();
-          updatePreview();
-          updateApplyButton();
-        });
-      }
 
       // Close modal when clicking outside
       if (borderLibraryModal) {
