@@ -67,6 +67,7 @@ function Maze(args) {
   this.blankFloorTiles = {}; // Grid positions that should be blank (no floor texture)
   this.decorations = settings["decorations"] || {}; // Grid position -> {tileUrl, category}
   this.decorationImages = {}; // URL -> loaded Image object
+  this.freeFormDecorations = settings["freeFormDecorations"] || {}; // Free-form decorations (not grid-snapped)
   this.showStroke = settings["showStroke"] !== false;
   this.strokeTop = settings["strokeTop"] !== false;
   this.strokeBottom = settings["strokeBottom"] !== false;
@@ -218,10 +219,11 @@ Maze.prototype.getWeightedTileIndex = function (type, gridX, gridY) {
 // Load decoration images (called when decorations are placed)
 Maze.prototype.loadDecorations = function () {
   return new Promise((resolve) => {
-    // Get unique URLs from all decorations
+    // Get unique URLs from all decorations (grid-based and free-form)
+    const gridUrls = Object.values(this.decorations).map(d => d.tileUrl);
+    const freeFormUrls = Object.values(this.freeFormDecorations || {}).map(d => d.tileUrl);
     const uniqueUrls = [...new Set(
-      Object.values(this.decorations)
-        .map(d => d.tileUrl)
+      [...gridUrls, ...freeFormUrls]
         .filter(url => url && !this.decorationImages[url])
     )];
 
@@ -286,6 +288,146 @@ Maze.prototype.clearDecorations = function () {
   this.decorationImages = {};
 };
 
+// ============================================
+// Free-form decorations (not grid-snapped)
+// ============================================
+
+// Add a free-form decoration
+Maze.prototype.addFreeFormDecoration = function (decoration) {
+  const id = "ff_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
+  decoration.id = id;
+  decoration.zIndex = Object.keys(this.freeFormDecorations).length;
+  this.freeFormDecorations[id] = decoration;
+  return id;
+};
+
+// Remove a free-form decoration
+Maze.prototype.removeFreeFormDecoration = function (id) {
+  if (this.freeFormDecorations[id]) {
+    delete this.freeFormDecorations[id];
+    return true;
+  }
+  return false;
+};
+
+// Update a free-form decoration's properties
+Maze.prototype.updateFreeFormDecoration = function (id, updates) {
+  if (this.freeFormDecorations[id]) {
+    Object.assign(this.freeFormDecorations[id], updates);
+    return this.freeFormDecorations[id];
+  }
+  return null;
+};
+
+// Get a free-form decoration by ID
+Maze.prototype.getFreeFormDecoration = function (id) {
+  return this.freeFormDecorations[id] || null;
+};
+
+// Get free-form decoration at screen position (hit testing)
+// screenX/screenY are CSS pixel coordinates relative to canvas
+// scale is the maze displayScale
+Maze.prototype.getFreeFormDecorationAt = function (screenX, screenY, canvasWidth, canvasHeight, scale, cssToInternalRatio) {
+  scale = scale || 1;
+
+  // Convert screen coords to logical coordinates (same as when placing)
+  const logicalClickX = screenX / scale;
+  const logicalClickY = screenY / scale;
+
+  // Check in reverse z-order (top first)
+  const entries = Object.entries(this.freeFormDecorations || {})
+    .sort((a, b) => (b[1].zIndex || 0) - (a[1].zIndex || 0));
+
+  for (const [id, dec] of entries) {
+    const img = this.decorationImages[dec.tileUrl];
+    const imgWidth = dec.baseWidth || (img ? (img.naturalWidth || img.width) : 64);
+    const imgHeight = dec.baseHeight || (img ? (img.naturalHeight || img.height) : 64);
+
+    // Get logical coordinates (support both old and new format)
+    const logX = dec.logicalX !== undefined ? dec.logicalX : (dec.canvasX / scale);
+    const logY = dec.logicalY !== undefined ? dec.logicalY : (dec.canvasY / scale);
+
+    // Calculate bounds in logical coordinates
+    // Size is: imgWidth * decorScale (logical size, before displayScale)
+    const logicalWidth = imgWidth * (dec.scale || 1);
+    const logicalHeight = imgHeight * (dec.scale || 1);
+
+    const left = logX - logicalWidth * 0.5;
+    const right = logX + logicalWidth * 0.5;
+    const top = logY - logicalHeight;
+    const bottom = logY;
+
+    if (logicalClickX >= left && logicalClickX <= right &&
+        logicalClickY >= top && logicalClickY <= bottom) {
+      return { id: id, decoration: dec };
+    }
+  }
+  return null;
+};
+
+// Clear all free-form decorations
+Maze.prototype.clearFreeFormDecorations = function () {
+  this.freeFormDecorations = {};
+};
+
+// Bring a free-form decoration to front
+Maze.prototype.bringFreeFormToFront = function (id) {
+  if (!this.freeFormDecorations[id]) return;
+
+  const maxZ = Math.max(0, ...Object.values(this.freeFormDecorations).map(d => d.zIndex || 0));
+  this.freeFormDecorations[id].zIndex = maxZ + 1;
+};
+
+// Send a free-form decoration to back
+Maze.prototype.sendFreeFormToBack = function (id) {
+  if (!this.freeFormDecorations[id]) return;
+
+  const minZ = Math.min(0, ...Object.values(this.freeFormDecorations).map(d => d.zIndex || 0));
+  this.freeFormDecorations[id].zIndex = minZ - 1;
+};
+
+/**
+ * Draw a single free-form decoration on a canvas context
+ * This is the shared drawing logic used for both preview and final render
+ * @param {CanvasRenderingContext2D} ctx - Canvas context to draw on
+ * @param {Image} img - The decoration image
+ * @param {number} logicalX - X position in logical coords (will be multiplied by displayScale)
+ * @param {number} logicalY - Y position in logical coords (will be multiplied by displayScale)
+ * @param {number} decorScale - The decoration's scale factor
+ * @param {number} displayScale - The maze's display scale
+ * @param {number} imgWidth - Image width (optional, uses img dimensions if not provided)
+ * @param {number} imgHeight - Image height (optional, uses img dimensions if not provided)
+ * @param {number} alpha - Opacity (optional, defaults to 1.0)
+ */
+Maze.prototype.drawFreeFormDecoration = function (ctx, img, logicalX, logicalY, decorScale, displayScale, imgWidth, imgHeight, alpha) {
+  if (!ctx || !img) return;
+
+  imgWidth = imgWidth || img.naturalWidth || img.width;
+  imgHeight = imgHeight || img.naturalHeight || img.height;
+  alpha = (alpha !== undefined) ? alpha : 1.0;
+
+  // Calculate draw size: image size * decoration scale * display scale
+  const drawWidth = imgWidth * decorScale * displayScale;
+  const drawHeight = imgHeight * decorScale * displayScale;
+
+  // Convert logical coordinates to canvas pixels (consistent with grid decorations)
+  const canvasX = logicalX * displayScale;
+  const canvasY = logicalY * displayScale;
+
+  // Center horizontally, bottom-align vertically at the click position
+  const drawX = canvasX - drawWidth * 0.5;
+  const drawY = canvasY - drawHeight;
+
+  // Draw the decoration
+  if (alpha < 1.0) {
+    ctx.globalAlpha = alpha;
+  }
+  ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+  if (alpha < 1.0) {
+    ctx.globalAlpha = 1.0;
+  }
+};
+
 // Check if a floor tile is blank
 Maze.prototype.isFloorBlank = function (gridX, gridY) {
   const key = `${gridX},${gridY}`;
@@ -310,9 +452,10 @@ Maze.prototype.clearBlankFloors = function () {
 // Export full maze state as JSON string
 Maze.prototype.exportMaze = function () {
   const data = {
-    version: 3,
+    version: 4,
     matrix: this.matrix,
     decorations: this.decorations,
+    freeFormDecorations: this.freeFormDecorations || {},
     blankFloorTiles: this.blankFloorTiles,
     floorTileMap: this.floorTileMap,
     entryNodes: this.entryNodes,
@@ -360,6 +503,12 @@ Maze.prototype.importMaze = function (jsonString) {
     }
     if (parsed.tileWeights) {
       this.tileWeights = parsed.tileWeights;
+    }
+    // Version 4+: free-form decorations
+    if (parsed.freeFormDecorations) {
+      this.freeFormDecorations = parsed.freeFormDecorations;
+    } else {
+      this.freeFormDecorations = {};
     }
     return true;
   } catch (e) {
@@ -1720,6 +1869,72 @@ Maze.prototype.draw = function () {
   // PASS 1.5: Draw "floor" layer decorations (on top of floors, under walls)
   drawDecorationsForLayer('floor');
 
+  // Helper to draw free-form decorations for a specific layer
+  const freeFormEntries = Object.entries(this.freeFormDecorations || {});
+  const drawFreeFormDecorationsForLayer = (layerName) => {
+    if (freeFormEntries.length === 0) return;
+
+    // Sort by zIndex (lower first, so higher draws on top)
+    const sortedEntries = freeFormEntries
+      .filter(([id, dec]) => (dec.layer || 'floor') === layerName)
+      .sort((a, b) => (a[1].zIndex || 0) - (b[1].zIndex || 0));
+
+    for (const [id, dec] of sortedEntries) {
+      const img = this.decorationImages[dec.tileUrl];
+      if (!img) continue;
+
+      // Use shared drawing method with logical coordinates
+      // Support both old (canvasX/canvasY) and new (logicalX/logicalY) formats
+      const logX = dec.logicalX !== undefined ? dec.logicalX : (dec.canvasX / scale);
+      const logY = dec.logicalY !== undefined ? dec.logicalY : (dec.canvasY / scale);
+      this.drawFreeFormDecoration(
+        ctx,
+        img,
+        logX,
+        logY,
+        dec.scale || 1,
+        scale,
+        dec.baseWidth,
+        dec.baseHeight
+      );
+    }
+  };
+
+  // PASS 1.6: Draw free-form "floor" layer decorations
+  drawFreeFormDecorationsForLayer('floor');
+
+  // Helper to draw preview decoration (if any) for a specific layer
+  const drawPreviewDecorationForLayer = (layerName) => {
+    // Check if TilePlacement has a preview decoration
+    if (typeof TilePlacement === 'undefined' || !TilePlacement.getPreviewDecoration) return;
+
+    const preview = TilePlacement.getPreviewDecoration();
+    if (!preview) return;
+    if ((preview.layer || 'floor') !== layerName) return;
+
+    const img = this.decorationImages[preview.tileUrl];
+    if (!img) return;
+
+    // Draw with transparency to indicate it's a preview
+    // Use logical coordinates (same as placed decorations)
+    const logX = preview.logicalX !== undefined ? preview.logicalX : (preview.canvasX / scale);
+    const logY = preview.logicalY !== undefined ? preview.logicalY : (preview.canvasY / scale);
+    this.drawFreeFormDecoration(
+      ctx,
+      img,
+      logX,
+      logY,
+      preview.scale || 1,
+      scale,
+      preview.baseWidth,
+      preview.baseHeight,
+      0.6  // Alpha for preview transparency
+    );
+  };
+
+  // PASS 1.7: Draw floor-layer preview decoration (if any)
+  drawPreviewDecorationForLayer('floor');
+
   // Helper to check if a position is a gate (should be treated as empty for neighbor calculations)
   const isGate = (x, y) => {
     return (gateEntry && x === gateEntry.x && y === gateEntry.y) ||
@@ -1766,7 +1981,7 @@ Maze.prototype.draw = function () {
         const xOffsetMultiplier = (dir === 'S') ? -1 : 1;
         const drawX = markerIsoX - drawWidth * 0.5 + (this.endMarkerOffsetX * offsetScale * xOffsetMultiplier);
         const cubeBottomY = markerIsoY + tileHeight + cubeHeight;
-        const drawY = cubeBottomY - drawHeight + cubeHeight + (this.endMarkerOffset * offsetScale); // Shift down one cubeHeight + offset
+        const drawY = cubeBottomY - drawHeight + cubeHeight + (this.endMarkerOffset * offsetScale);
         ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
       }
     } else {
@@ -1995,6 +2210,12 @@ Maze.prototype.draw = function () {
 
   // PASS 3: Draw "overlay" layer decorations (on top of everything)
   drawDecorationsForLayer('overlay');
+
+  // PASS 3.5: Draw free-form "overlay" layer decorations
+  drawFreeFormDecorationsForLayer('overlay');
+
+  // PASS 3.6: Draw overlay-layer preview decoration (if any)
+  drawPreviewDecorationForLayer('overlay');
 
   // PASS 4: Draw exit indicator (arrow and EXIT text)
   if (this.showEntryIndicators && gateExit && this.entryNodes.end) {

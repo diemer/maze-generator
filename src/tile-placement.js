@@ -79,6 +79,38 @@
   // Overlay canvas for preview (avoids CORS issues with getImageData)
   var overlayCanvas = null;
 
+  // Free-form decoration mode (for custom decorations from library)
+  var freeFormMode = false;
+
+  // Selected free-form decoration (for dragging/editing)
+  var selectedFreeForm = null; // { id, decoration }
+
+  // Dragging state
+  var isDragging = false;
+  var dragStartX = 0;
+  var dragStartY = 0;
+  var dragOffsetX = 0;
+  var dragOffsetY = 0;
+  var dragStartPos = null; // { x, y } for undo
+
+  // Free-form hover position for preview
+  var freeFormHoverPos = null; // { screenX, screenY }
+
+  // Preview decoration data (rendered by maze as part of normal draw cycle)
+  // When set, the maze will render this as a transparent preview during its draw()
+  var previewDecoration = null; // { canvasX, canvasY, scale, baseWidth, baseHeight, tileUrl, layer }
+
+  // Floating preview element (CSS-positioned, follows mouse)
+  var floatingPreview = null;
+  var floatingPreviewImg = null;
+  var placementScaleControl = null;
+  var placementScaleSlider = null;
+  var placementScaleValue = null;
+
+  // Current placement scale (adjustable before placing)
+  // Default to 0.04 for a reasonable starting size (500px * 0.04 * 5 = 100px)
+  var placementScale = 0.04;
+
   /**
    * Initialize tile placement functionality
    */
@@ -86,18 +118,133 @@
     var canvas = document.getElementById("maze");
     if (!canvas) return;
 
-    // Create overlay canvas for preview
+    // Create overlay canvas for preview (still used for grid-snapped decorations)
     createOverlayCanvas();
+
+    // Initialize floating preview elements for free-form mode
+    initFloatingPreview();
 
     canvas.addEventListener("click", handleCanvasClick);
     canvas.addEventListener("mousemove", handleCanvasMouseMove);
     canvas.addEventListener("mouseleave", handleCanvasMouseLeave);
+    canvas.addEventListener("mousedown", handleCanvasMouseDown);
+    canvas.addEventListener("mouseup", handleCanvasMouseUp);
+
+    // Escape key to exit placement mode
+    document.addEventListener("keydown", function(e) {
+      if (e.key === "Escape") {
+        if (selectedDecorationTile || selectedWallTool || selectedFloorTool) {
+          clearSelectedDecoration();
+          clearSelectedWallTool();
+          clearSelectedFloorTool();
+          // Redraw to clear any preview
+          if (typeof mazeNodes !== "undefined" && mazeNodes) {
+            mazeNodes.draw();
+          }
+        }
+      }
+    });
 
     // Initialize decoration palette UI
     initDecorationPalette();
 
     // Initialize export/import buttons
     initExportImport();
+  }
+
+  /**
+   * Initialize floating preview element and placement scale controls
+   */
+  function initFloatingPreview() {
+    floatingPreview = document.getElementById("freeform-preview");
+    if (floatingPreview) {
+      floatingPreviewImg = floatingPreview.querySelector("img");
+    }
+
+    placementScaleControl = document.getElementById("placement-scale-control");
+    placementScaleSlider = document.getElementById("placement-scale");
+    placementScaleValue = document.getElementById("placement-scale-value");
+
+    if (placementScaleSlider) {
+      placementScaleSlider.addEventListener("input", function () {
+        placementScale = parseFloat(placementScaleSlider.value);
+        if (placementScaleValue) {
+          placementScaleValue.textContent = placementScale.toFixed(2) + "x";
+        }
+        // Update floating preview size
+        updateFloatingPreviewSize();
+      });
+    }
+  }
+
+  /**
+   * Show/hide floating preview and placement scale control
+   */
+  function showFloatingPreview(show) {
+    if (floatingPreview) {
+      floatingPreview.style.display = show ? "block" : "none";
+    }
+    if (placementScaleControl) {
+      placementScaleControl.style.display = show ? "flex" : "none";
+    }
+  }
+
+  /**
+   * Update the floating preview image and size
+   */
+  function updateFloatingPreviewImage(imageUrl) {
+    if (!floatingPreviewImg) return;
+
+    if (imageUrl && previewImage) {
+      floatingPreviewImg.src = imageUrl;
+      updateFloatingPreviewSize();
+    }
+  }
+
+  /**
+   * Update floating preview size based on current placement scale and display scale
+   */
+  function updateFloatingPreviewSize() {
+    if (!floatingPreviewImg || !previewImage) return;
+
+    var imgWidth = previewImage.naturalWidth || previewImage.width;
+    var imgHeight = previewImage.naturalHeight || previewImage.height;
+
+    // Calculate the visual size on screen
+    // The placed decoration renders at: imgWidth * placementScale * displayScale (internal canvas pixels)
+    // Then scaled down by cssToInternalRatio for CSS pixels on screen
+    var mazeCanvas = document.getElementById("maze");
+    if (!mazeCanvas) return;
+
+    var rect = mazeCanvas.getBoundingClientRect();
+    // Get displayScale from mazeNodes global, with fallback
+    var displayScale = (typeof mazeNodes !== 'undefined' && mazeNodes && mazeNodes.displayScale) ? mazeNodes.displayScale : 1;
+    var cssToInternalRatio = mazeCanvas.width / rect.width;
+
+    // Visual CSS size = internal size / cssToInternalRatio
+    var visualWidth = (imgWidth * placementScale * displayScale) / cssToInternalRatio;
+    var visualHeight = (imgHeight * placementScale * displayScale) / cssToInternalRatio;
+
+    floatingPreviewImg.style.width = visualWidth + "px";
+    floatingPreviewImg.style.height = visualHeight + "px";
+  }
+
+  /**
+   * Position the floating preview at mouse cursor
+   */
+  function positionFloatingPreview(clientX, clientY) {
+    if (!floatingPreview || !floatingPreviewImg) return;
+
+    // Get current visual size
+    var width = parseFloat(floatingPreviewImg.style.width) || 64;
+    var height = parseFloat(floatingPreviewImg.style.height) || 64;
+
+    // Center horizontally, anchor at bottom (click point is where decoration base will be)
+    var left = clientX - width / 2;
+    var top = clientY - height;
+
+    floatingPreview.style.left = left + "px";
+    floatingPreview.style.top = top + "px";
   }
 
   /**
@@ -134,8 +281,14 @@
     var mazeCanvas = document.getElementById("maze");
     if (!mazeCanvas || !overlayCanvas) return;
 
+    // Match internal pixel dimensions
     overlayCanvas.width = mazeCanvas.width;
     overlayCanvas.height = mazeCanvas.height;
+
+    // IMPORTANT: Also match CSS display size to ensure visual alignment
+    var rect = mazeCanvas.getBoundingClientRect();
+    overlayCanvas.style.width = rect.width + "px";
+    overlayCanvas.style.height = rect.height + "px";
     overlayCanvas.style.left = mazeCanvas.offsetLeft + "px";
     overlayCanvas.style.top = mazeCanvas.offsetTop + "px";
   }
@@ -144,9 +297,81 @@
    * Handle mouse move on the maze canvas
    */
   function handleCanvasMouseMove(e) {
+    var canvas = e.target;
+    var rect = canvas.getBoundingClientRect();
+    var screenX = e.clientX - rect.left;
+    var screenY = e.clientY - rect.top;
+
+    // Handle free-form decoration dragging
+    if (isDragging && selectedFreeForm && mazeNodes) {
+      // Convert screen coords to logical coords (consistent with placement)
+      var displayScale = mazeNodes.displayScale || 1;
+      var mouseLogicalX = screenX / displayScale;
+      var mouseLogicalY = screenY / displayScale;
+      var newLogicalX = mouseLogicalX - dragOffsetX;
+      var newLogicalY = mouseLogicalY - dragOffsetY;
+
+      // Clamp to canvas bounds (in logical space)
+      var maxLogicalX = canvas.width / displayScale;
+      var maxLogicalY = canvas.height / displayScale;
+      newLogicalX = Math.max(0, Math.min(maxLogicalX, newLogicalX));
+      newLogicalY = Math.max(0, Math.min(maxLogicalY, newLogicalY));
+
+      mazeNodes.updateFreeFormDecoration(selectedFreeForm.id, { logicalX: newLogicalX, logicalY: newLogicalY });
+      clearPreview(); // Clear overlay to avoid ghosting
+      mazeNodes.draw();
+      return;
+    }
+
+    // Handle free-form preview (custom decorations that don't snap to grid)
+    // Set preview data and let maze render it during its draw cycle
+    if (freeFormMode && selectedDecorationTile && previewImage && mazeNodes) {
+      freeFormHoverPos = { screenX: screenX, screenY: screenY };
+      hoveredCell = null;
+      hoveredWallCell = null;
+      // Hide floating preview, use maze canvas instead
+      if (floatingPreview) {
+        floatingPreview.style.display = "none";
+      }
+
+      // Convert screen coordinates to logical coordinates (consistent with grid decorations)
+      // Grid decorations use: screenX / displayScale -> logical -> * displayScale when drawing
+      var displayScale = mazeNodes.displayScale || 1;
+      var logicalX = screenX / displayScale;
+      var logicalY = screenY / displayScale;
+
+      var imgWidth = previewImage.naturalWidth || previewImage.width || 64;
+      var imgHeight = previewImage.naturalHeight || previewImage.height || 64;
+
+      // Set preview decoration data - maze will render this during its draw()
+      // Store logical coordinates - drawing will multiply by displayScale
+      previewDecoration = {
+        logicalX: logicalX,
+        logicalY: logicalY,
+        scale: placementScale,
+        baseWidth: imgWidth,
+        baseHeight: imgHeight,
+        tileUrl: selectedDecorationTile,
+        layer: selectedLayer
+      };
+
+      // Ensure image is in cache for maze to use
+      if (!mazeNodes.decorationImages[selectedDecorationTile]) {
+        mazeNodes.decorationImages[selectedDecorationTile] = previewImage;
+      }
+
+      // Clear overlay (no longer used for free-form preview)
+      clearPreview();
+
+      // Trigger maze redraw which will include the preview
+      mazeNodes.draw();
+      return;
+    }
+
     // Need either decoration, wall, or floor tool selected
     if (!selectedDecorationTile && !selectedWallTool && !selectedFloorTool) {
       hoveredCell = null;
+      freeFormHoverPos = null;
       clearPreview();
       updateHoverInfo(null);
       return;
@@ -159,11 +384,6 @@
     ) {
       return;
     }
-
-    var canvas = e.target;
-    var rect = canvas.getBoundingClientRect();
-    var screenX = e.clientX - rect.left;
-    var screenY = e.clientY - rect.top;
 
     var tileWidth = mazeNodes.wallSize;
     var tileHeight = mazeNodes.wallSize * mazeNodes.isoRatio;
@@ -298,8 +518,18 @@
   function handleCanvasMouseLeave() {
     hoveredCell = null;
     hoveredWallCell = null;
+    freeFormHoverPos = null;
+    previewDecoration = null; // Clear preview decoration
     clearPreview();
     updateHoverInfo(null);
+    // Hide floating preview when mouse leaves canvas
+    if (floatingPreview) {
+      floatingPreview.style.display = "none";
+    }
+    // Redraw maze without preview
+    if (typeof mazeNodes !== "undefined" && mazeNodes) {
+      mazeNodes.draw();
+    }
   }
 
   /**
@@ -443,7 +673,10 @@
       return;
     }
 
-    // Draw decoration preview
+    // Note: Free-form decoration preview is now handled by the floating CSS element
+    // (floatingPreview) instead of canvas drawing. See positionFloatingPreview().
+
+    // Draw grid-snapped decoration preview
     if (!hoveredCell || !selectedDecorationTile || !previewImage) {
       return;
     }
@@ -495,6 +728,10 @@
       // Redraw preview if we're hovering
       if (hoveredCell) {
         drawPreview();
+      }
+      // Update floating preview for free-form mode
+      if (freeFormMode) {
+        updateFloatingPreviewImage(tileUrl);
       }
     };
     img.src = tileUrl;
@@ -570,8 +807,8 @@
    * Handle click on the maze canvas
    */
   function handleCanvasClick(e) {
-    // Check if any tool is selected
-    if (!selectedDecorationTile && !selectedWallTool && !selectedFloorTool) return;
+    // If we just finished dragging, don't process click
+    if (isDragging) return;
 
     // Check if maze exists
     if (
@@ -586,6 +823,15 @@
     var rect = canvas.getBoundingClientRect();
     var screenX = e.clientX - rect.left;
     var screenY = e.clientY - rect.top;
+
+    // Handle free-form placement (custom decorations)
+    if (freeFormMode && selectedDecorationTile) {
+      handleFreeFormPlacement(screenX, screenY, canvas);
+      return;
+    }
+
+    // Check if any tool is selected for grid-based operations
+    if (!selectedDecorationTile && !selectedWallTool && !selectedFloorTool) return;
 
     // Get maze parameters
     var tileWidth = mazeNodes.wallSize;
@@ -640,6 +886,175 @@
    * When clicking on the upper part of a wall, the floor-level calculation
    * returns the wrong cell. Only check immediate neighbors "in front".
    */
+  /**
+   * Handle free-form decoration placement (not grid-snapped)
+   */
+  function handleFreeFormPlacement(screenX, screenY, canvas) {
+    if (!mazeNodes || !selectedDecorationTile) return;
+
+    // Convert screen coordinates to logical coordinates (consistent with grid decorations)
+    var displayScale = mazeNodes.displayScale || 1;
+    var logicalX = screenX / displayScale;
+    var logicalY = screenY / displayScale;
+
+    // Get image dimensions for baseWidth/baseHeight
+    var baseWidth = 64;
+    var baseHeight = 64;
+    if (previewImage) {
+      baseWidth = previewImage.naturalWidth || previewImage.width || 64;
+      baseHeight = previewImage.naturalHeight || previewImage.height || 64;
+    }
+
+    // Use the user-controlled placement scale (from the slider)
+    var decorScale = placementScale;
+
+    // Create the free-form decoration - store logical coordinates
+    // Drawing will multiply by displayScale (consistent with grid decorations)
+    var decoration = {
+      tileUrl: selectedDecorationTile,
+      layer: selectedLayer,
+      logicalX: logicalX,
+      logicalY: logicalY,
+      scale: decorScale,
+      baseWidth: baseWidth,
+      baseHeight: baseHeight
+    };
+
+    // Ensure image is in the decoration images cache
+    if (!mazeNodes.decorationImages[selectedDecorationTile] && previewImage) {
+      mazeNodes.decorationImages[selectedDecorationTile] = previewImage;
+    }
+
+    var id = mazeNodes.addFreeFormDecoration(decoration);
+
+    // Add to undo stack
+    undoStack.push({
+      type: 'freeform-add',
+      id: id
+    });
+    if (undoStack.length > MAX_UNDO_STACK) {
+      undoStack.shift();
+    }
+    updateUndoButton();
+
+    // Clear preview decoration (we just placed it)
+    previewDecoration = null;
+
+    // Exit placement mode after placing
+    clearSelectedDecoration();
+
+    // Redraw
+    mazeNodes.draw();
+  }
+
+  /**
+   * Get the current preview decoration data (for maze to render)
+   */
+  function getPreviewDecoration() {
+    return previewDecoration;
+  }
+
+  /**
+   * Handle mousedown for free-form decoration dragging
+   */
+  function handleCanvasMouseDown(e) {
+    if (!mazeNodes) return;
+
+    var canvas = e.target;
+    var rect = canvas.getBoundingClientRect();
+    var screenX = e.clientX - rect.left;
+    var screenY = e.clientY - rect.top;
+
+    // Check if clicking on a free-form decoration
+    var hit = mazeNodes.getFreeFormDecorationAt(
+      screenX, screenY, canvas.width, canvas.height, mazeNodes.displayScale
+    );
+
+    if (hit) {
+      selectedFreeForm = hit;
+      isDragging = true;
+      dragStartX = screenX;
+      dragStartY = screenY;
+
+      // Get logical coordinates (support both old and new format)
+      var displayScale = mazeNodes.displayScale || 1;
+      var decLogicalX = hit.decoration.logicalX !== undefined
+        ? hit.decoration.logicalX
+        : (hit.decoration.canvasX / displayScale);
+      var decLogicalY = hit.decoration.logicalY !== undefined
+        ? hit.decoration.logicalY
+        : (hit.decoration.canvasY / displayScale);
+
+      // Store starting position for undo (in logical coords)
+      dragStartPos = { logicalX: decLogicalX, logicalY: decLogicalY };
+
+      // Calculate offset in logical coordinates
+      var clickLogicalX = screenX / displayScale;
+      var clickLogicalY = screenY / displayScale;
+      dragOffsetX = clickLogicalX - decLogicalX;
+      dragOffsetY = clickLogicalY - decLogicalY;
+
+      showFreeFormControls(true);
+      e.preventDefault();
+    } else {
+      // Clicked elsewhere - deselect
+      if (selectedFreeForm && !selectedDecorationTile) {
+        selectedFreeForm = null;
+        showFreeFormControls(false);
+      }
+    }
+  }
+
+  /**
+   * Handle mouseup for free-form decoration dragging
+   */
+  function handleCanvasMouseUp(e) {
+    if (isDragging && selectedFreeForm && dragStartPos && mazeNodes) {
+      // Check if actually moved (using logical coords)
+      var dec = mazeNodes.getFreeFormDecoration(selectedFreeForm.id);
+      var displayScale = mazeNodes.displayScale || 1;
+      var currentLogicalX = dec.logicalX !== undefined ? dec.logicalX : (dec.canvasX / displayScale);
+      var currentLogicalY = dec.logicalY !== undefined ? dec.logicalY : (dec.canvasY / displayScale);
+
+      if (dec && (currentLogicalX !== dragStartPos.logicalX || currentLogicalY !== dragStartPos.logicalY)) {
+        // Add to undo stack (using logical coords)
+        undoStack.push({
+          type: 'freeform-move',
+          id: selectedFreeForm.id,
+          previousLogicalX: dragStartPos.logicalX,
+          previousLogicalY: dragStartPos.logicalY
+        });
+        if (undoStack.length > MAX_UNDO_STACK) {
+          undoStack.shift();
+        }
+        updateUndoButton();
+      }
+    }
+    isDragging = false;
+    dragStartPos = null;
+  }
+
+  /**
+   * Show/hide free-form decoration controls
+   */
+  function showFreeFormControls(show) {
+    var controls = document.getElementById('freeform-controls');
+    if (controls) {
+      controls.style.display = show ? 'block' : 'none';
+
+      if (show && selectedFreeForm) {
+        var scaleSlider = document.getElementById('freeform-scale');
+        var scaleValue = document.getElementById('freeform-scale-value');
+        if (scaleSlider && selectedFreeForm.decoration) {
+          scaleSlider.value = selectedFreeForm.decoration.scale || 1;
+          if (scaleValue) {
+            scaleValue.textContent = (selectedFreeForm.decoration.scale || 1).toFixed(2) + 'x';
+          }
+        }
+      }
+    }
+  }
+
   function findWallCellAtClick(gridX, gridY) {
     if (!mazeNodes || !mazeNodes.matrix) return null;
 
@@ -837,6 +1252,58 @@
     if (typeof mazeNodes === "undefined") return;
 
     var lastAction = undoStack.pop();
+
+    // Handle free-form undo operations
+    if (lastAction.type === "freeform-add") {
+      mazeNodes.removeFreeFormDecoration(lastAction.id);
+      if (selectedFreeForm && selectedFreeForm.id === lastAction.id) {
+        selectedFreeForm = null;
+        showFreeFormControls(false);
+      }
+      updateUndoButton();
+      mazeNodes.draw();
+      return;
+    }
+
+    if (lastAction.type === "freeform-move") {
+      // Support both old (canvasX/Y) and new (logicalX/Y) undo formats
+      var updates = {};
+      if (lastAction.previousLogicalX !== undefined) {
+        updates.logicalX = lastAction.previousLogicalX;
+        updates.logicalY = lastAction.previousLogicalY;
+      } else {
+        updates.canvasX = lastAction.previousCanvasX;
+        updates.canvasY = lastAction.previousCanvasY;
+      }
+      mazeNodes.updateFreeFormDecoration(lastAction.id, updates);
+      updateUndoButton();
+      mazeNodes.draw();
+      return;
+    }
+
+    if (lastAction.type === "freeform-delete") {
+      // Restore the deleted decoration
+      mazeNodes.freeFormDecorations[lastAction.id] = lastAction.decoration;
+      updateUndoButton();
+      mazeNodes.loadDecorations().then(function () {
+        mazeNodes.draw();
+      });
+      return;
+    }
+
+    if (lastAction.type === "freeform-scale") {
+      mazeNodes.updateFreeFormDecoration(lastAction.id, {
+        scale: lastAction.previousScale
+      });
+      if (selectedFreeForm && selectedFreeForm.id === lastAction.id) {
+        showFreeFormControls(true);
+      }
+      updateUndoButton();
+      mazeNodes.draw();
+      return;
+    }
+
+    // Handle grid-based undo operations
     var coords = lastAction.key.split(",").map(Number);
     var gridX = coords[0];
     var gridY = coords[1];
@@ -903,6 +1370,9 @@
     // Clear other tools when decoration is selected
     selectedWallTool = null;
     selectedFloorTool = null;
+    // Reset free-form mode by default - decoration-library will set it to true for custom decorations
+    freeFormMode = false;
+    selectedFreeForm = null;
     updateToolSelection();
     loadPreviewImage(tileUrl);
     updatePaletteSelection();
@@ -917,9 +1387,122 @@
     previewImage = null;
     previewImageUrl = null;
     hoveredCell = null;
+    freeFormHoverPos = null;
+    freeFormMode = false;
     clearPreview();
+    showFloatingPreview(false);
     updatePaletteSelection();
     updateCursor();
+    // Restore cursor
+    var mazeCanvas = document.getElementById("maze");
+    if (mazeCanvas) {
+      mazeCanvas.classList.remove("freeform-placement-mode");
+    }
+  }
+
+  /**
+   * Set free-form mode (for custom decorations that don't snap to grid)
+   */
+  function setFreeFormMode(enabled) {
+    freeFormMode = enabled;
+    var mazeCanvas = document.getElementById("maze");
+
+    if (enabled) {
+      // Show placement scale control when entering free-form mode
+      showFloatingPreview(false); // We use canvas preview now
+      if (placementScaleControl) {
+        placementScaleControl.style.display = "flex";
+      }
+      // Hide cursor on maze canvas
+      if (mazeCanvas) {
+        mazeCanvas.classList.add("freeform-placement-mode");
+      }
+    } else {
+      selectedFreeForm = null;
+      showFreeFormControls(false);
+      showFloatingPreview(false);
+      // Show cursor again
+      if (mazeCanvas) {
+        mazeCanvas.classList.remove("freeform-placement-mode");
+      }
+    }
+  }
+
+  /**
+   * Get current free-form mode state
+   */
+  function getFreeFormMode() {
+    return freeFormMode;
+  }
+
+  /**
+   * Delete the currently selected free-form decoration
+   */
+  function deleteSelectedFreeForm() {
+    if (!selectedFreeForm || !mazeNodes) return;
+
+    var decoration = mazeNodes.getFreeFormDecoration(selectedFreeForm.id);
+    if (decoration) {
+      // Add to undo stack
+      undoStack.push({
+        type: 'freeform-delete',
+        id: selectedFreeForm.id,
+        decoration: JSON.parse(JSON.stringify(decoration))
+      });
+      if (undoStack.length > MAX_UNDO_STACK) {
+        undoStack.shift();
+      }
+      updateUndoButton();
+
+      mazeNodes.removeFreeFormDecoration(selectedFreeForm.id);
+      selectedFreeForm = null;
+      showFreeFormControls(false);
+      mazeNodes.draw();
+    }
+  }
+
+  /**
+   * Scale the currently selected free-form decoration
+   */
+  function scaleFreeForm(newScale) {
+    if (!selectedFreeForm || !mazeNodes) return;
+
+    var decoration = mazeNodes.getFreeFormDecoration(selectedFreeForm.id);
+    if (decoration) {
+      var previousScale = decoration.scale || 1;
+
+      // Add to undo stack
+      undoStack.push({
+        type: 'freeform-scale',
+        id: selectedFreeForm.id,
+        previousScale: previousScale
+      });
+      if (undoStack.length > MAX_UNDO_STACK) {
+        undoStack.shift();
+      }
+      updateUndoButton();
+
+      mazeNodes.updateFreeFormDecoration(selectedFreeForm.id, { scale: newScale });
+      mazeNodes.draw();
+    }
+  }
+
+  /**
+   * Bring selected free-form decoration to front
+   */
+  function bringFreeFormToFront() {
+    if (!selectedFreeForm || !mazeNodes) return;
+    mazeNodes.bringFreeFormToFront(selectedFreeForm.id);
+    mazeNodes.draw();
+  }
+
+  /**
+   * Send selected free-form decoration to back
+   */
+  function sendFreeFormToBack() {
+    if (!selectedFreeForm || !mazeNodes) return;
+    mazeNodes.sendFreeFormToBack(selectedFreeForm.id);
+    mazeNodes.draw();
   }
 
   /**
@@ -1025,10 +1608,17 @@
    * Update visual selection state in palette
    */
   function updatePaletteSelection() {
+    // Update built-in palette items
     var items = document.querySelectorAll(".palette-item");
     items.forEach(function (item) {
       var isSelected = item.dataset.tile === selectedDecorationTile;
       item.classList.toggle("selected", isSelected);
+    });
+
+    // Also update custom decoration items
+    var customItems = document.querySelectorAll(".custom-decoration-item");
+    customItems.forEach(function (item) {
+      item.classList.remove("selected");
     });
   }
 
@@ -1259,5 +1849,14 @@
     },
     saveCanvasState: saveCanvasState,
     DECORATION_CATEGORIES: DECORATION_CATEGORIES,
+    // Free-form decoration functions
+    setFreeFormMode: setFreeFormMode,
+    getFreeFormMode: getFreeFormMode,
+    deleteSelectedFreeForm: deleteSelectedFreeForm,
+    scaleFreeForm: scaleFreeForm,
+    bringFreeFormToFront: bringFreeFormToFront,
+    sendFreeFormToBack: sendFreeFormToBack,
+    // Preview decoration (for maze to render during draw cycle)
+    getPreviewDecoration: getPreviewDecoration,
   };
 })(typeof self !== "undefined" ? self : this);

@@ -388,6 +388,297 @@
       object-fit: contain;
     }
 
+    /* Custom Decoration Library */
+    .decoration-library-section {
+      margin-top: 1em;
+      padding-top: 1em;
+      border-top: 1px solid #ddd;
+    }
+
+    .decoration-library-section h5 {
+      margin: 0 0 0.5em 0;
+      font-size: 0.9em;
+      color: #555;
+    }
+
+    .upload-zone {
+      border: 2px dashed #ccc;
+      border-radius: 4px;
+      padding: 12px;
+      text-align: center;
+      margin-bottom: 10px;
+      background: #fafafa;
+      transition:
+        border-color 0.2s,
+        background-color 0.2s;
+    }
+
+    .upload-zone.drag-over {
+      border-color: #3377ff;
+      background: #f0f8ff;
+    }
+
+    .upload-zone p {
+      margin: 0;
+      font-size: 0.85em;
+      color: #666;
+    }
+
+    .upload-zone button {
+      background: #3377ff;
+      color: white;
+      border: none;
+      padding: 4px 12px;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 0.85em;
+    }
+
+    .upload-zone button:hover {
+      background: #2266ee;
+    }
+
+    .upload-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 8px;
+      justify-content: center;
+    }
+
+    .upload-controls select {
+      padding: 4px 8px;
+      font-size: 0.85em;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+
+    .category-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .category-controls select {
+      flex: 1;
+      padding: 4px 8px;
+      font-size: 0.85em;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+
+    .category-controls button {
+      padding: 4px 8px;
+      font-size: 0.8em;
+      background: #eee;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .category-controls button:hover {
+      background: #ddd;
+    }
+
+    .custom-decoration-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+      gap: 6px;
+      max-height: 180px;
+      overflow-y: auto;
+      padding: 4px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    .custom-decoration-item {
+      position: relative;
+      aspect-ratio: 1;
+      border: 2px solid transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f9f9f9;
+      transition:
+        border-color 0.15s,
+        background-color 0.15s;
+    }
+
+    .custom-decoration-item:hover {
+      border-color: #3377ff;
+      background: #f0f0f0;
+    }
+
+    .custom-decoration-item.selected {
+      border-color: #3377ff;
+      background: #e8f0ff;
+    }
+
+    .custom-decoration-item img {
+      max-width: 90%;
+      max-height: 90%;
+      object-fit: contain;
+    }
+
+    .custom-decoration-item .delete-btn {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #ff5555;
+      color: white;
+      border: none;
+      font-size: 12px;
+      line-height: 1;
+      cursor: pointer;
+      display: none;
+      padding: 0;
+    }
+
+    .custom-decoration-item:hover .delete-btn {
+      display: block;
+    }
+
+    .custom-decoration-item .delete-btn:hover {
+      background: #ff3333;
+    }
+
+    .library-empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      color: #999;
+      font-size: 0.85em;
+      padding: 20px;
+    }
+
+    .storage-info {
+      font-size: 0.75em;
+      color: #888;
+      margin-top: 6px;
+      text-align: right;
+    }
+
+    .storage-info.storage-warning {
+      color: #cc6600;
+      font-weight: bold;
+    }
+
+    /* Free-form decoration controls */
+    .freeform-controls {
+      margin-top: 1em;
+      padding: 10px;
+      background: #e8f0ff;
+      border: 1px solid #3377ff;
+      border-radius: 4px;
+    }
+
+    .freeform-controls label {
+      font-size: 0.85em;
+      margin-right: 8px;
+    }
+
+    .freeform-controls input[type="range"] {
+      width: 100px;
+      vertical-align: middle;
+    }
+
+    .freeform-scale-value {
+      font-size: 0.85em;
+      margin-left: 4px;
+    }
+
+    .freeform-zorder {
+      margin-top: 8px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .freeform-controls button {
+      padding: 4px 10px;
+      font-size: 0.8em;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .freeform-controls button:hover {
+      background: #f0f0f0;
+    }
+
+    .freeform-controls button.danger {
+      background: #ffeeee;
+      border-color: #cc6666;
+      color: #cc3333;
+    }
+
+    .freeform-controls button.danger:hover {
+      background: #ffdddd;
+    }
+
+    /* Hide cursor when in free-form placement mode */
+    #maze.freeform-placement-mode {
+      cursor: none !important;
+    }
+
+    /* Floating preview for free-form decoration placement */
+    #freeform-preview {
+      position: fixed;
+      pointer-events: none;
+      z-index: 1000;
+      opacity: 0.7;
+      display: none;
+      transform-origin: center bottom;
+    }
+
+    #freeform-preview img {
+      display: block;
+      max-width: none;
+    }
+
+    /* Placement scale control (shown during free-form placement mode) */
+    .placement-scale-control {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 255, 255, 0.95);
+      padding: 10px 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      z-index: 1001;
+      display: none;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .placement-scale-control label {
+      font-size: 0.9em;
+      font-weight: 500;
+    }
+
+    .placement-scale-control input[type="range"] {
+      width: 150px;
+      vertical-align: middle;
+    }
+
+    .placement-scale-control .scale-value {
+      font-size: 0.85em;
+      min-width: 3em;
+    }
+
+    .placement-scale-control .hint {
+      font-size: 0.75em;
+      color: #666;
+      margin-left: 10px;
+    }
+
     .palette-actions {
       display: flex;
       gap: 0.5em;
@@ -859,6 +1150,36 @@
       background: #e8e8e8;
     }
 
+    .apply-changes-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75em;
+      padding: 0.5em;
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 4px;
+      margin: 0.5em 0;
+    }
+
+    .apply-btn {
+      padding: 6px 12px;
+      background: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .apply-btn:hover {
+      background: #43a047;
+    }
+
+    .apply-hint {
+      font-size: 0.85em;
+      color: #856404;
+    }
+
     .saved-maps-list {
       display: flex;
       flex-direction: column;
@@ -1239,6 +1560,12 @@
       min-height: 100vh;
       padding-bottom: 80px;
       /* Space for collapsed panel */
+      transition: padding-bottom 0.3s ease;
+    }
+
+    .maze-area.palette-expanded {
+      padding-bottom: 420px;
+      /* Space for expanded decoration palette */
     }
 
     /* Floating settings cog button */
@@ -1380,8 +1707,8 @@
     </div>
   </div>
   <script>
-    (function() {
-      var PASSWORD = "dungeon";  // Change this to your desired password
+    (function () {
+      var PASSWORD = "dungeon"; // Change this to your desired password
       var AUTH_KEY = "maze-generator-authenticated";
 
       var overlay = document.getElementById("password-overlay");
@@ -1407,7 +1734,7 @@
       }
 
       submit.addEventListener("click", checkPassword);
-      input.addEventListener("keypress", function(e) {
+      input.addEventListener("keypress", function (e) {
         if (e.key === "Enter") {
           checkPassword();
         }
@@ -1447,7 +1774,7 @@
 
         <p>
           <label for="display-scale">Display scale:</label>
-          <input id="display-scale" type="number" name="" value="5" min="0.25" max="4" step="0.25" />
+          <input id="display-scale" type="number" name="" value="5" min="0.25" step="0.25" />
         </p>
 
         <p>
@@ -1480,6 +1807,12 @@
           <label for="height">Rows:</label>
           <input id="height" type="number" name="height" value="10" min="3" max="200" />
         </p>
+        <p class="apply-changes-row" id="apply-changes-row" style="display: none">
+          <button type="button" id="apply-maze-changes" class="apply-btn">
+            Apply Changes
+          </button>
+          <span class="apply-hint">Maze structure changed - regeneration required</span>
+        </p>
         <p>
           <label for="entry">Maze entries:</label>
           <select id="entry" name="entry">
@@ -1511,7 +1844,8 @@
         </p>
         <p>
           <label for="entry-indicator-font-size">Indicator font size:</label>
-          <input id="entry-indicator-font-size" type="number" name="entry-indicator-font-size" value="8" min="1" max="100" step="1" />
+          <input id="entry-indicator-font-size" type="number" name="entry-indicator-font-size" value="8" min="1"
+            max="100" step="1" />
         </p>
         <p>
           <label for="bias">Bias:</label>
@@ -1766,8 +2100,12 @@
           Backup &amp; Restore all saved maps and projects.
         </p>
         <div class="database-tools">
-          <button type="button" id="export-database-btn">Export Database</button>
-          <button type="button" id="import-database-btn">Import Database</button>
+          <button type="button" id="export-database-btn">
+            Export Database
+          </button>
+          <button type="button" id="import-database-btn">
+            Import Database
+          </button>
           <input type="file" id="import-database-file" accept=".json" style="display: none" />
         </div>
       </div>
@@ -1779,7 +2117,9 @@
         <div class="project-selector">
           <label for="current-project">Project:</label>
           <select id="current-project"></select>
-          <button type="button" id="new-project-btn" title="New Project">+</button>
+          <button type="button" id="new-project-btn" title="New Project">
+            +
+          </button>
         </div>
         <div class="save-map-section">
           <label for="save-map-name">Save Current Map</label>
@@ -1792,7 +2132,9 @@
         </div>
         <div class="saved-maps-header">
           <h4>Saved Maps</h4>
-          <button type="button" id="download-all-btn" class="download-all-btn">Download All</button>
+          <button type="button" id="download-all-btn" class="download-all-btn">
+            Download All
+          </button>
         </div>
         <div class="saved-maps-list" id="saved-maps-list">
           <div class="no-saved-maps">No saved maps yet</div>
@@ -1881,6 +2223,62 @@
         <h5>Hazards</h5>
         <div class="palette-items"></div>
       </div>
+
+      <!-- Custom Decoration Library -->
+      <div class="decoration-library-section">
+        <h5>Custom Decorations</h5>
+
+        <!-- Upload area -->
+        <div class="upload-zone" id="decoration-upload-zone">
+          <input type="file" id="decoration-file-input" accept="image/png" multiple hidden />
+          <p>
+            Drop PNG files here or
+            <button type="button" id="browse-decorations-btn">Browse</button>
+          </p>
+          <div class="upload-controls">
+            <label>Category:</label>
+            <select id="decoration-upload-category">
+              <option value="monsters">Monsters</option>
+              <option value="props" selected>Props</option>
+              <option value="npcs">NPCs</option>
+              <option value="effects">Effects</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Category filter -->
+        <div class="category-controls">
+          <select id="decoration-category-filter">
+            <option value="all">All Categories</option>
+          </select>
+          <button type="button" id="add-category-btn">+ Category</button>
+        </div>
+
+        <!-- Library grid -->
+        <div class="custom-decoration-grid" id="custom-decoration-grid"></div>
+
+        <!-- Storage indicator -->
+        <div class="storage-info">
+          <span id="storage-used">0 B</span> / ~5 MB used
+        </div>
+      </div>
+
+      <!-- Free-form decoration controls (shown when a free-form decoration is selected) -->
+      <div class="freeform-controls" id="freeform-controls" style="display: none">
+        <div>
+          <label>Scale:</label>
+          <input type="range" id="freeform-scale" min="0.01" max="3" step="0.01" value="1" />
+          <span class="freeform-scale-value" id="freeform-scale-value">1.0x</span>
+        </div>
+        <div class="freeform-zorder">
+          <button type="button" id="freeform-to-front">Bring to Front</button>
+          <button type="button" id="freeform-to-back">Send to Back</button>
+          <button type="button" id="freeform-delete" class="danger">
+            Delete
+          </button>
+        </div>
+      </div>
+
       <div class="palette-actions">
         <button type="button" id="undo-decoration" disabled>Undo</button>
         <button type="button" id="deselect-tool">Deselect Tool</button>
@@ -1917,6 +2315,7 @@
   <script type="text/javascript" src="src/stroke-logic.js"></script>
   <script type="text/javascript" src="src/maze-iso.js"></script>
   <script type="text/javascript" src="src/tile-placement.js"></script>
+  <script type="text/javascript" src="src/decoration-library.js"></script>
   <script type="text/javascript" src="src/solver.js"></script>
   <script type="text/javascript" src="src/app.js"></script>
   <script type="text/javascript" src="src/human-colours-en-gb.js"></script>
@@ -1930,6 +2329,71 @@
       if (typeof initMaze === "function") {
         initMaze();
       }
+
+      // Initialize custom decoration library
+      if (
+        typeof DecorationLibrary !== "undefined" &&
+        DecorationLibrary.init
+      ) {
+        DecorationLibrary.init();
+      }
+
+      // Initialize free-form decoration controls
+      (function initFreeFormControls() {
+        var scaleSlider = document.getElementById("freeform-scale");
+        var scaleValue = document.getElementById("freeform-scale-value");
+        var toFrontBtn = document.getElementById("freeform-to-front");
+        var toBackBtn = document.getElementById("freeform-to-back");
+        var deleteBtn = document.getElementById("freeform-delete");
+
+        if (scaleSlider) {
+          scaleSlider.addEventListener("input", function () {
+            var val = parseFloat(this.value);
+            if (scaleValue) {
+              scaleValue.textContent = val.toFixed(2) + "x";
+            }
+            if (
+              typeof TilePlacement !== "undefined" &&
+              TilePlacement.scaleFreeForm
+            ) {
+              TilePlacement.scaleFreeForm(val);
+            }
+          });
+        }
+
+        if (toFrontBtn) {
+          toFrontBtn.addEventListener("click", function () {
+            if (
+              typeof TilePlacement !== "undefined" &&
+              TilePlacement.bringFreeFormToFront
+            ) {
+              TilePlacement.bringFreeFormToFront();
+            }
+          });
+        }
+
+        if (toBackBtn) {
+          toBackBtn.addEventListener("click", function () {
+            if (
+              typeof TilePlacement !== "undefined" &&
+              TilePlacement.sendFreeFormToBack
+            ) {
+              TilePlacement.sendFreeFormToBack();
+            }
+          });
+        }
+
+        if (deleteBtn) {
+          deleteBtn.addEventListener("click", function () {
+            if (
+              typeof TilePlacement !== "undefined" &&
+              TilePlacement.deleteSelectedFreeForm
+            ) {
+              TilePlacement.deleteSelectedFreeForm();
+            }
+          });
+        }
+      })();
 
       // Settings panel toggle
       var settingsToggle = document.getElementById("settings-toggle");
@@ -1946,21 +2410,30 @@
       // Decoration palette collapse toggle
       var paletteCollapse = document.getElementById("palette-collapse");
       var decorationPalette = document.getElementById("decoration-palette");
+      var mazeArea = document.getElementById("maze-area");
       var collapseText = paletteCollapse
         ? paletteCollapse.querySelector(".collapse-text")
         : null;
+
+      function updatePaletteState() {
+        var isCollapsed = decorationPalette.classList.contains("collapsed");
+        if (collapseText) {
+          collapseText.textContent = isCollapsed ? "Expand" : "Collapse";
+        }
+        if (mazeArea) {
+          if (isCollapsed) {
+            mazeArea.classList.remove("palette-expanded");
+          } else {
+            mazeArea.classList.add("palette-expanded");
+          }
+        }
+      }
 
       if (paletteCollapse && decorationPalette) {
         paletteCollapse.addEventListener("click", function (e) {
           e.stopPropagation();
           decorationPalette.classList.toggle("collapsed");
-          if (collapseText) {
-            collapseText.textContent = decorationPalette.classList.contains(
-              "collapsed",
-            )
-              ? "Expand"
-              : "Collapse";
-          }
+          updatePaletteState();
         });
 
         // Also allow clicking the header to toggle
@@ -1969,12 +2442,7 @@
           paletteHeader.addEventListener("click", function (e) {
             if (e.target === paletteHeader || e.target.tagName === "H4") {
               decorationPalette.classList.toggle("collapsed");
-              if (collapseText) {
-                collapseText.textContent =
-                  decorationPalette.classList.contains("collapsed")
-                    ? "Expand"
-                    : "Collapse";
-              }
+              updatePaletteState();
             }
           });
         }
@@ -2024,14 +2492,28 @@
           var data = localStorage.getItem(PROJECTS_KEY);
           var projects = data ? JSON.parse(data) : [];
           // Ensure default project exists
-          if (!projects.find(function(p) { return p.id === DEFAULT_PROJECT_ID; })) {
-            projects.unshift({ id: DEFAULT_PROJECT_ID, name: "Default", timestamp: Date.now() });
+          if (
+            !projects.find(function (p) {
+              return p.id === DEFAULT_PROJECT_ID;
+            })
+          ) {
+            projects.unshift({
+              id: DEFAULT_PROJECT_ID,
+              name: "Default",
+              timestamp: Date.now(),
+            });
             saveProjectsToStorage(projects);
           }
           return projects;
         } catch (e) {
           console.warn("Failed to load projects:", e);
-          return [{ id: DEFAULT_PROJECT_ID, name: "Default", timestamp: Date.now() }];
+          return [
+            {
+              id: DEFAULT_PROJECT_ID,
+              name: "Default",
+              timestamp: Date.now(),
+            },
+          ];
         }
       }
 
@@ -2044,7 +2526,9 @@
       }
 
       function getCurrentProjectId() {
-        return localStorage.getItem(CURRENT_PROJECT_KEY) || DEFAULT_PROJECT_ID;
+        return (
+          localStorage.getItem(CURRENT_PROJECT_KEY) || DEFAULT_PROJECT_ID
+        );
       }
 
       function setCurrentProjectId(projectId) {
@@ -2058,7 +2542,7 @@
         var newProject = {
           id: Date.now().toString(),
           name: name,
-          timestamp: Date.now()
+          timestamp: Date.now(),
         };
         projects.push(newProject);
         saveProjectsToStorage(projects);
@@ -2067,7 +2551,9 @@
 
       function renameProject(projectId, newName) {
         var projects = getProjects();
-        var project = projects.find(function(p) { return p.id === projectId; });
+        var project = projects.find(function (p) {
+          return p.id === projectId;
+        });
         if (project) {
           project.name = newName;
           saveProjectsToStorage(projects);
@@ -2080,12 +2566,14 @@
           return;
         }
         var projects = getProjects();
-        projects = projects.filter(function(p) { return p.id !== projectId; });
+        projects = projects.filter(function (p) {
+          return p.id !== projectId;
+        });
         saveProjectsToStorage(projects);
 
         // Move maps from deleted project to default
         var maps = getAllMaps();
-        maps.forEach(function(map) {
+        maps.forEach(function (map) {
           if (map.projectId === projectId) {
             map.projectId = DEFAULT_PROJECT_ID;
           }
@@ -2100,7 +2588,9 @@
 
       function getMapCountForProject(projectId) {
         var maps = getAllMaps();
-        return maps.filter(function(m) { return (m.projectId || DEFAULT_PROJECT_ID) === projectId; }).length;
+        return maps.filter(function (m) {
+          return (m.projectId || DEFAULT_PROJECT_ID) === projectId;
+        }).length;
       }
 
       function renderProjectSelector() {
@@ -2110,10 +2600,20 @@
         var projects = getProjects();
         var currentId = getCurrentProjectId();
 
-        select.innerHTML = projects.map(function(p) {
-          var selected = p.id === currentId ? " selected" : "";
-          return '<option value="' + p.id + '"' + selected + '>' + escapeHtml(p.name) + '</option>';
-        }).join("");
+        select.innerHTML = projects
+          .map(function (p) {
+            var selected = p.id === currentId ? " selected" : "";
+            return (
+              '<option value="' +
+              p.id +
+              '"' +
+              selected +
+              ">" +
+              escapeHtml(p.name) +
+              "</option>"
+            );
+          })
+          .join("");
       }
 
       function renderProjectsList() {
@@ -2122,45 +2622,71 @@
 
         var projects = getProjects();
 
-        container.innerHTML = projects.map(function(project) {
-          var mapCount = getMapCountForProject(project.id);
-          var isDefault = project.id === DEFAULT_PROJECT_ID;
-          var deleteBtn = isDefault ? "" : '<button type="button" class="delete-project-btn" data-project-id="' + project.id + '">Delete</button>';
+        container.innerHTML = projects
+          .map(function (project) {
+            var mapCount = getMapCountForProject(project.id);
+            var isDefault = project.id === DEFAULT_PROJECT_ID;
+            var deleteBtn = isDefault
+              ? ""
+              : '<button type="button" class="delete-project-btn" data-project-id="' +
+              project.id +
+              '">Delete</button>';
 
-          return '<div class="project-item" data-project-id="' + project.id + '">' +
-            '<span class="project-name">' + escapeHtml(project.name) + '</span>' +
-            '<span class="project-count">' + mapCount + ' map' + (mapCount !== 1 ? 's' : '') + '</span>' +
-            '<button type="button" class="rename-project-btn" data-project-id="' + project.id + '">Rename</button>' +
-            deleteBtn +
-            '</div>';
-        }).join("");
+            return (
+              '<div class="project-item" data-project-id="' +
+              project.id +
+              '">' +
+              '<span class="project-name">' +
+              escapeHtml(project.name) +
+              "</span>" +
+              '<span class="project-count">' +
+              mapCount +
+              " map" +
+              (mapCount !== 1 ? "s" : "") +
+              "</span>" +
+              '<button type="button" class="rename-project-btn" data-project-id="' +
+              project.id +
+              '">Rename</button>' +
+              deleteBtn +
+              "</div>"
+            );
+          })
+          .join("");
 
         // Add event listeners
-        container.querySelectorAll(".rename-project-btn").forEach(function(btn) {
-          btn.addEventListener("click", function() {
-            var projectId = this.getAttribute("data-project-id");
-            var projects = getProjects();
-            var project = projects.find(function(p) { return p.id === projectId; });
-            if (!project) return;
+        container
+          .querySelectorAll(".rename-project-btn")
+          .forEach(function (btn) {
+            btn.addEventListener("click", function () {
+              var projectId = this.getAttribute("data-project-id");
+              var projects = getProjects();
+              var project = projects.find(function (p) {
+                return p.id === projectId;
+              });
+              if (!project) return;
 
-            var newName = prompt("Enter new name:", project.name);
-            if (newName && newName.trim()) {
-              renameProject(projectId, newName.trim());
-              renderProjectSelector();
-              renderProjectsList();
-            }
+              var newName = prompt("Enter new name:", project.name);
+              if (newName && newName.trim()) {
+                renameProject(projectId, newName.trim());
+                renderProjectSelector();
+                renderProjectsList();
+              }
+            });
           });
-        });
 
-        container.querySelectorAll(".delete-project-btn").forEach(function(btn) {
-          btn.addEventListener("click", function() {
-            var projectId = this.getAttribute("data-project-id");
-            if (confirm("Delete this project? Maps will be moved to Default.")) {
-              deleteProject(projectId);
-              renderProjectsList();
-            }
+        container
+          .querySelectorAll(".delete-project-btn")
+          .forEach(function (btn) {
+            btn.addEventListener("click", function () {
+              var projectId = this.getAttribute("data-project-id");
+              if (
+                confirm("Delete this project? Maps will be moved to Default.")
+              ) {
+                deleteProject(projectId);
+                renderProjectsList();
+              }
+            });
           });
-        });
       }
 
       // Get all maps (unfiltered)
@@ -2182,7 +2708,7 @@
       function getSavedMaps() {
         var currentProjectId = getCurrentProjectId();
         var allMaps = getAllMaps();
-        return allMaps.filter(function(m) {
+        return allMaps.filter(function (m) {
           return (m.projectId || DEFAULT_PROJECT_ID) === currentProjectId;
         });
       }
@@ -2312,7 +2838,9 @@
         }
 
         var maps = getAllMaps();
-        var mapIndex = maps.findIndex(function(m) { return m.id === currentMapId; });
+        var mapIndex = maps.findIndex(function (m) {
+          return m.id === currentMapId;
+        });
 
         if (mapIndex === -1) {
           alert("Map not found");
@@ -2448,7 +2976,8 @@
 
           var map = maps[currentIndex];
           if (downloadAllBtn) {
-            downloadAllBtn.textContent = "Downloading " + (currentIndex + 1) + "/" + totalMaps + "...";
+            downloadAllBtn.textContent =
+              "Downloading " + (currentIndex + 1) + "/" + totalMaps + "...";
           }
 
           if (mazeNodes.importMaze(map.data)) {
@@ -2706,7 +3235,7 @@
       // Project selector event listeners
       var projectSelector = document.getElementById("current-project");
       if (projectSelector) {
-        projectSelector.addEventListener("change", function() {
+        projectSelector.addEventListener("change", function () {
           setCurrentProjectId(this.value);
           updateMapNameInput();
         });
@@ -2715,7 +3244,7 @@
       // New project button (in maps tab)
       var newProjectBtn = document.getElementById("new-project-btn");
       if (newProjectBtn) {
-        newProjectBtn.addEventListener("click", function() {
+        newProjectBtn.addEventListener("click", function () {
           var name = prompt("Enter project name:");
           if (name && name.trim()) {
             var project = createProject(name.trim());
@@ -2730,8 +3259,10 @@
       var addProjectBtn = document.getElementById("add-project-btn");
       var newProjectNameInput = document.getElementById("new-project-name");
       if (addProjectBtn) {
-        addProjectBtn.addEventListener("click", function() {
-          var name = newProjectNameInput ? newProjectNameInput.value.trim() : "";
+        addProjectBtn.addEventListener("click", function () {
+          var name = newProjectNameInput
+            ? newProjectNameInput.value.trim()
+            : "";
           if (name) {
             createProject(name);
             if (newProjectNameInput) newProjectNameInput.value = "";
@@ -2751,15 +3282,19 @@
       // Database Export/Import
       function exportDatabase() {
         var data = {
-          version: 1,
+          version: 2,
           exportDate: new Date().toISOString(),
           projects: getProjects(),
           maps: getAllMaps(),
-          currentProject: getCurrentProjectId()
+          currentProject: getCurrentProjectId(),
+          customDecorations:
+            typeof DecorationLibrary !== "undefined"
+              ? DecorationLibrary.exportLibrary()
+              : null,
         };
 
         var json = JSON.stringify(data, null, 2);
-        var blob = new Blob([json], { type: "application/json" });
+        var blob = new Blob([json], {type: "application/json"});
         var url = URL.createObjectURL(blob);
 
         var link = document.createElement("a");
@@ -2774,7 +3309,7 @@
 
       function importDatabase(file) {
         var reader = new FileReader();
-        reader.onload = function(e) {
+        reader.onload = function (e) {
           try {
             var data = JSON.parse(e.target.result);
 
@@ -2786,7 +3321,12 @@
             var mapCount = data.maps ? data.maps.length : 0;
             var projectCount = data.projects ? data.projects.length : 0;
 
-            var confirmMsg = "Import " + mapCount + " maps and " + projectCount + " projects?\n\n";
+            var confirmMsg =
+              "Import " +
+              mapCount +
+              " maps and " +
+              projectCount +
+              " projects?\n\n";
             confirmMsg += "Choose how to handle existing data:\n";
             confirmMsg += "• OK = Merge (add to existing)\n";
             confirmMsg += "• Cancel = Abort import";
@@ -2797,8 +3337,10 @@
 
             // Merge projects (avoid duplicates by ID)
             var existingProjects = getProjects();
-            var existingProjectIds = existingProjects.map(function(p) { return p.id; });
-            data.projects.forEach(function(project) {
+            var existingProjectIds = existingProjects.map(function (p) {
+              return p.id;
+            });
+            data.projects.forEach(function (project) {
               if (existingProjectIds.indexOf(project.id) === -1) {
                 existingProjects.push(project);
               }
@@ -2807,13 +3349,23 @@
 
             // Merge maps (avoid duplicates by ID)
             var existingMaps = getAllMaps();
-            var existingMapIds = existingMaps.map(function(m) { return m.id; });
-            data.maps.forEach(function(map) {
+            var existingMapIds = existingMaps.map(function (m) {
+              return m.id;
+            });
+            data.maps.forEach(function (map) {
               if (existingMapIds.indexOf(map.id) === -1) {
                 existingMaps.push(map);
               }
             });
             saveMapsToStorage(existingMaps);
+
+            // Import custom decorations if present
+            if (
+              data.customDecorations &&
+              typeof DecorationLibrary !== "undefined"
+            ) {
+              DecorationLibrary.importLibrary(data.customDecorations);
+            }
 
             // Refresh UI
             renderProjectSelector();
@@ -2821,7 +3373,18 @@
             renderSavedMapsList();
             updateMapNameInput();
 
-            alert("Import complete! Added " + mapCount + " maps and " + projectCount + " projects.");
+            var decorationMsg = data.customDecorations
+              ? " and custom decorations"
+              : "";
+            alert(
+              "Import complete! Added " +
+              mapCount +
+              " maps and " +
+              projectCount +
+              " projects" +
+              decorationMsg +
+              ".",
+            );
           } catch (err) {
             console.error("Import failed:", err);
             alert("Failed to import: " + err.message);
@@ -2840,10 +3403,10 @@
       var importDbBtn = document.getElementById("import-database-btn");
       var importDbFile = document.getElementById("import-database-file");
       if (importDbBtn && importDbFile) {
-        importDbBtn.addEventListener("click", function() {
+        importDbBtn.addEventListener("click", function () {
           importDbFile.click();
         });
-        importDbFile.addEventListener("change", function() {
+        importDbFile.addEventListener("change", function () {
           if (this.files && this.files[0]) {
             importDatabase(this.files[0]);
             this.value = ""; // Reset for next import
@@ -2878,11 +3441,134 @@
             document.body.removeChild(link);
           } catch (err) {
             alert(
-              "Cannot export PNG: canvas contains cross-origin images. Try running from a local server."
+              "Cannot export PNG: canvas contains cross-origin images. Try running from a local server.",
             );
             console.error("toDataURL failed:", err);
           }
         });
+      }
+
+      // Track destructive setting changes (require maze regeneration)
+      var applyChangesRow = document.getElementById("apply-changes-row");
+      var applyMazeChangesBtn = document.getElementById("apply-maze-changes");
+      var pathWidthInput = document.getElementById("path-width");
+      var pathHeightInput = document.getElementById("path-height");
+      var columnsInput = document.getElementById("width");
+      var rowsInput = document.getElementById("height");
+
+      // Store initial values to detect changes
+      var initialStructureValues = {
+        pathWidth: pathWidthInput ? pathWidthInput.value : "",
+        pathHeight: pathHeightInput ? pathHeightInput.value : "",
+        columns: columnsInput ? columnsInput.value : "",
+        rows: rowsInput ? rowsInput.value : "",
+      };
+
+      function checkStructureChanges() {
+        var changed =
+          (pathWidthInput &&
+            pathWidthInput.value !== initialStructureValues.pathWidth) ||
+          (pathHeightInput &&
+            pathHeightInput.value !== initialStructureValues.pathHeight) ||
+          (columnsInput &&
+            columnsInput.value !== initialStructureValues.columns) ||
+          (rowsInput && rowsInput.value !== initialStructureValues.rows);
+        if (applyChangesRow) {
+          applyChangesRow.style.display = changed ? "flex" : "none";
+        }
+      }
+
+      function applyMazeChanges() {
+        // Check if there are decorations
+        var hasDecorations =
+          typeof mazeNodes !== "undefined" &&
+          mazeNodes.decorations &&
+          Object.keys(mazeNodes.decorations).length > 0;
+
+        if (hasDecorations) {
+          if (
+            !confirm(
+              "This will regenerate the maze and remove all decorations. Continue?",
+            )
+          ) {
+            return;
+          }
+        }
+
+        // Regenerate maze
+        if (typeof initMaze === "function") {
+          initMaze();
+          clearCurrentMap();
+        }
+
+        // Update initial values to current
+        initialStructureValues.pathWidth = pathWidthInput
+          ? pathWidthInput.value
+          : "";
+        initialStructureValues.pathHeight = pathHeightInput
+          ? pathHeightInput.value
+          : "";
+        initialStructureValues.columns = columnsInput
+          ? columnsInput.value
+          : "";
+        initialStructureValues.rows = rowsInput ? rowsInput.value : "";
+
+        // Hide the apply row
+        if (applyChangesRow) {
+          applyChangesRow.style.display = "none";
+        }
+      }
+
+      // Add listeners to destructive inputs
+      [pathWidthInput, pathHeightInput, columnsInput, rowsInput].forEach(
+        function (input) {
+          if (input) {
+            input.addEventListener("change", checkStructureChanges);
+            input.addEventListener("input", checkStructureChanges);
+          }
+        },
+      );
+
+      if (applyMazeChangesBtn) {
+        applyMazeChangesBtn.addEventListener("click", applyMazeChanges);
+      }
+
+      // Live update wall size and display scale
+      var wallSizeInput = document.getElementById("wall-size");
+      var displayScaleInput = document.getElementById("display-scale");
+
+      function updateMazeSize() {
+        if (
+          typeof mazeNodes === "undefined" ||
+          !mazeNodes.matrix ||
+          !mazeNodes.matrix.length
+        ) {
+          return;
+        }
+        if (wallSizeInput) {
+          mazeNodes.wallSize = parseInt(wallSizeInput.value) || 10;
+        }
+        if (displayScaleInput) {
+          mazeNodes.displayScale = parseFloat(displayScaleInput.value) || 1.0;
+        }
+        mazeNodes.loadTileset().then(function () {
+          mazeNodes.draw();
+          if (
+            typeof TilePlacement !== "undefined" &&
+            TilePlacement.saveCanvasState
+          ) {
+            TilePlacement.saveCanvasState();
+          }
+        });
+      }
+
+      if (wallSizeInput) {
+        wallSizeInput.addEventListener("change", updateMazeSize);
+        wallSizeInput.addEventListener("input", updateMazeSize);
+      }
+      if (displayScaleInput) {
+        displayScaleInput.addEventListener("change", updateMazeSize);
+        displayScaleInput.addEventListener("input", updateMazeSize);
       }
 
       // Live update entry positions when dropdown or flip checkboxes change
@@ -2925,7 +3611,9 @@
       }
 
       // Live toggle for entry indicators
-      var showEntryIndicatorsCheckbox = document.getElementById("show-entry-indicators");
+      var showEntryIndicatorsCheckbox = document.getElementById(
+        "show-entry-indicators",
+      );
       if (showEntryIndicatorsCheckbox) {
         showEntryIndicatorsCheckbox.addEventListener("change", function () {
           if (
@@ -2933,14 +3621,17 @@
             mazeNodes.matrix &&
             mazeNodes.matrix.length
           ) {
-            mazeNodes.showEntryIndicators = showEntryIndicatorsCheckbox.checked;
+            mazeNodes.showEntryIndicators =
+              showEntryIndicatorsCheckbox.checked;
             mazeNodes.draw();
           }
         });
       }
 
       // Live update for entry indicator font size
-      var entryIndicatorFontSizeInput = document.getElementById("entry-indicator-font-size");
+      var entryIndicatorFontSizeInput = document.getElementById(
+        "entry-indicator-font-size",
+      );
       if (entryIndicatorFontSizeInput) {
         entryIndicatorFontSizeInput.addEventListener("input", function () {
           if (
@@ -2948,7 +3639,8 @@
             mazeNodes.matrix &&
             mazeNodes.matrix.length
           ) {
-            mazeNodes.entryIndicatorFontSize = parseFloat(entryIndicatorFontSizeInput.value) || 0;
+            mazeNodes.entryIndicatorFontSize =
+              parseFloat(entryIndicatorFontSizeInput.value) || 0;
             mazeNodes.draw();
           }
         });
@@ -2977,6 +3669,19 @@
       }
     })();
   </script>
+
+  <!-- Floating preview for free-form decoration placement -->
+  <div id="freeform-preview">
+    <img src="" alt="Preview" />
+  </div>
+
+  <!-- Placement scale control (shown during free-form placement mode) -->
+  <div class="placement-scale-control" id="placement-scale-control">
+    <label>Size:</label>
+    <input type="range" id="placement-scale" min="0.01" max="0.5" step="0.01" value="0.04" />
+    <span class="scale-value" id="placement-scale-value">0.04x</span>
+    <span class="hint">Click to place</span>
+  </div>
 </body>
 
 </html>
