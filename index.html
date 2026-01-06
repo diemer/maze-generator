@@ -2399,24 +2399,19 @@
 
     .border-preview-item .reroll-btn {
       position: absolute;
-      top: 4px;
-      right: 4px;
-      width: 24px;
-      height: 24px;
-      border: none;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.9);
+      top: 8px;
+      left: 8px;
+      width: 22px;
+      height: 22px;
+      border: 2px solid #667eea;
+      border-radius: 4px;
+      background: white;
       cursor: pointer;
-      opacity: 0;
-      transition: opacity 0.2s;
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 3;
-    }
-
-    .border-preview-item:hover .reroll-btn {
-      opacity: 1;
+      color: #667eea;
     }
 
     .border-preview-item .reroll-btn:hover {
@@ -5477,7 +5472,7 @@
           mapThumb.style.justifyContent = "center";
           mapThumb.style.fontSize = "10px";
           mapThumb.style.color = "#999";
-          mapThumb.style.zIndex = "0";
+          mapThumb.style.zIndex = "2";
 
           // Show map thumbnail
           var thumbImg = document.createElement("img");
