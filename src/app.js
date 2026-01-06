@@ -276,9 +276,6 @@ function initMaze() {
         if (maze.matrix.length) {
             mazeNodes = maze;
         }
-
-        location.href = "#";
-        location.href = "#generate";
     });
 }
 

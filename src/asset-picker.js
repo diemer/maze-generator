@@ -579,30 +579,6 @@ function initEndMarkerOffset() {
   }
 }
 
-// Initialize wall size listener for live updates
-function initWallSizeListener() {
-  const wallSizeInput = document.getElementById("wall-size");
-  if (wallSizeInput) {
-    function updateWallSize() {
-      if (
-        typeof mazeNodes === "undefined" ||
-        !mazeNodes.matrix ||
-        !mazeNodes.matrix.length
-      ) {
-        return;
-      }
-      const newWallSize = parseInt(wallSizeInput.value) || 10;
-      mazeNodes.wallSize = newWallSize;
-      mazeNodes.draw();
-      if (typeof TilePlacement !== "undefined" && TilePlacement.saveCanvasState) {
-        TilePlacement.saveCanvasState();
-      }
-    }
-    wallSizeInput.addEventListener("change", updateWallSize);
-    wallSizeInput.addEventListener("input", updateWallSize);
-  }
-}
-
 // Initialize end marker presets
 function initEndMarkerPresets() {
   const presetStairs = document.getElementById("preset-stairs");
@@ -694,7 +670,6 @@ document.addEventListener("DOMContentLoaded", function () {
   initIsoRatio();
   initEndMarkerOffset();
   initEndMarkerPresets();
-  initWallSizeListener();
   initPreviews();
 
   // Initialize tile placement for decorations
