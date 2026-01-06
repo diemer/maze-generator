@@ -19,50 +19,27 @@ CREATE TABLE IF NOT EXISTS maze_project_border_settings (
 -- Enable RLS
 ALTER TABLE maze_project_border_settings ENABLE ROW LEVEL SECURITY;
 
--- Users can read settings for projects they own
-CREATE POLICY "Users can read own project border settings"
+-- Authenticated users can access all border settings
+CREATE POLICY "Authenticated users can read border settings"
     ON maze_project_border_settings FOR SELECT
     TO authenticated
-    USING (
-        project_id IN (
-            SELECT id FROM maze_projects WHERE user_id = auth.uid()
-        )
-    );
+    USING (true);
 
--- Users can insert settings for projects they own
-CREATE POLICY "Users can insert own project border settings"
+CREATE POLICY "Authenticated users can insert border settings"
     ON maze_project_border_settings FOR INSERT
     TO authenticated
-    WITH CHECK (
-        project_id IN (
-            SELECT id FROM maze_projects WHERE user_id = auth.uid()
-        )
-    );
+    WITH CHECK (true);
 
--- Users can update settings for projects they own
-CREATE POLICY "Users can update own project border settings"
+CREATE POLICY "Authenticated users can update border settings"
     ON maze_project_border_settings FOR UPDATE
     TO authenticated
-    USING (
-        project_id IN (
-            SELECT id FROM maze_projects WHERE user_id = auth.uid()
-        )
-    )
-    WITH CHECK (
-        project_id IN (
-            SELECT id FROM maze_projects WHERE user_id = auth.uid()
-        )
-    );
+    USING (true)
+    WITH CHECK (true);
 
--- Users can delete settings for projects they own
-CREATE POLICY "Users can delete own project border settings"
+CREATE POLICY "Authenticated users can delete border settings"
     ON maze_project_border_settings FOR DELETE
     TO authenticated
-    USING (
-        project_id IN (
-            SELECT id FROM maze_projects WHERE user_id = auth.uid()
-        )
-    );
+    USING (true);
 
 -- Function to update timestamp on change
 CREATE OR REPLACE FUNCTION update_border_settings_timestamp()
