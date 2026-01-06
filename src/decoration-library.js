@@ -496,6 +496,24 @@
   function selectCustomDecoration(decoration) {
     // Use the tile-placement module's API if available
     if (root.TilePlacement) {
+      // Toggle behavior: if same decoration is selected, deselect it
+      var currentSelection = root.TilePlacement.getSelectedDecoration
+        ? root.TilePlacement.getSelectedDecoration()
+        : null;
+
+      if (currentSelection === decoration.dataUrl) {
+        // Same decoration - deselect it
+        if (root.TilePlacement.clearSelectedDecoration) {
+          root.TilePlacement.clearSelectedDecoration();
+        }
+        // Clear visual selection
+        var items = document.querySelectorAll(".custom-decoration-item");
+        items.forEach(function (item) {
+          item.classList.remove("selected");
+        });
+        return;
+      }
+
       if (root.TilePlacement.setSelectedDecoration) {
         root.TilePlacement.setSelectedDecoration(decoration.dataUrl);
       }

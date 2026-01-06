@@ -321,21 +321,8 @@
       object-fit: contain;
     }
 
-    /* Decoration Palette */
-    .decoration-palette {
-      margin-top: 1em;
-      padding: 1em;
-      background: #f5f5f5;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      max-width: 500px;
-    }
-
-    .decoration-palette h4 {
-      margin: 0;
-    }
-
-    .decoration-palette .palette-hint {
+    /* Decoration Drawer Content */
+    .decoration-drawer .palette-hint {
       font-size: 0.85em;
       color: #666;
       margin: 0 0 1em 0;
@@ -583,7 +570,8 @@
       border-radius: 6px;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
       pointer-events: auto;
-      transform: translateX(-50%); /* Center horizontally */
+      transform: translateX(-50%);
+      /* Center horizontally */
     }
 
     .freeform-controls label {
@@ -666,6 +654,33 @@
       color: #3377ff;
       margin-left: 8px;
       font-style: italic;
+    }
+
+    /* Grid decoration controls (simpler than free-form) */
+    .grid-decoration-controls {
+      position: fixed;
+      z-index: 1000;
+      padding: 6px 10px;
+      background: rgba(232, 240, 255, 0.95);
+      border: 1px solid #3377ff;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      pointer-events: auto;
+      transform: translateX(-50%);
+    }
+
+    .grid-decoration-controls button {
+      padding: 4px 12px;
+      font-size: 0.8em;
+      background: #ffeeee;
+      color: #cc3333;
+      border: 1px solid #cc6666;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+
+    .grid-decoration-controls button:hover {
+      background: #ffdddd;
     }
 
     /* Hide cursor when in free-form placement mode */
@@ -916,13 +931,22 @@
     }
 
     .hover-info {
-      padding: 0.5em;
-      margin-bottom: 0.5em;
+      position: fixed;
+      top: 10px;
+      right: 20px;
+      padding: 0.5em 1em;
       font-size: 0.85em;
       background: #e3f2fd;
       border: 1px solid #90caf9;
       border-radius: 4px;
       color: #1565c0;
+      z-index: 1003;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      transition: right 0.3s ease;
+    }
+
+    body.decorations-open .hover-info {
+      right: 360px;
     }
 
     .hover-info:empty {
@@ -985,7 +1009,7 @@
       pointer-events: none;
     }
 
-    .segmented-buttons .segment input[type="radio"]:checked + span {
+    .segmented-buttons .segment input[type="radio"]:checked+span {
       color: white;
     }
 
@@ -1002,7 +1026,7 @@
       margin-bottom: 1em;
     }
 
-    .wall-tools > label {
+    .wall-tools>label {
       font-weight: 500;
       font-size: 0.9em;
       color: #333;
@@ -1016,10 +1040,37 @@
       margin-bottom: 1em;
     }
 
-    .layer-toggle > label:first-child {
+    .layer-toggle>label:first-child {
       font-weight: 500;
       font-size: 0.9em;
       color: #333;
+    }
+
+    /* Decoration tools */
+    .decoration-tools {
+      margin-bottom: 1em;
+    }
+
+    .tool-btn {
+      padding: 0.4em 0.8em;
+      border: 1px solid #ccc;
+      background: #f5f5f5;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85em;
+      color: #333;
+      transition: all 0.15s ease;
+    }
+
+    .tool-btn:hover {
+      background: #e8e8e8;
+      border-color: #999;
+    }
+
+    .tool-btn.selected {
+      background: #ff6b6b;
+      color: white;
+      border-color: #ff5252;
     }
 
     /* Toggle switch */
@@ -1058,18 +1109,18 @@
       background-color: white;
       transition: 0.2s;
       border-radius: 50%;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     }
 
-    .switch input:checked + .slider {
+    .switch input:checked+.slider {
       background-color: #1976d2;
     }
 
-    .switch input:checked + .slider:before {
+    .switch input:checked+.slider:before {
       transform: translateX(20px);
     }
 
-    .switch input:focus + .slider {
+    .switch input:focus+.slider {
       box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.3);
     }
 
@@ -1112,6 +1163,7 @@
       z-index: 1002;
       overflow-y: auto;
       padding: 1em;
+      box-sizing: border-box;
       transform: translateX(0);
       transition: transform 0.3s ease;
     }
@@ -1120,15 +1172,20 @@
       transform: translateX(-100%);
     }
 
-    /* Push main content when drawer is open */
-    .maze-area,
-    .decoration-palette {
-      transition: margin-left 0.3s ease;
+    /* Push main content when drawers are open */
+    .maze-area {
+      transition:
+        margin-left 0.3s ease,
+        margin-right 0.3s ease;
     }
 
-    body.drawer-open .maze-area,
-    body.drawer-open .decoration-palette {
+    body.drawer-open .maze-area {
       margin-left: calc(320px + 2em);
+    }
+
+    body.decorations-open #maze,
+    body.decorations-open #maze-preview-overlay {
+      margin-right: calc(340px + 2em);
     }
 
     .settings-panel .controls {
@@ -1656,24 +1713,14 @@
     .maze-area {
       position: relative;
       min-height: 100vh;
-      padding-bottom: 80px;
-      /* Space for collapsed panel */
-      transition: padding-bottom 0.3s ease;
+      width: fit-content;
     }
 
-    .maze-area.palette-expanded {
-      padding-bottom: 420px;
-      /* Space for expanded decoration palette */
-    }
-
-    /* Floating settings cog button */
-    .settings-toggle-btn {
+    /* Drawer notch tabs */
+    .drawer-notch {
       position: fixed;
-      top: 1em;
-      left: 1em;
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
+      top: 50%;
+      transform: translateY(-50%);
       background: #3377ff;
       color: white;
       border: none;
@@ -1683,103 +1730,90 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition:
-        transform 0.3s ease,
-        background 0.2s ease,
-        left 0.3s ease;
+      padding: 12px 8px;
+      font-size: 0.85em;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      transition: background 0.2s ease;
     }
 
-    .settings-toggle-btn:hover {
-      background: #0055ff;
+    .drawer-notch:hover {
+      background: #2266dd;
     }
 
-    .settings-toggle-btn.active {
-      left: 336px;
-      transform: rotate(90deg);
+    .drawer-notch.active {
+      background: #1a5acc;
     }
 
-    .settings-toggle-btn svg {
-      width: 24px;
-      height: 24px;
-      fill: currentColor;
+    .drawer-notch span {
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
     }
 
-    /* Sticky decoration panel at bottom */
-    .decoration-palette {
-      position: fixed;
-      bottom: 0;
+    /* Left notch (Settings) */
+    .drawer-notch.left {
       left: 0;
-      right: 0;
-      margin: 0;
-      max-width: none;
-      border-radius: 8px 8px 0 0;
-      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
-      z-index: 1000;
-      max-height: 400px;
-      overflow-y: auto;
+      border-radius: 0 8px 8px 0;
       transition:
-        max-height 0.3s ease,
-        padding 0.3s ease;
+        left 0.3s ease,
+        background 0.2s ease;
     }
 
-    .decoration-palette.collapsed {
-      max-height: 48px;
-      overflow: hidden;
-      padding: 0.5em 1em;
+    .drawer-notch.left.active {
+      left: 320px;
     }
 
-    .decoration-palette.collapsed .palette-content {
-      display: none;
+    .drawer-notch.left span {
+      transform: rotate(180deg);
     }
 
-    .palette-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      cursor: pointer;
+    /* Right notch (Decorations) */
+    .drawer-notch.right {
+      right: -7px;
+      border-radius: 8px 0 0 8px;
+      transition:
+        right 0.3s ease,
+        background 0.2s ease;
+    }
+
+    .drawer-notch.right.active {
+      right: calc(340px - 7px);
+    }
+
+    /* Right-side decoration drawer */
+    .decoration-drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 340px;
+      height: 100vh;
+      background: #fff;
+      box-shadow: -2px 0 12px rgba(0, 0, 0, 0.15);
+      z-index: 1002;
+      overflow-y: auto;
+      padding: 1em;
+      box-sizing: border-box;
+      transform: translateX(100%);
+      transition: transform 0.3s ease;
+    }
+
+    .decoration-drawer.open {
+      transform: translateX(0);
+    }
+
+    .decoration-drawer h4 {
+      margin: 0 0 1em 0;
       padding-bottom: 0.5em;
-      margin-bottom: 0.5em;
       border-bottom: 1px solid #ddd;
     }
 
-    .decoration-palette.collapsed .palette-header {
-      border-bottom: none;
-      padding-bottom: 0;
-      margin-bottom: 0;
+    /* Hide old palette header in drawer mode */
+    .decoration-drawer .palette-header {
+      display: none;
     }
 
-    .palette-header h4 {
-      margin: 0;
-      display: flex;
-      align-items: center;
-      gap: 0.5em;
-    }
-
-    .collapse-toggle {
-      background: none;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      padding: 4px 8px;
-      cursor: pointer;
-      font-size: 0.85em;
-      color: #666;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .collapse-toggle:hover {
-      background: #e8e8e8;
-      border-color: #999;
-    }
-
-    .collapse-toggle .arrow {
-      transition: transform 0.2s ease;
-      font-size: 0.9em;
-    }
-
-    .decoration-palette.collapsed .collapse-toggle .arrow {
-      transform: rotate(180deg);
+    .decoration-drawer .palette-content {
+      display: block !important;
     }
 
     /* Adjust canvas container for sticky panel */
@@ -1842,12 +1876,9 @@
     })();
   </script>
 
-  <!-- Floating Settings Toggle Button -->
-  <button type="button" class="settings-toggle-btn" id="settings-toggle" title="Toggle Settings">
-    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z" />
-    </svg>
+  <!-- Settings Drawer Notch -->
+  <button type="button" class="drawer-notch left" id="settings-toggle" title="Toggle Settings">
+    <span>Settings</span>
   </button>
 
   <div class="settings-panel hidden" id="settings-panel">
@@ -2270,26 +2301,32 @@
   </div>
   <!-- End maze-area -->
 
-  <!-- Decoration Palette -->
-  <div class="decoration-palette collapsed" id="decoration-palette">
-    <div class="palette-header" id="palette-header">
-      <h4>Decorations</h4>
-      <button type="button" class="collapse-toggle" id="palette-collapse">
-        <span class="arrow">&#x25BC;</span>
-        <span class="collapse-text">Expand</span>
-      </button>
-    </div>
+  <!-- Decorations Drawer Notch -->
+  <button type="button" class="drawer-notch right" id="decorations-toggle" title="Toggle Decorations">
+    <span>Decorations</span>
+  </button>
+
+  <!-- Decorations Drawer -->
+  <div class="hover-info" id="hover-info"></div>
+
+  <div class="decoration-drawer" id="decoration-drawer">
+    <h4>Decorations</h4>
     <div class="palette-content">
-      <div class="hover-info" id="hover-info"></div>
       <p class="palette-hint">
         Select a decoration, then click on a floor tile to place it
       </p>
       <div class="wall-tools">
         <label>Wall Tools:</label>
         <div class="segmented-buttons">
-          <button type="button" id="wall-tool-add" class="wall-tool-btn">Add</button>
-          <button type="button" id="wall-tool-remove" class="wall-tool-btn">Remove</button>
-          <button type="button" id="floor-tool-clear" class="wall-tool-btn">Clear Floor</button>
+          <button type="button" id="wall-tool-add" class="wall-tool-btn">
+            Add
+          </button>
+          <button type="button" id="wall-tool-remove" class="wall-tool-btn">
+            Remove
+          </button>
+          <button type="button" id="floor-tool-clear" class="wall-tool-btn">
+            Clear Floor
+          </button>
         </div>
       </div>
       <div class="layer-toggle">
@@ -2314,6 +2351,9 @@
           </div>
         </label>
       </div>
+      <div class="decoration-tools">
+        <button type="button" id="decoration-eraser" class="tool-btn" title="Erase decorations">Erase</button>
+      </div>
       <div class="palette-category" data-category="furniture">
         <h5>Furniture</h5>
         <div class="palette-items"></div>
@@ -2337,7 +2377,8 @@
 
         <!-- Upload area -->
         <div class="upload-zone" id="decoration-upload-zone">
-          <input type="file" id="decoration-file-input" accept="image/png,image/svg+xml,image/jpeg,image/gif,image/webp" multiple hidden />
+          <input type="file" id="decoration-file-input" accept="image/png,image/svg+xml,image/jpeg,image/gif,image/webp"
+            multiple hidden />
           <p>
             Drop images here or
             <button type="button" id="browse-decorations-btn">Browse</button>
@@ -2382,6 +2423,7 @@
     </div>
     <!-- End palette-content -->
   </div>
+  <!-- End decoration-drawer -->
 
   <!-- FAB - Download Map -->
   <button type="button" class="fab-download" id="fab-download" title="Download Map">
@@ -2401,24 +2443,34 @@
 
   <!-- Floating free-form decoration controls (positioned under selected decoration) -->
   <div class="freeform-controls" id="freeform-controls" style="display: none">
-    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
       <span>
         <label>Scale:</label>
         <input type="range" id="freeform-scale" min="0.01" max="3" step="0.01" value="1" />
         <span class="freeform-scale-value" id="freeform-scale-value">1.0x</span>
       </span>
-      <span style="display: flex; align-items: center; gap: 4px;">
+      <span style="display: flex; align-items: center; gap: 4px">
         <label>Clip:</label>
-        <button type="button" id="freeform-clip-left" class="clip-toggle" title="Clip bottom-left (SW)">&#9699;</button>
-        <button type="button" id="freeform-clip-right" class="clip-toggle" title="Clip bottom-right (SE)">&#9698;</button>
-        <span id="clip-adjust-hint" class="clip-hint" style="display: none;">Move to adjust, click to confirm</span>
+        <button type="button" id="freeform-clip-left" class="clip-toggle" title="Clip bottom-left (SW)">
+          &#9699;
+        </button>
+        <button type="button" id="freeform-clip-right" class="clip-toggle" title="Clip bottom-right (SE)">
+          &#9698;
+        </button>
+        <span id="clip-adjust-hint" class="clip-hint" style="display: none">Move to adjust, click to confirm</span>
       </span>
     </div>
     <div class="freeform-zorder">
       <button type="button" id="freeform-to-front">Front</button>
       <button type="button" id="freeform-to-back">Back</button>
-      <button type="button" id="freeform-delete" class="danger">Delete</button>
+      <button type="button" id="freeform-delete" class="danger">
+        Delete
+      </button>
     </div>
+  </div>
+
+  <div class="grid-decoration-controls" id="grid-decoration-controls" style="display: none">
+    <button type="button" id="grid-decoration-delete" class="danger">Delete</button>
   </div>
 
   <script type="text/javascript" src="src/globals.js"></script>
@@ -2508,6 +2560,21 @@
         }
       })();
 
+      // Grid decoration delete button
+      (function () {
+        var gridDeleteBtn = document.getElementById("grid-decoration-delete");
+        if (gridDeleteBtn) {
+          gridDeleteBtn.addEventListener("click", function () {
+            if (
+              typeof TilePlacement !== "undefined" &&
+              TilePlacement.deleteSelectedGridDecoration
+            ) {
+              TilePlacement.deleteSelectedGridDecoration();
+            }
+          });
+        }
+      })();
+
       // Settings panel toggle
       var settingsToggle = document.getElementById("settings-toggle");
       var settingsPanel = document.getElementById("settings-panel");
@@ -2520,45 +2587,16 @@
         });
       }
 
-      // Decoration palette collapse toggle
-      var paletteCollapse = document.getElementById("palette-collapse");
-      var decorationPalette = document.getElementById("decoration-palette");
-      var mazeArea = document.getElementById("maze-area");
-      var collapseText = paletteCollapse
-        ? paletteCollapse.querySelector(".collapse-text")
-        : null;
+      // Decoration drawer toggle
+      var decorationsToggle = document.getElementById("decorations-toggle");
+      var decorationDrawer = document.getElementById("decoration-drawer");
 
-      function updatePaletteState() {
-        var isCollapsed = decorationPalette.classList.contains("collapsed");
-        if (collapseText) {
-          collapseText.textContent = isCollapsed ? "Expand" : "Collapse";
-        }
-        if (mazeArea) {
-          if (isCollapsed) {
-            mazeArea.classList.remove("palette-expanded");
-          } else {
-            mazeArea.classList.add("palette-expanded");
-          }
-        }
-      }
-
-      if (paletteCollapse && decorationPalette) {
-        paletteCollapse.addEventListener("click", function (e) {
-          e.stopPropagation();
-          decorationPalette.classList.toggle("collapsed");
-          updatePaletteState();
+      if (decorationsToggle && decorationDrawer) {
+        decorationsToggle.addEventListener("click", function () {
+          decorationDrawer.classList.toggle("open");
+          decorationsToggle.classList.toggle("active");
+          document.body.classList.toggle("decorations-open");
         });
-
-        // Also allow clicking the header to toggle
-        var paletteHeader = document.getElementById("palette-header");
-        if (paletteHeader) {
-          paletteHeader.addEventListener("click", function (e) {
-            if (e.target === paletteHeader || e.target.tagName === "H4") {
-              decorationPalette.classList.toggle("collapsed");
-              updatePaletteState();
-            }
-          });
-        }
       }
 
       // Settings panel tabs

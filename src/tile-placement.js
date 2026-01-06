@@ -16,6 +16,12 @@
   // Floor tool mode: 'clear' or null
   var selectedFloorTool = null;
 
+  // Decoration eraser mode
+  var decorationEraserMode = false;
+
+  // Selected grid decoration for manipulation
+  var selectedGridDecoration = null; // { gridX, gridY, decoration }
+
   // Undo stack for placements (decorations and walls)
   // Each entry: { type: 'decoration'|'wall', key: "x,y", previous: ... }
   var undoStack = [];
@@ -643,8 +649,8 @@
       return;
     }
 
-    // Need either decoration, wall, or floor tool selected
-    if (!selectedDecorationTile && !selectedWallTool && !selectedFloorTool) {
+    // Need either decoration, wall, floor tool, or eraser selected
+    if (!selectedDecorationTile && !selectedWallTool && !selectedFloorTool && !decorationEraserMode) {
       hoveredCell = null;
       freeFormHoverPos = null;
       clearPreview();
@@ -763,6 +769,21 @@
           hoveredCell = null;
           drawPreview();
         }
+      } else if (decorationEraserMode) {
+        // Track which floor cell would have decoration erased
+        var cellToErase = isFloor ? { x: coords.gridX, y: coords.gridY } : null;
+
+        // Only redraw if hovered cell changed
+        if (
+          !hoveredWallCell ||
+          !cellToErase ||
+          hoveredWallCell.x !== cellToErase.x ||
+          hoveredWallCell.y !== cellToErase.y
+        ) {
+          hoveredWallCell = cellToErase;
+          hoveredCell = null;
+          drawPreview();
+        }
       } else {
         hoveredCell = null;
         hoveredWallCell = null;
@@ -851,7 +872,7 @@
     var scale = mazeNodes.displayScale || 1;
 
     // Draw wall tool or floor tool highlight
-    if (hoveredWallCell && (selectedWallTool || selectedFloorTool)) {
+    if (hoveredWallCell && (selectedWallTool || selectedFloorTool || decorationEraserMode)) {
       var j = hoveredWallCell.x;
       var i = hoveredWallCell.y;
 
@@ -861,7 +882,10 @@
       // Choose color based on tool
       var fillColor;
       var strokeColor;
-      if (selectedFloorTool === "clear") {
+      if (decorationEraserMode) {
+        fillColor = "#ff6b6b";
+        strokeColor = "#ff5252";
+      } else if (selectedFloorTool === "clear") {
         fillColor = "#888888";
         strokeColor = "#555555";
       } else if (selectedWallTool === "remove") {
@@ -1105,9 +1129,6 @@
       return;
     }
 
-    // Check if any tool is selected for grid-based operations
-    if (!selectedDecorationTile && !selectedWallTool && !selectedFloorTool) return;
-
     // Get maze parameters
     var tileWidth = mazeNodes.wallSize;
     var tileHeight = mazeNodes.wallSize * mazeNodes.isoRatio;
@@ -1132,6 +1153,11 @@
 
     // Validate bounds
     if (gridX < 0 || gridX >= matrixCols || gridY < 0 || gridY >= matrixRows) {
+      // Clicked outside grid - deselect grid decoration if any
+      if (selectedGridDecoration) {
+        selectedGridDecoration = null;
+        showGridDecorationControls(false);
+      }
       return;
     }
 
@@ -1150,9 +1176,57 @@
       return;
     }
 
+    // Handle decoration eraser
+    if (decorationEraserMode) {
+      handleDecorationErase(gridX, gridY, pixel, key);
+      return;
+    }
+
     // Handle decoration tool
     if (selectedDecorationTile) {
       handleDecorationEdit(gridX, gridY, pixel, key);
+      return;
+    }
+
+    // No tool active - check for grid decoration selection
+    // Check clicked cell and cells "behind" it in isometric space
+    var cellsToCheck = [
+      { x: gridX, y: gridY },
+      { x: gridX, y: gridY + 1 },
+      { x: gridX - 1, y: gridY + 1 },
+      { x: gridX + 1, y: gridY + 1 },
+    ];
+
+    var foundDecoration = null;
+    var foundGridX = gridX;
+    var foundGridY = gridY;
+
+    for (var i = 0; i < cellsToCheck.length; i++) {
+      var cell = cellsToCheck[i];
+      var decoration = mazeNodes.getDecoration(cell.x, cell.y);
+      if (decoration) {
+        foundDecoration = decoration;
+        foundGridX = cell.x;
+        foundGridY = cell.y;
+        break;
+      }
+    }
+
+    if (foundDecoration) {
+      // Select the grid decoration
+      selectedGridDecoration = {
+        gridX: foundGridX,
+        gridY: foundGridY,
+        decoration: foundDecoration
+      };
+      showGridDecorationControls(true);
+      positionGridDecorationControls(foundGridX, foundGridY);
+    } else {
+      // Clicked empty cell - deselect
+      if (selectedGridDecoration) {
+        selectedGridDecoration = null;
+        showGridDecorationControls(false);
+      }
     }
   }
 
@@ -1442,6 +1516,113 @@
     controls.style.top = fixedY + 'px';
   }
 
+  /**
+   * Show or hide grid decoration controls
+   */
+  function showGridDecorationControls(show) {
+    var controls = document.getElementById('grid-decoration-controls');
+    if (controls) {
+      controls.style.display = show ? 'block' : 'none';
+    }
+  }
+
+  /**
+   * Position grid decoration controls below the selected cell
+   */
+  function positionGridDecorationControls(gridX, gridY) {
+    var controls = document.getElementById('grid-decoration-controls');
+    if (!controls || !mazeNodes) return;
+    if (controls.style.display === 'none') return;
+
+    var canvas = document.getElementById("maze");
+    if (!canvas) return;
+
+    var rect = canvas.getBoundingClientRect();
+    var displayScale = mazeNodes.displayScale || 1;
+    var tileWidth = mazeNodes.wallSize;
+    var tileHeight = mazeNodes.wallSize * mazeNodes.isoRatio;
+    var matrixCols = mazeNodes.matrix[0].length;
+    var offsetX = matrixCols * tileWidth * 0.5;
+    var offsetY = tileHeight;
+
+    // Convert grid to isometric coordinates (center of tile)
+    var isoCoords = IsoGeometry.projectToIso(
+      gridX + 0.5, gridY + 0.5,
+      tileWidth, tileHeight,
+      offsetX, offsetY
+    );
+
+    // Apply display scale to get screen coordinates
+    var screenX = isoCoords.isoX * displayScale;
+    var screenY = isoCoords.isoY * displayScale;
+
+    // Position below the tile
+    var fixedX = rect.left + screenX;
+    var fixedY = rect.top + screenY + (tileHeight * displayScale * 0.5) + 10;
+
+    // Get controls dimensions for boundary checking
+    var controlsRect = controls.getBoundingClientRect();
+    var controlsWidth = controlsRect.width || 80;
+    var controlsHeight = controlsRect.height || 40;
+
+    // Constrain to viewport
+    var padding = 10;
+    var viewportWidth = window.innerWidth;
+    var viewportHeight = window.innerHeight;
+
+    var minX = controlsWidth / 2 + padding;
+    var maxX = viewportWidth - controlsWidth / 2 - padding;
+    fixedX = Math.max(minX, Math.min(maxX, fixedX));
+
+    var maxY = viewportHeight - controlsHeight - padding;
+    if (fixedY > maxY) {
+      fixedY = rect.top + screenY - controlsHeight - 10;
+    }
+    fixedY = Math.max(padding, fixedY);
+
+    controls.style.left = fixedX + 'px';
+    controls.style.top = fixedY + 'px';
+  }
+
+  /**
+   * Delete the selected grid decoration
+   */
+  function deleteSelectedGridDecoration() {
+    if (!selectedGridDecoration || !mazeNodes) return;
+
+    var gridX = selectedGridDecoration.gridX;
+    var gridY = selectedGridDecoration.gridY;
+    var key = gridX + "," + gridY;
+    var existing = selectedGridDecoration.decoration;
+
+    // Store previous state for undo
+    var previousState = {
+      tileUrl: existing.tileUrl,
+      category: existing.category,
+      layer: existing.layer,
+    };
+
+    // Remove the decoration
+    mazeNodes.setDecoration(gridX, gridY, null);
+
+    // Track in undo stack
+    undoStack.push({ type: "decoration", key: key, previous: previousState });
+    if (undoStack.length > MAX_UNDO_STACK) {
+      undoStack.shift();
+    }
+    updateUndoButton();
+
+    // Clear selection
+    selectedGridDecoration = null;
+    showGridDecorationControls(false);
+
+    // Reload and redraw
+    mazeNodes.loadDecorations().then(function () {
+      mazeNodes.draw();
+      saveCanvasState();
+    });
+  }
+
   function findWallCellAtClick(gridX, gridY) {
     if (!mazeNodes || !mazeNodes.matrix) return null;
 
@@ -1620,6 +1801,74 @@
   }
 
   /**
+   * Handle decoration eraser - remove decoration at grid position
+   */
+  function handleDecorationErase(gridX, gridY, pixel, key) {
+    // Check clicked cell and cells "behind" it in isometric space
+    // Decorations extend upward visually, so clicking on them may register
+    // as a cell in front of where they're actually anchored
+    var cellsToCheck = [
+      { x: gridX, y: gridY },
+      { x: gridX, y: gridY + 1 },      // directly behind
+      { x: gridX - 1, y: gridY + 1 },  // behind-left
+      { x: gridX + 1, y: gridY + 1 },  // behind-right
+    ];
+
+    var found = null;
+    var foundKey = null;
+
+    for (var i = 0; i < cellsToCheck.length; i++) {
+      var cell = cellsToCheck[i];
+      var cellPixel = mazeNodes.matrix[cell.y]
+        ? parseInt(mazeNodes.matrix[cell.y].charAt(cell.x), 10)
+        : 1;
+
+      // Skip wall cells
+      if (cellPixel !== 0) continue;
+
+      var decoration = mazeNodes.getDecoration(cell.x, cell.y);
+      if (decoration) {
+        found = decoration;
+        foundKey = cell.x + "," + cell.y;
+        gridX = cell.x;
+        gridY = cell.y;
+        break;
+      }
+    }
+
+    // Nothing to erase
+    if (!found) {
+      return;
+    }
+
+    var existing = found;
+    key = foundKey;
+
+    // Store previous state for undo
+    var previousState = {
+      tileUrl: existing.tileUrl,
+      category: existing.category,
+      layer: existing.layer,
+    };
+
+    // Remove the decoration
+    mazeNodes.setDecoration(gridX, gridY, null);
+
+    // Track in undo stack
+    undoStack.push({ type: "decoration", key: key, previous: previousState });
+    if (undoStack.length > MAX_UNDO_STACK) {
+      undoStack.shift();
+    }
+    updateUndoButton();
+
+    // Reload decoration images and redraw
+    mazeNodes.loadDecorations().then(function () {
+      mazeNodes.draw();
+      saveCanvasState();
+    });
+  }
+
+  /**
    * Set a cell in the maze matrix
    */
   function setMatrixCell(row, col, value) {
@@ -1757,6 +2006,9 @@
     // Clear other tools when decoration is selected
     selectedWallTool = null;
     selectedFloorTool = null;
+    decorationEraserMode = false;
+    selectedGridDecoration = null;
+    showGridDecorationControls(false);
     // Use free-form mode if forced by user toggle, otherwise default to grid snap
     // (decoration-library will override to true for custom decorations)
     freeFormMode = forceFreeFormMode;
@@ -1916,6 +2168,9 @@
     if (tool) {
       selectedFloorTool = null;
       selectedDecorationTile = null;
+      decorationEraserMode = false;
+      selectedGridDecoration = null;
+      showGridDecorationControls(false);
       previewImage = null;
       previewImageUrl = null;
       hoveredCell = null;
@@ -1945,6 +2200,9 @@
     if (tool) {
       selectedWallTool = null;
       selectedDecorationTile = null;
+      decorationEraserMode = false;
+      selectedGridDecoration = null;
+      showGridDecorationControls(false);
       previewImage = null;
       previewImageUrl = null;
       hoveredCell = null;
@@ -1965,17 +2223,52 @@
   }
 
   /**
+   * Set decoration eraser mode
+   * @param {boolean} enabled - Whether eraser mode is active
+   */
+  function setDecorationEraserMode(enabled) {
+    decorationEraserMode = enabled;
+    // Clear other tools when eraser is enabled
+    if (enabled) {
+      selectedWallTool = null;
+      selectedFloorTool = null;
+      selectedDecorationTile = null;
+      selectedGridDecoration = null;
+      showGridDecorationControls(false);
+      previewImage = null;
+      previewImageUrl = null;
+      hoveredCell = null;
+      clearPreview();
+      updatePaletteSelection();
+    }
+    updateToolSelection();
+    updateCursor();
+  }
+
+  /**
+   * Clear decoration eraser mode
+   */
+  function clearDecorationEraserMode() {
+    decorationEraserMode = false;
+    updateToolSelection();
+    updateCursor();
+  }
+
+  /**
    * Update tool button selection state (wall and floor tools)
    */
   function updateToolSelection() {
     var addBtn = document.getElementById("wall-tool-add");
     var removeBtn = document.getElementById("wall-tool-remove");
     var clearFloorBtn = document.getElementById("floor-tool-clear");
+    var decorationEraserBtn = document.getElementById("decoration-eraser");
     if (addBtn) addBtn.classList.toggle("selected", selectedWallTool === "add");
     if (removeBtn)
       removeBtn.classList.toggle("selected", selectedWallTool === "remove");
     if (clearFloorBtn)
       clearFloorBtn.classList.toggle("selected", selectedFloorTool === "clear");
+    if (decorationEraserBtn)
+      decorationEraserBtn.classList.toggle("selected", decorationEraserMode);
   }
 
   /**
@@ -2073,7 +2366,12 @@
         item.appendChild(img);
 
         item.addEventListener("click", function () {
-          setSelectedDecoration(tileUrl);
+          // Toggle behavior: if same tile is selected, deselect it
+          if (selectedDecorationTile === tileUrl) {
+            clearSelectedDecoration();
+          } else {
+            setSelectedDecoration(tileUrl);
+          }
           // Don't automatically change layer - user controls it with the toggle
         });
 
@@ -2174,6 +2472,18 @@
         }
       });
     }
+
+    // Decoration eraser button
+    var decorationEraserBtn = document.getElementById("decoration-eraser");
+    if (decorationEraserBtn) {
+      decorationEraserBtn.addEventListener("click", function () {
+        if (decorationEraserMode) {
+          clearDecorationEraserMode();
+        } else {
+          setDecorationEraserMode(true);
+        }
+      });
+    }
   }
 
   /**
@@ -2261,6 +2571,11 @@
     getSelectedFloorTool: function () {
       return selectedFloorTool;
     },
+    setDecorationEraserMode: setDecorationEraserMode,
+    clearDecorationEraserMode: clearDecorationEraserMode,
+    getDecorationEraserMode: function () {
+      return decorationEraserMode;
+    },
     undo: undoLastPlacement,
     getUndoCount: function () {
       return undoStack.length;
@@ -2274,6 +2589,8 @@
     scaleFreeForm: scaleFreeForm,
     bringFreeFormToFront: bringFreeFormToFront,
     sendFreeFormToBack: sendFreeFormToBack,
+    // Grid decoration selection
+    deleteSelectedGridDecoration: deleteSelectedGridDecoration,
     // Preview decoration (for maze to render during draw cycle)
     getPreviewDecoration: getPreviewDecoration,
     // Clip preview state (for maze to render preview line)
