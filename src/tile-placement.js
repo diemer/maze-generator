@@ -8,7 +8,7 @@
 
   // Currently selected decoration tile URL and layer
   var selectedDecorationTile = null;
-  var selectedLayer = "floor"; // 'floor' (under walls) or 'overlay' (above walls)
+  var selectedLayer = localStorage.getItem("decorationLayer") || "floor"; // 'floor' (under walls) or 'overlay' (above walls)
 
   // Wall tool mode: 'add', 'remove', or null (decoration mode)
   var selectedWallTool = null;
@@ -49,6 +49,13 @@
         "src/assets/isocandlelit.png",
       ],
     },
+    walls: {
+      layer: "overlay", // Wall decorations go on top
+      tiles: [
+        "src/assets/arch-with-bricks-left.png",
+        "src/assets/arch-with-bricks-right.png",
+      ],
+    },
     hazards: {
       layer: "floor", // Hazards on floor
       tiles: [
@@ -81,6 +88,13 @@
 
   // Free-form decoration mode (for custom decorations from library)
   var freeFormMode = false;
+  // Force free-form mode for all decorations (user toggle)
+  var forceFreeFormMode = localStorage.getItem("forceFreeFormMode") === "true";
+
+  // Helper to check if a decoration is a custom one (data URL) vs built-in (file path)
+  function isCustomDecoration(tileUrl) {
+    return tileUrl && tileUrl.startsWith("data:");
+  }
 
   // Selected free-form decoration (for dragging/editing)
   var selectedFreeForm = null; // { id, decoration }
@@ -110,6 +124,18 @@
   // Current placement scale (adjustable before placing)
   // Default to 0.04 for a reasonable starting size (500px * 0.04 * 5 = 100px)
   var placementScale = 0.04;
+
+  // Clipping options for free-form decorations (isometric clipping)
+  var clipBottomLeft = false;
+  var clipBottomRight = false;
+
+  // Clip adjustment mode state
+  var clipAdjustMode = null; // null, 'left', 'right', or 'both'
+  var clipAdjustStartOffsetLeft = 0;
+  var clipAdjustStartOffsetRight = 0;
+  var clipPreviewOffsetLeft = 0;
+  var clipPreviewOffsetRight = 0;
+  var clipPreviewOffsetY = 0; // Y offset for 'both' mode (shifts anchor up/down)
 
   /**
    * Initialize tile placement functionality
@@ -150,6 +176,10 @@
 
     // Initialize export/import buttons
     initExportImport();
+
+    // Update floating controls position on scroll/resize
+    window.addEventListener("scroll", positionFreeFormControls);
+    window.addEventListener("resize", positionFreeFormControls);
   }
 
   /**
@@ -174,6 +204,207 @@
         // Update floating preview size
         updateFloatingPreviewSize();
       });
+    }
+
+    // Clip toggle buttons
+    var clipLeftBtn = document.getElementById("clip-bottom-left");
+    var clipRightBtn = document.getElementById("clip-bottom-right");
+
+    if (clipLeftBtn) {
+      clipLeftBtn.addEventListener("click", function () {
+        // If a decoration is selected, update it; otherwise update state for new placements
+        if (selectedFreeForm && mazeNodes) {
+          var newValue = !selectedFreeForm.decoration.clipBottomLeft;
+          mazeNodes.updateFreeFormDecoration(selectedFreeForm.id, { clipBottomLeft: newValue });
+          selectedFreeForm.decoration.clipBottomLeft = newValue;
+          clipLeftBtn.classList.toggle("active", newValue);
+        } else {
+          clipBottomLeft = !clipBottomLeft;
+          clipLeftBtn.classList.toggle("active", clipBottomLeft);
+        }
+        // Trigger redraw to update preview/decoration
+        if (typeof mazeNodes !== "undefined" && mazeNodes) {
+          mazeNodes.draw();
+        }
+      });
+    }
+
+    if (clipRightBtn) {
+      clipRightBtn.addEventListener("click", function () {
+        // If a decoration is selected, update it; otherwise update state for new placements
+        if (selectedFreeForm && mazeNodes) {
+          var newValue = !selectedFreeForm.decoration.clipBottomRight;
+          mazeNodes.updateFreeFormDecoration(selectedFreeForm.id, { clipBottomRight: newValue });
+          selectedFreeForm.decoration.clipBottomRight = newValue;
+          clipRightBtn.classList.toggle("active", newValue);
+        } else {
+          clipBottomRight = !clipBottomRight;
+          clipRightBtn.classList.toggle("active", clipBottomRight);
+        }
+        // Trigger redraw to update preview/decoration
+        if (typeof mazeNodes !== "undefined" && mazeNodes) {
+          mazeNodes.draw();
+        }
+      });
+    }
+
+    // Freeform clip toggle buttons (for editing placed decorations)
+    var freeformClipLeftBtn = document.getElementById("freeform-clip-left");
+    var freeformClipRightBtn = document.getElementById("freeform-clip-right");
+
+    if (freeformClipLeftBtn) {
+      freeformClipLeftBtn.addEventListener("click", function () {
+        if (selectedFreeForm && mazeNodes) {
+          var hint = document.getElementById("clip-adjust-hint");
+          // If already clipped, turn off immediately
+          if (selectedFreeForm.decoration.clipBottomLeft) {
+            mazeNodes.updateFreeFormDecoration(selectedFreeForm.id, { clipBottomLeft: false, clipOffsetLeft: 0 });
+            selectedFreeForm.decoration.clipBottomLeft = false;
+            selectedFreeForm.decoration.clipOffsetLeft = 0;
+            freeformClipLeftBtn.classList.remove("active", "adjusting");
+            if (hint) hint.style.display = "none";
+            clipAdjustMode = null;
+            mazeNodes.draw();
+          } else {
+            // Enter clip adjust mode
+            enterClipAdjustMode('left');
+          }
+        }
+      });
+    }
+
+    if (freeformClipRightBtn) {
+      freeformClipRightBtn.addEventListener("click", function () {
+        if (selectedFreeForm && mazeNodes) {
+          var hint = document.getElementById("clip-adjust-hint");
+          // If already clipped, turn off immediately
+          if (selectedFreeForm.decoration.clipBottomRight) {
+            mazeNodes.updateFreeFormDecoration(selectedFreeForm.id, { clipBottomRight: false, clipOffsetRight: 0 });
+            selectedFreeForm.decoration.clipBottomRight = false;
+            selectedFreeForm.decoration.clipOffsetRight = 0;
+            freeformClipRightBtn.classList.remove("active", "adjusting");
+            if (hint) hint.style.display = "none";
+            clipAdjustMode = null;
+            mazeNodes.draw();
+          } else {
+            // Enter clip adjust mode
+            enterClipAdjustMode('right');
+          }
+        }
+      });
+    }
+
+    // Keyboard handler for clip adjust mode
+    document.addEventListener("keydown", handleClipAdjustKeydown);
+  }
+
+  /**
+   * Cancel clip adjustment mode without applying changes
+   */
+  function cancelClipAdjustMode() {
+    if (!clipAdjustMode) return;
+
+    var hint = document.getElementById("clip-adjust-hint");
+    var btn = document.getElementById(clipAdjustMode === 'left' ? "freeform-clip-left" : "freeform-clip-right");
+
+    // Just clear the UI state - no clip was applied yet
+    if (btn) btn.classList.remove("active", "adjusting");
+    if (hint) hint.style.display = "none";
+    clipAdjustMode = null;
+
+    if (mazeNodes) mazeNodes.draw();
+  }
+
+  /**
+   * Enter clip adjustment mode
+   */
+  function enterClipAdjustMode(side) {
+    if (!selectedFreeForm || !mazeNodes) return;
+
+    var btnLeft = document.getElementById("freeform-clip-left");
+    var btnRight = document.getElementById("freeform-clip-right");
+    var hint = document.getElementById("clip-adjust-hint");
+
+    // If already in adjust mode and clicking the other button, switch to 'both'
+    if (clipAdjustMode && clipAdjustMode !== 'both' && clipAdjustMode !== side) {
+      clipAdjustMode = 'both';
+      // Initialize both preview offsets
+      clipAdjustStartOffsetLeft = selectedFreeForm.decoration.clipOffsetLeft || 0;
+      clipAdjustStartOffsetRight = selectedFreeForm.decoration.clipOffsetRight || 0;
+      clipPreviewOffsetLeft = clipAdjustStartOffsetLeft;
+      clipPreviewOffsetRight = clipAdjustStartOffsetRight;
+      // Both buttons active and adjusting
+      if (btnLeft) btnLeft.classList.add("active", "adjusting");
+      if (btnRight) btnRight.classList.add("active", "adjusting");
+      if (hint) hint.style.display = "inline";
+      mazeNodes.draw();
+      return;
+    }
+
+    clipAdjustMode = side;
+    clipAdjustStartOffsetLeft = selectedFreeForm.decoration.clipOffsetLeft || 0;
+    clipAdjustStartOffsetRight = selectedFreeForm.decoration.clipOffsetRight || 0;
+    if (side === 'left') {
+      clipPreviewOffsetLeft = clipAdjustStartOffsetLeft;
+    } else {
+      clipPreviewOffsetRight = clipAdjustStartOffsetRight;
+    }
+
+    // Update button state
+    var btn = document.getElementById(side === 'left' ? "freeform-clip-left" : "freeform-clip-right");
+    if (btn) btn.classList.add("active", "adjusting");
+
+    // Show hint
+    if (hint) hint.style.display = "inline";
+
+    mazeNodes.draw();
+  }
+
+  /**
+   * Handle keydown for clip adjust mode
+   */
+  function handleClipAdjustKeydown(e) {
+    if (!clipAdjustMode || !selectedFreeForm || !mazeNodes) return;
+
+    var hint = document.getElementById("clip-adjust-hint");
+    var btnLeft = document.getElementById("freeform-clip-left");
+    var btnRight = document.getElementById("freeform-clip-right");
+
+    if (e.key === "Enter") {
+      // Confirm clip - apply the preview offset(s)
+      var updates = {};
+      if (clipAdjustMode === 'left' || clipAdjustMode === 'both') {
+        updates.clipBottomLeft = true;
+        updates.clipOffsetLeft = clipPreviewOffsetLeft;
+        selectedFreeForm.decoration.clipBottomLeft = true;
+        selectedFreeForm.decoration.clipOffsetLeft = clipPreviewOffsetLeft;
+      }
+      if (clipAdjustMode === 'right' || clipAdjustMode === 'both') {
+        updates.clipBottomRight = true;
+        updates.clipOffsetRight = clipPreviewOffsetRight;
+        selectedFreeForm.decoration.clipBottomRight = true;
+        selectedFreeForm.decoration.clipOffsetRight = clipPreviewOffsetRight;
+      }
+      if (clipAdjustMode === 'both') {
+        updates.clipOffsetY = clipPreviewOffsetY;
+        selectedFreeForm.decoration.clipOffsetY = clipPreviewOffsetY;
+      }
+      mazeNodes.updateFreeFormDecoration(selectedFreeForm.id, updates);
+
+      if (btnLeft) btnLeft.classList.remove("adjusting");
+      if (btnRight) btnRight.classList.remove("adjusting");
+      if (hint) hint.style.display = "none";
+      clipAdjustMode = null;
+      mazeNodes.draw();
+      e.preventDefault();
+    } else if (e.key === "Escape") {
+      // Cancel clip adjustment - just clear preview state
+      if (btnLeft) btnLeft.classList.remove("active", "adjusting");
+      if (btnRight) btnRight.classList.remove("active", "adjusting");
+      if (hint) hint.style.display = "none";
+      clipAdjustMode = null;
+      mazeNodes.draw();
+      e.preventDefault();
     }
   }
 
@@ -299,8 +530,43 @@
   function handleCanvasMouseMove(e) {
     var canvas = e.target;
     var rect = canvas.getBoundingClientRect();
+
+    // Use CSS pixels (consistent with placement)
     var screenX = e.clientX - rect.left;
     var screenY = e.clientY - rect.top;
+
+    // Handle clip adjustment mode - just update preview offset, don't apply
+    if (clipAdjustMode && selectedFreeForm && mazeNodes) {
+      var displayScale = mazeNodes.displayScale || 1;
+
+      // Calculate offset based on mouse position relative to decoration anchor
+      var decLogicalX = selectedFreeForm.decoration.logicalX || 0;
+      var decLogicalY = selectedFreeForm.decoration.logicalY || 0;
+      var decScreenX = decLogicalX * displayScale;
+      var decScreenY = decLogicalY * displayScale;
+
+      // Offset is mouse distance from decoration anchor (in logical units)
+      var offsetLogicalX = (screenX - decScreenX) / displayScale;
+      var offsetLogicalY = (screenY - decScreenY) / displayScale;
+
+      if (clipAdjustMode === 'both') {
+        // In 'both' mode, V moves as a whole with the mouse
+        // Both anchors share the same X offset, Y offset shifts the anchor point
+        clipPreviewOffsetLeft = offsetLogicalX;
+        clipPreviewOffsetRight = offsetLogicalX;
+        clipPreviewOffsetY = offsetLogicalY;
+      } else if (clipAdjustMode === 'left') {
+        clipPreviewOffsetLeft = offsetLogicalX;
+        clipPreviewOffsetY = 0;
+      } else {
+        clipPreviewOffsetRight = offsetLogicalX;
+        clipPreviewOffsetY = 0;
+      }
+
+      // Redraw to show preview line
+      mazeNodes.draw();
+      return;
+    }
 
     // Handle free-form decoration dragging
     if (isDragging && selectedFreeForm && mazeNodes) {
@@ -311,15 +577,13 @@
       var newLogicalX = mouseLogicalX - dragOffsetX;
       var newLogicalY = mouseLogicalY - dragOffsetY;
 
-      // Clamp to canvas bounds (in logical space)
-      var maxLogicalX = canvas.width / displayScale;
-      var maxLogicalY = canvas.height / displayScale;
-      newLogicalX = Math.max(0, Math.min(maxLogicalX, newLogicalX));
-      newLogicalY = Math.max(0, Math.min(maxLogicalY, newLogicalY));
-
       mazeNodes.updateFreeFormDecoration(selectedFreeForm.id, { logicalX: newLogicalX, logicalY: newLogicalY });
+      selectedFreeForm.decoration.logicalX = newLogicalX;
+      selectedFreeForm.decoration.logicalY = newLogicalY;
       clearPreview(); // Clear overlay to avoid ghosting
       mazeNodes.draw();
+      // Update floating controls position
+      positionFreeFormControls();
       return;
     }
 
@@ -334,8 +598,7 @@
         floatingPreview.style.display = "none";
       }
 
-      // Convert screen coordinates to logical coordinates (consistent with grid decorations)
-      // Grid decorations use: screenX / displayScale -> logical -> * displayScale when drawing
+      // Convert screen coordinates to logical coordinates (consistent with placement)
       var displayScale = mazeNodes.displayScale || 1;
       var logicalX = screenX / displayScale;
       var logicalY = screenY / displayScale;
@@ -343,16 +606,28 @@
       var imgWidth = previewImage.naturalWidth || previewImage.width || 64;
       var imgHeight = previewImage.naturalHeight || previewImage.height || 64;
 
+      // Calculate scale: for built-in decorations with forced free-form mode,
+      // use tile-based scale to match grid-snapped size
+      var previewScale;
+      if (forceFreeFormMode && !isCustomDecoration(selectedDecorationTile)) {
+        var tileWidth = mazeNodes.wallSize || 10;
+        previewScale = tileWidth / imgWidth;
+      } else {
+        previewScale = placementScale;
+      }
+
       // Set preview decoration data - maze will render this during its draw()
       // Store logical coordinates - drawing will multiply by displayScale
       previewDecoration = {
         logicalX: logicalX,
         logicalY: logicalY,
-        scale: placementScale,
+        scale: previewScale,
         baseWidth: imgWidth,
         baseHeight: imgHeight,
         tileUrl: selectedDecorationTile,
-        layer: selectedLayer
+        layer: selectedLayer,
+        clipBottomLeft: clipBottomLeft,
+        clipBottomRight: clipBottomRight
       };
 
       // Ensure image is in cache for maze to use
@@ -905,8 +1180,17 @@
       baseHeight = previewImage.naturalHeight || previewImage.height || 64;
     }
 
-    // Use the user-controlled placement scale (from the slider)
-    var decorScale = placementScale;
+    // Calculate scale: for built-in decorations with forced free-form mode,
+    // use tile-based scale to match grid-snapped size
+    var decorScale;
+    if (forceFreeFormMode && !isCustomDecoration(selectedDecorationTile)) {
+      // Match grid-snapped sizing: drawWidth = tileWidth, so scale = tileWidth / imgWidth
+      var tileWidth = mazeNodes.wallSize || 10;
+      decorScale = tileWidth / baseWidth;
+    } else {
+      // Custom decorations use the user-controlled placement scale
+      decorScale = placementScale;
+    }
 
     // Create the free-form decoration - store logical coordinates
     // Drawing will multiply by displayScale (consistent with grid decorations)
@@ -917,7 +1201,9 @@
       logicalY: logicalY,
       scale: decorScale,
       baseWidth: baseWidth,
-      baseHeight: baseHeight
+      baseHeight: baseHeight,
+      clipBottomLeft: clipBottomLeft,
+      clipBottomRight: clipBottomRight
     };
 
     // Ensure image is in the decoration images cache
@@ -960,15 +1246,49 @@
   function handleCanvasMouseDown(e) {
     if (!mazeNodes) return;
 
+    // If in clip adjust mode, click confirms (same as Enter)
+    if (clipAdjustMode && selectedFreeForm) {
+      var updates = {};
+      if (clipAdjustMode === 'left' || clipAdjustMode === 'both') {
+        updates.clipBottomLeft = true;
+        updates.clipOffsetLeft = clipPreviewOffsetLeft;
+        selectedFreeForm.decoration.clipBottomLeft = true;
+        selectedFreeForm.decoration.clipOffsetLeft = clipPreviewOffsetLeft;
+      }
+      if (clipAdjustMode === 'right' || clipAdjustMode === 'both') {
+        updates.clipBottomRight = true;
+        updates.clipOffsetRight = clipPreviewOffsetRight;
+        selectedFreeForm.decoration.clipBottomRight = true;
+        selectedFreeForm.decoration.clipOffsetRight = clipPreviewOffsetRight;
+      }
+      if (clipAdjustMode === 'both') {
+        updates.clipOffsetY = clipPreviewOffsetY;
+        selectedFreeForm.decoration.clipOffsetY = clipPreviewOffsetY;
+      }
+      mazeNodes.updateFreeFormDecoration(selectedFreeForm.id, updates);
+
+      var btnLeft = document.getElementById("freeform-clip-left");
+      var btnRight = document.getElementById("freeform-clip-right");
+      var hint = document.getElementById("clip-adjust-hint");
+      if (btnLeft) btnLeft.classList.remove("adjusting");
+      if (btnRight) btnRight.classList.remove("adjusting");
+      if (hint) hint.style.display = "none";
+      clipAdjustMode = null;
+      mazeNodes.draw();
+      e.preventDefault();
+      return;
+    }
+
     var canvas = e.target;
     var rect = canvas.getBoundingClientRect();
+
+    // Use CSS pixels (consistent with placement which stores screenX/displayScale as logical)
     var screenX = e.clientX - rect.left;
     var screenY = e.clientY - rect.top;
+    var displayScale = mazeNodes.displayScale || 1;
 
     // Check if clicking on a free-form decoration
-    var hit = mazeNodes.getFreeFormDecorationAt(
-      screenX, screenY, canvas.width, canvas.height, mazeNodes.displayScale
-    );
+    var hit = mazeNodes.getFreeFormDecorationAt(screenX, screenY, displayScale);
 
     if (hit) {
       selectedFreeForm = hit;
@@ -977,7 +1297,6 @@
       dragStartY = screenY;
 
       // Get logical coordinates (support both old and new format)
-      var displayScale = mazeNodes.displayScale || 1;
       var decLogicalX = hit.decoration.logicalX !== undefined
         ? hit.decoration.logicalX
         : (hit.decoration.canvasX / displayScale);
@@ -999,6 +1318,7 @@
     } else {
       // Clicked elsewhere - deselect
       if (selectedFreeForm && !selectedDecorationTile) {
+        cancelClipAdjustMode();
         selectedFreeForm = null;
         showFreeFormControls(false);
       }
@@ -1035,7 +1355,7 @@
   }
 
   /**
-   * Show/hide free-form decoration controls
+   * Show/hide free-form decoration controls and position below selected decoration
    */
   function showFreeFormControls(show) {
     var controls = document.getElementById('freeform-controls');
@@ -1051,8 +1371,75 @@
             scaleValue.textContent = (selectedFreeForm.decoration.scale || 1).toFixed(2) + 'x';
           }
         }
+
+        // Sync clip toggle buttons to selected decoration's state
+        var freeformClipLeftBtn = document.getElementById("freeform-clip-left");
+        var freeformClipRightBtn = document.getElementById("freeform-clip-right");
+        if (freeformClipLeftBtn && selectedFreeForm.decoration) {
+          freeformClipLeftBtn.classList.toggle("active", !!selectedFreeForm.decoration.clipBottomLeft);
+        }
+        if (freeformClipRightBtn && selectedFreeForm.decoration) {
+          freeformClipRightBtn.classList.toggle("active", !!selectedFreeForm.decoration.clipBottomRight);
+        }
+
+        // Position controls below the selected decoration
+        positionFreeFormControls();
       }
     }
+  }
+
+  /**
+   * Position free-form controls below the selected decoration
+   */
+  function positionFreeFormControls() {
+    var controls = document.getElementById('freeform-controls');
+    if (!controls || !selectedFreeForm || !mazeNodes) return;
+    if (controls.style.display === 'none') return;
+
+    var canvas = document.getElementById("maze");
+    if (!canvas) return;
+
+    var rect = canvas.getBoundingClientRect();
+    var displayScale = mazeNodes.displayScale || 1;
+    var dec = selectedFreeForm.decoration;
+
+    // Get decoration's logical coordinates (anchor is at bottom-center)
+    var logicalX = dec.logicalX !== undefined ? dec.logicalX : 0;
+    var logicalY = dec.logicalY !== undefined ? dec.logicalY : 0;
+
+    // Convert to screen coordinates relative to canvas
+    var screenX = logicalX * displayScale;
+    var screenY = logicalY * displayScale;
+
+    // For position: fixed, use viewport coordinates (rect already gives viewport coords)
+    var fixedX = rect.left + screenX;
+    var fixedY = rect.top + screenY + 10; // 10px below anchor
+
+    // Get controls dimensions for boundary checking
+    var controlsRect = controls.getBoundingClientRect();
+    var controlsWidth = controlsRect.width;
+    var controlsHeight = controlsRect.height;
+
+    // Constrain to viewport (with some padding)
+    var padding = 10;
+    var viewportWidth = window.innerWidth;
+    var viewportHeight = window.innerHeight;
+
+    // Since transform: translateX(-50%) centers the element, adjust X for that
+    var minX = controlsWidth / 2 + padding;
+    var maxX = viewportWidth - controlsWidth / 2 - padding;
+    fixedX = Math.max(minX, Math.min(maxX, fixedX));
+
+    // Constrain Y to keep controls visible
+    var maxY = viewportHeight - controlsHeight - padding;
+    if (fixedY > maxY) {
+      // Position above the decoration instead
+      fixedY = rect.top + screenY - controlsHeight - 10;
+    }
+    fixedY = Math.max(padding, fixedY);
+
+    controls.style.left = fixedX + 'px';
+    controls.style.top = fixedY + 'px';
   }
 
   function findWallCellAtClick(gridX, gridY) {
@@ -1370,8 +1757,9 @@
     // Clear other tools when decoration is selected
     selectedWallTool = null;
     selectedFloorTool = null;
-    // Reset free-form mode by default - decoration-library will set it to true for custom decorations
-    freeFormMode = false;
+    // Use free-form mode if forced by user toggle, otherwise default to grid snap
+    // (decoration-library will override to true for custom decorations)
+    freeFormMode = forceFreeFormMode;
     selectedFreeForm = null;
     updateToolSelection();
     loadPreviewImage(tileUrl);
@@ -1389,6 +1777,19 @@
     hoveredCell = null;
     freeFormHoverPos = null;
     freeFormMode = false;
+    previewDecoration = null;
+
+    // Cancel any active clip adjustment
+    cancelClipAdjustMode();
+
+    // Reset clipping state for placement mode
+    clipBottomLeft = false;
+    clipBottomRight = false;
+    var clipLeftBtn = document.getElementById("clip-bottom-left");
+    var clipRightBtn = document.getElementById("clip-bottom-right");
+    if (clipLeftBtn) clipLeftBtn.classList.remove("active");
+    if (clipRightBtn) clipRightBtn.classList.remove("active");
+
     clearPreview();
     showFloatingPreview(false);
     updatePaletteSelection();
@@ -1627,6 +2028,7 @@
    */
   function setSelectedLayer(layer) {
     selectedLayer = layer;
+    localStorage.setItem("decorationLayer", layer);
     updateLayerToggle();
   }
 
@@ -1690,6 +2092,22 @@
     if (overlayRadio) {
       overlayRadio.addEventListener("change", function () {
         if (this.checked) setSelectedLayer("overlay");
+      });
+    }
+    // Initialize radio buttons to match loaded preference
+    updateLayerToggle();
+
+    // Free placement toggle checkbox
+    var freePlacementToggle = document.getElementById("free-placement-toggle");
+    if (freePlacementToggle) {
+      freePlacementToggle.checked = forceFreeFormMode;
+      freePlacementToggle.addEventListener("change", function () {
+        forceFreeFormMode = this.checked;
+        localStorage.setItem("forceFreeFormMode", forceFreeFormMode);
+        // Update current mode if a decoration is selected
+        if (selectedDecorationTile) {
+          freeFormMode = forceFreeFormMode;
+        }
       });
     }
 
@@ -1858,5 +2276,16 @@
     sendFreeFormToBack: sendFreeFormToBack,
     // Preview decoration (for maze to render during draw cycle)
     getPreviewDecoration: getPreviewDecoration,
+    // Clip preview state (for maze to render preview line)
+    getClipPreview: function () {
+      if (!clipAdjustMode || !selectedFreeForm) return null;
+      return {
+        mode: clipAdjustMode,
+        offsetLeft: clipPreviewOffsetLeft,
+        offsetRight: clipPreviewOffsetRight,
+        offsetY: clipPreviewOffsetY,
+        decoration: selectedFreeForm.decoration
+      };
+    },
   };
 })(typeof self !== "undefined" ? self : this);

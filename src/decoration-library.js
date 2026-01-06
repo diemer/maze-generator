@@ -132,14 +132,17 @@
   /**
    * Process uploaded files and add to library
    */
+  // Supported image types for decoration uploads
+  var SUPPORTED_IMAGE_TYPES = ["image/png", "image/svg+xml", "image/jpeg", "image/gif", "image/webp"];
+
   function processUpload(files, category) {
     var lib = loadLibrary();
     var promises = [];
 
     for (var i = 0; i < files.length; i++) {
       var file = files[i];
-      if (file.type !== "image/png") {
-        console.warn("Skipping non-PNG file:", file.name);
+      if (SUPPORTED_IMAGE_TYPES.indexOf(file.type) === -1) {
+        console.warn("Skipping unsupported file type:", file.name, file.type);
         continue;
       }
 
@@ -161,7 +164,8 @@
 
     return Promise.all(promises).then(function (results) {
       results.forEach(function (result) {
-        var name = result.fileName.replace(/\.png$/i, "");
+        // Remove common image extensions from display name
+        var name = result.fileName.replace(/\.(png|svg|jpe?g|gif|webp)$/i, "");
         var decoration = {
           id: "dec_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5),
           name: name,
@@ -569,7 +573,7 @@
       uploadZone.classList.remove("drag-over");
 
       var files = Array.prototype.filter.call(e.dataTransfer.files, function (f) {
-        return f.type === "image/png";
+        return SUPPORTED_IMAGE_TYPES.indexOf(f.type) !== -1;
       });
 
       if (files.length > 0) {

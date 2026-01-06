@@ -327,10 +327,11 @@ Maze.prototype.getFreeFormDecoration = function (id) {
 // Get free-form decoration at screen position (hit testing)
 // screenX/screenY are CSS pixel coordinates relative to canvas
 // scale is the maze displayScale
-Maze.prototype.getFreeFormDecorationAt = function (screenX, screenY, canvasWidth, canvasHeight, scale, cssToInternalRatio) {
+Maze.prototype.getFreeFormDecorationAt = function (screenX, screenY, scale) {
   scale = scale || 1;
 
   // Convert screen coords to logical coordinates (same as when placing)
+  // Placement stores: screenX / displayScale = logicalX
   const logicalClickX = screenX / scale;
   const logicalClickY = screenY / scale;
 
@@ -398,25 +399,96 @@ Maze.prototype.sendFreeFormToBack = function (id) {
  * @param {number} imgWidth - Image width (optional, uses img dimensions if not provided)
  * @param {number} imgHeight - Image height (optional, uses img dimensions if not provided)
  * @param {number} alpha - Opacity (optional, defaults to 1.0)
+ * @param {boolean} clipBottomLeft - Clip bottom-left (SW) at isometric angle
+ * @param {boolean} clipBottomRight - Clip bottom-right (SE) at isometric angle
+ * @param {number} isoRatio - Isometric ratio for clip angle (defaults to 0.5)
+ * @param {number} clipOffsetLeft - Horizontal offset for left clip line (in logical units)
+ * @param {number} clipOffsetRight - Horizontal offset for right clip line (in logical units)
+ * @param {number} clipOffsetY - Vertical offset for clip anchor (used when both clips applied together)
  */
-Maze.prototype.drawFreeFormDecoration = function (ctx, img, logicalX, logicalY, decorScale, displayScale, imgWidth, imgHeight, alpha) {
+Maze.prototype.drawFreeFormDecoration = function (ctx, img, logicalX, logicalY, decorScale, displayScale, imgWidth, imgHeight, alpha, clipBottomLeft, clipBottomRight, isoRatio, clipOffsetLeft, clipOffsetRight, clipOffsetY) {
   if (!ctx || !img) return;
 
   imgWidth = imgWidth || img.naturalWidth || img.width;
   imgHeight = imgHeight || img.naturalHeight || img.height;
   alpha = (alpha !== undefined) ? alpha : 1.0;
+  isoRatio = isoRatio || 0.5;
 
-  // Calculate draw size: image size * decoration scale * display scale
-  const drawWidth = imgWidth * decorScale * displayScale;
-  const drawHeight = imgHeight * decorScale * displayScale;
+  // Calculate draw size: image size * decoration scale
+  // Note: ctx.scale(displayScale) is already applied in draw(), so we work in logical coordinates
+  const drawWidth = imgWidth * decorScale;
+  const drawHeight = imgHeight * decorScale;
 
-  // Convert logical coordinates to canvas pixels (consistent with grid decorations)
-  const canvasX = logicalX * displayScale;
-  const canvasY = logicalY * displayScale;
+  // Use logical coordinates directly (ctx.scale handles conversion to canvas pixels)
+  const canvasX = logicalX;
+  const canvasY = logicalY;
 
   // Center horizontally, bottom-align vertically at the click position
   const drawX = canvasX - drawWidth * 0.5;
   const drawY = canvasY - drawHeight;
+
+  // Calculate clipping geometry (needed for both clipping and debug drawing)
+  const topY = drawY;
+  const leftX = drawX;
+  const rightX = drawX + drawWidth;
+  const bottomY = canvasY;
+  const decorHeight = bottomY - topY;
+  // The isometric slope matches tile edges: tileHeight/tileWidth = isoRatio
+  // For every 1 unit horizontal, we move isoRatio units vertical
+  // So for deltaY vertical, we need deltaY/isoRatio horizontal
+  const clipDeltaX = decorHeight / isoRatio;
+
+  // Clip offsets are already in logical coordinates
+  const offsetLeftCanvas = clipOffsetLeft || 0;
+  const offsetRightCanvas = clipOffsetRight || 0;
+  const offsetYCanvas = clipOffsetY || 0;
+
+  // Apply isometric clipping if requested
+  const needsClipping = clipBottomLeft || clipBottomRight;
+  if (needsClipping) {
+    ctx.save();
+    ctx.beginPath();
+
+    // Clip anchor points shifted by offsets
+    const leftAnchorX = canvasX + offsetLeftCanvas;
+    const rightAnchorX = canvasX + offsetRightCanvas;
+    // Y offset only applies when both clips are active (V shape moves as unit)
+    const anchorY = (clipBottomLeft && clipBottomRight) ? (bottomY + offsetYCanvas) : bottomY;
+
+    if (clipBottomLeft && clipBottomRight) {
+      // Both clipped: keep everything ABOVE both diagonal lines
+      // Recalculate clipDeltaX based on actual anchor Y position
+      const effectiveHeight = anchorY - topY;
+      const effectiveClipDeltaX = effectiveHeight / isoRatio;
+
+      // Calculate where lines meet the top edge
+      const leftTopX = leftAnchorX - effectiveClipDeltaX;
+      const rightTopX = rightAnchorX + effectiveClipDeltaX;
+
+      // Keep the area above both diagonal lines (V shape pointing down)
+      ctx.moveTo(leftTopX, topY);
+      ctx.lineTo(rightTopX, topY);
+      ctx.lineTo(rightAnchorX, anchorY);
+      ctx.lineTo(leftAnchorX, anchorY);
+      ctx.closePath();
+    } else if (clipBottomLeft) {
+      // Clip bottom-left: keep top, right side, and diagonal from anchor up-left
+      ctx.moveTo(leftAnchorX - clipDeltaX, topY);
+      ctx.lineTo(rightX, topY);
+      ctx.lineTo(rightX, bottomY);
+      ctx.lineTo(leftAnchorX, bottomY);
+      ctx.closePath();
+    } else if (clipBottomRight) {
+      // Clip bottom-right: keep top, left side, and diagonal from anchor up-right
+      ctx.moveTo(leftX, topY);
+      ctx.lineTo(rightAnchorX + clipDeltaX, topY);
+      ctx.lineTo(rightAnchorX, bottomY);
+      ctx.lineTo(leftX, bottomY);
+      ctx.closePath();
+    }
+
+    ctx.clip();
+  }
 
   // Draw the decoration
   if (alpha < 1.0) {
@@ -425,6 +497,10 @@ Maze.prototype.drawFreeFormDecoration = function (ctx, img, logicalX, logicalY, 
   ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
   if (alpha < 1.0) {
     ctx.globalAlpha = 1.0;
+  }
+
+  if (needsClipping) {
+    ctx.restore();
   }
 };
 
@@ -1895,7 +1971,14 @@ Maze.prototype.draw = function () {
         dec.scale || 1,
         scale,
         dec.baseWidth,
-        dec.baseHeight
+        dec.baseHeight,
+        1.0,  // alpha
+        dec.clipBottomLeft || false,
+        dec.clipBottomRight || false,
+        this.isoRatio,
+        dec.clipOffsetLeft || 0,
+        dec.clipOffsetRight || 0,
+        dec.clipOffsetY || 0
       );
     }
   };
@@ -1928,7 +2011,13 @@ Maze.prototype.draw = function () {
       scale,
       preview.baseWidth,
       preview.baseHeight,
-      0.6  // Alpha for preview transparency
+      0.6,  // Alpha for preview transparency
+      preview.clipBottomLeft || false,
+      preview.clipBottomRight || false,
+      this.isoRatio,
+      preview.clipOffsetLeft || 0,
+      preview.clipOffsetRight || 0,
+      preview.clipOffsetY || 0
     );
   };
 
@@ -2216,6 +2305,109 @@ Maze.prototype.draw = function () {
 
   // PASS 3.6: Draw overlay-layer preview decoration (if any)
   drawPreviewDecorationForLayer('overlay');
+
+  // PASS 3.7: Draw clip preview lines (dashed) if in clip adjust mode
+  const drawClipPreviewLine = () => {
+    if (typeof TilePlacement === 'undefined' || !TilePlacement.getClipPreview) return;
+
+    const clipPreview = TilePlacement.getClipPreview();
+    if (!clipPreview) return;
+
+    const dec = clipPreview.decoration;
+    const img = this.decorationImages[dec.tileUrl];
+    if (!img) return;
+
+    const imgWidth = dec.baseWidth || img.naturalWidth || img.width;
+    const imgHeight = dec.baseHeight || img.naturalHeight || img.height;
+    const decorScale = dec.scale || 1;
+    const isoRatio = this.isoRatio || 0.5;
+
+    // Calculate decoration bounds (same as drawFreeFormDecoration)
+    const logX = dec.logicalX || 0;
+    const logY = dec.logicalY || 0;
+    const drawWidth = imgWidth * decorScale;
+    const drawHeight = imgHeight * decorScale;
+    const canvasX = logX;
+    const canvasY = logY;
+    const topY = canvasY - drawHeight;
+    const bottomY = canvasY;
+    const decorHeight = bottomY - topY;
+    const clipDeltaX = decorHeight / isoRatio;
+
+    ctx.save();
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 4]);
+
+    const previewColor = '#ff6600';
+    const existingClipColor = '#888888';
+
+    // Determine which lines to draw based on mode
+    const drawLeftPreview = clipPreview.mode === 'left' || clipPreview.mode === 'both';
+    const drawRightPreview = clipPreview.mode === 'right' || clipPreview.mode === 'both';
+
+    // Draw existing clip line (gray) if we're only adjusting the other side
+    if (clipPreview.mode === 'left' && dec.clipBottomRight) {
+      const existingAnchorX = canvasX + (dec.clipOffsetRight || 0);
+      ctx.strokeStyle = existingClipColor;
+      ctx.beginPath();
+      ctx.moveTo(existingAnchorX, bottomY);
+      ctx.lineTo(existingAnchorX + clipDeltaX, topY);
+      ctx.stroke();
+    } else if (clipPreview.mode === 'right' && dec.clipBottomLeft) {
+      const existingAnchorX = canvasX + (dec.clipOffsetLeft || 0);
+      ctx.strokeStyle = existingClipColor;
+      ctx.beginPath();
+      ctx.moveTo(existingAnchorX, bottomY);
+      ctx.lineTo(existingAnchorX - clipDeltaX, topY);
+      ctx.stroke();
+    }
+
+    // Draw preview lines (orange)
+    ctx.strokeStyle = previewColor;
+
+    // Y offset for 'both' mode (shifts anchor point up/down)
+    const anchorYOffset = clipPreview.offsetY || 0;
+
+    if (drawLeftPreview) {
+      const leftAnchorX = canvasX + clipPreview.offsetLeft;
+      const leftAnchorY = bottomY + anchorYOffset;
+      // Recalculate where line reaches top based on shifted anchor
+      const leftTopX = leftAnchorX - (leftAnchorY - topY) / isoRatio;
+      ctx.beginPath();
+      ctx.moveTo(leftAnchorX, leftAnchorY);
+      ctx.lineTo(leftTopX, topY);
+      ctx.stroke();
+
+      // Draw anchor point marker
+      ctx.setLineDash([]);
+      ctx.fillStyle = previewColor;
+      ctx.beginPath();
+      ctx.arc(leftAnchorX, leftAnchorY, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.setLineDash([6, 4]);
+    }
+
+    if (drawRightPreview) {
+      const rightAnchorX = canvasX + clipPreview.offsetRight;
+      const rightAnchorY = bottomY + anchorYOffset;
+      // Recalculate where line reaches top based on shifted anchor
+      const rightTopX = rightAnchorX + (rightAnchorY - topY) / isoRatio;
+      ctx.beginPath();
+      ctx.moveTo(rightAnchorX, rightAnchorY);
+      ctx.lineTo(rightTopX, topY);
+      ctx.stroke();
+
+      // Draw anchor point marker
+      ctx.setLineDash([]);
+      ctx.fillStyle = previewColor;
+      ctx.beginPath();
+      ctx.arc(rightAnchorX, rightAnchorY, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  };
+  drawClipPreviewLine();
 
   // PASS 4: Draw exit indicator (arrow and EXIT text)
   if (this.showEntryIndicators && gateExit && this.entryNodes.end) {

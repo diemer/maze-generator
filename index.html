@@ -469,16 +469,20 @@
     }
 
     .category-controls button {
-      padding: 4px 8px;
+      padding: 5px 10px;
       font-size: 0.8em;
-      background: #eee;
-      border: 1px solid #ccc;
-      border-radius: 3px;
+      background: #e3f2fd;
+      color: #1565c0;
+      border: 1px solid #90caf9;
+      border-radius: 4px;
       cursor: pointer;
+      font-weight: 500;
+      transition: all 0.15s ease;
     }
 
     .category-controls button:hover {
-      background: #ddd;
+      background: #bbdefb;
+      border-color: #64b5f6;
     }
 
     .custom-decoration-grid {
@@ -569,40 +573,48 @@
       font-weight: bold;
     }
 
-    /* Free-form decoration controls */
+    /* Free-form decoration controls - floating under selected decoration */
     .freeform-controls {
-      margin-top: 1em;
-      padding: 10px;
-      background: #e8f0ff;
+      position: fixed;
+      z-index: 1000;
+      padding: 8px 12px;
+      background: rgba(232, 240, 255, 0.95);
       border: 1px solid #3377ff;
-      border-radius: 4px;
+      border-radius: 6px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      pointer-events: auto;
+      transform: translateX(-50%); /* Center horizontally */
     }
 
     .freeform-controls label {
-      font-size: 0.85em;
-      margin-right: 8px;
+      font-size: 0.8em;
+      margin-right: 4px;
     }
 
     .freeform-controls input[type="range"] {
-      width: 100px;
+      width: 70px;
       vertical-align: middle;
     }
 
     .freeform-scale-value {
-      font-size: 0.85em;
+      font-size: 0.8em;
       margin-left: 4px;
+      min-width: 35px;
+      display: inline-block;
     }
 
     .freeform-zorder {
-      margin-top: 8px;
+      margin-top: 6px;
       display: flex;
-      gap: 8px;
+      gap: 6px;
+      justify-content: center;
     }
 
     .freeform-controls button {
-      padding: 4px 10px;
-      font-size: 0.8em;
+      padding: 3px 8px;
+      font-size: 0.75em;
       background: #fff;
+      color: #333;
       border: 1px solid #ccc;
       border-radius: 3px;
       cursor: pointer;
@@ -620,6 +632,40 @@
 
     .freeform-controls button.danger:hover {
       background: #ffdddd;
+    }
+
+    .freeform-controls .clip-toggle {
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      font-size: 16px;
+      line-height: 1;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .freeform-controls .clip-toggle:hover {
+      background: #f0f0f0;
+    }
+
+    .freeform-controls .clip-toggle.active {
+      background: #3377ff;
+      border-color: #2266dd;
+      color: #fff;
+    }
+
+    .freeform-controls .clip-toggle.adjusting {
+      animation: pulse-clip 0.8s ease-in-out infinite;
+    }
+
+    .freeform-controls .clip-hint {
+      font-size: 0.75em;
+      color: #3377ff;
+      margin-left: 8px;
+      font-style: italic;
     }
 
     /* Hide cursor when in free-form placement mode */
@@ -870,7 +916,6 @@
     }
 
     .hover-info {
-      min-height: 1.5em;
       padding: 0.5em;
       margin-bottom: 0.5em;
       font-size: 0.85em;
@@ -880,116 +925,169 @@
       color: #1565c0;
     }
 
-    .layer-badge {
-      display: inline-block;
-      padding: 1px 6px;
-      font-size: 0.7em;
-      font-weight: normal;
-      border-radius: 3px;
-      vertical-align: middle;
+    .hover-info:empty {
+      display: none;
     }
 
-    .layer-badge.floor {
-      background: #e8f5e9;
-      color: #2e7d32;
-      border: 1px solid #a5d6a7;
+    /* Segmented button groups */
+    .segmented-buttons {
+      display: inline-flex;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #ccc;
+      background: #f5f5f5;
     }
 
-    .layer-badge.overlay {
-      background: #fff3e0;
-      color: #e65100;
-      border: 1px solid #ffcc80;
+    .segmented-buttons button,
+    .segmented-buttons .segment {
+      padding: 6px 12px;
+      font-size: 0.85em;
+      border: none;
+      background: transparent;
+      color: #555;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border-right: 1px solid #ddd;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    /* Wall tools */
+    .segmented-buttons button:last-child,
+    .segmented-buttons .segment:last-child {
+      border-right: none;
+    }
+
+    .segmented-buttons button:hover,
+    .segmented-buttons .segment:hover {
+      background: #e8e8e8;
+    }
+
+    .segmented-buttons button.selected,
+    .segmented-buttons .segment.selected {
+      background: #1976d2;
+      color: white;
+    }
+
+    #wall-tool-add.selected {
+      background: #388e3c;
+    }
+
+    #wall-tool-remove.selected {
+      background: #d32f2f;
+    }
+
+    /* Segment with hidden radio */
+    .segmented-buttons .segment input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .segmented-buttons .segment input[type="radio"]:checked + span {
+      color: white;
+    }
+
+    .segmented-buttons .segment:has(input:checked) {
+      background: #1976d2;
+      color: white;
+    }
+
+    /* Wall tools container */
     .wall-tools {
       display: flex;
       align-items: center;
       gap: 0.75em;
       margin-bottom: 1em;
-      padding: 0.5em;
-      background: #fff;
-      border-radius: 4px;
-      border: 1px solid #ddd;
     }
 
-    .wall-tools>label {
+    .wall-tools > label {
       font-weight: 500;
       font-size: 0.9em;
       color: #333;
     }
 
-    .wall-tool-btn {
-      padding: 4px 10px;
-      font-size: 0.85em;
-      border: 1px solid #666;
-      border-radius: 3px;
-      background: #fff;
-      color: #333;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-
-    .wall-tool-btn:hover {
-      background: #e8e8e8;
-      border-color: #444;
-    }
-
-    .wall-tool-btn.selected {
-      background: #1976d2;
-      color: white;
-      border-color: #1565c0;
-    }
-
-    #wall-tool-add.selected {
-      background: #388e3c;
-      border-color: #2e7d32;
-    }
-
-    #wall-tool-remove.selected {
-      background: #d32f2f;
-      border-color: #c62828;
-    }
-
-    /* Layer toggle for decoration placement */
+    /* Layer toggle container */
     .layer-toggle {
       display: flex;
       align-items: center;
       gap: 0.75em;
       margin-bottom: 1em;
-      padding: 0.5em;
-      background: #fff;
-      border-radius: 4px;
-      border: 1px solid #ddd;
     }
 
-    .layer-toggle>label:first-child {
+    .layer-toggle > label:first-child {
       font-weight: 500;
       font-size: 0.9em;
       color: #333;
     }
 
-    .layer-option {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
+    /* Toggle switch */
+    .switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .switch .slider {
+      position: absolute;
       cursor: pointer;
-      padding: 2px 4px;
-      border-radius: 3px;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: 0.2s;
+      border-radius: 24px;
     }
 
-    .layer-option:hover {
-      background: #f0f0f0;
+    .switch .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.2s;
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
     }
 
-    .layer-option input[type="radio"] {
-      margin: 0;
+    .switch input:checked + .slider {
+      background-color: #1976d2;
     }
 
-    .layer-desc {
-      font-size: 0.75em;
-      color: #888;
+    .switch input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    .switch input:focus + .slider {
+      box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.3);
+    }
+
+    /* Placement mode toggle */
+    .placement-mode-toggle {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1em;
+    }
+
+    .switch-label {
+      display: flex;
+      align-items: center;
+      gap: 0.75em;
+      cursor: pointer;
+      font-size: 0.9em;
+      font-weight: 500;
+      color: #333;
     }
 
     #undo-decoration:disabled {
@@ -2188,27 +2286,32 @@
       </p>
       <div class="wall-tools">
         <label>Wall Tools:</label>
-        <button type="button" id="wall-tool-add" class="wall-tool-btn">
-          Add Wall
-        </button>
-        <button type="button" id="wall-tool-remove" class="wall-tool-btn">
-          Remove Wall
-        </button>
-        <button type="button" id="floor-tool-clear" class="wall-tool-btn">
-          Clear Floor
-        </button>
+        <div class="segmented-buttons">
+          <button type="button" id="wall-tool-add" class="wall-tool-btn">Add</button>
+          <button type="button" id="wall-tool-remove" class="wall-tool-btn">Remove</button>
+          <button type="button" id="floor-tool-clear" class="wall-tool-btn">Clear Floor</button>
+        </div>
       </div>
       <div class="layer-toggle">
-        <label>Place on layer:</label>
-        <label class="layer-option">
-          <input type="radio" name="decoration-layer" id="layer-floor" value="floor" checked />
-          <span class="layer-badge floor">floor</span>
-          <span class="layer-desc">(under walls)</span>
-        </label>
-        <label class="layer-option">
-          <input type="radio" name="decoration-layer" id="layer-overlay" value="overlay" />
-          <span class="layer-badge overlay">overlay</span>
-          <span class="layer-desc">(above walls)</span>
+        <label>Layer:</label>
+        <div class="segmented-buttons">
+          <label class="segment">
+            <input type="radio" name="decoration-layer" id="layer-floor" value="floor" checked />
+            <span>Floor</span>
+          </label>
+          <label class="segment">
+            <input type="radio" name="decoration-layer" id="layer-overlay" value="overlay" />
+            <span>Overlay</span>
+          </label>
+        </div>
+      </div>
+      <div class="placement-mode-toggle">
+        <label class="switch-label">
+          <span>Free placement</span>
+          <div class="switch">
+            <input type="checkbox" id="free-placement-toggle" />
+            <span class="slider"></span>
+          </div>
         </label>
       </div>
       <div class="palette-category" data-category="furniture">
@@ -2223,6 +2326,10 @@
         <h5>Hazards</h5>
         <div class="palette-items"></div>
       </div>
+      <div class="palette-category" data-category="walls">
+        <h5>Walls</h5>
+        <div class="palette-items"></div>
+      </div>
 
       <!-- Custom Decoration Library -->
       <div class="decoration-library-section">
@@ -2230,9 +2337,9 @@
 
         <!-- Upload area -->
         <div class="upload-zone" id="decoration-upload-zone">
-          <input type="file" id="decoration-file-input" accept="image/png" multiple hidden />
+          <input type="file" id="decoration-file-input" accept="image/png,image/svg+xml,image/jpeg,image/gif,image/webp" multiple hidden />
           <p>
-            Drop PNG files here or
+            Drop images here or
             <button type="button" id="browse-decorations-btn">Browse</button>
           </p>
           <div class="upload-controls">
@@ -2260,22 +2367,6 @@
         <!-- Storage indicator -->
         <div class="storage-info">
           <span id="storage-used">0 B</span> / ~5 MB used
-        </div>
-      </div>
-
-      <!-- Free-form decoration controls (shown when a free-form decoration is selected) -->
-      <div class="freeform-controls" id="freeform-controls" style="display: none">
-        <div>
-          <label>Scale:</label>
-          <input type="range" id="freeform-scale" min="0.01" max="3" step="0.01" value="1" />
-          <span class="freeform-scale-value" id="freeform-scale-value">1.0x</span>
-        </div>
-        <div class="freeform-zorder">
-          <button type="button" id="freeform-to-front">Bring to Front</button>
-          <button type="button" id="freeform-to-back">Send to Back</button>
-          <button type="button" id="freeform-delete" class="danger">
-            Delete
-          </button>
         </div>
       </div>
 
@@ -2307,6 +2398,28 @@
       <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
     </svg>
   </button>
+
+  <!-- Floating free-form decoration controls (positioned under selected decoration) -->
+  <div class="freeform-controls" id="freeform-controls" style="display: none">
+    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+      <span>
+        <label>Scale:</label>
+        <input type="range" id="freeform-scale" min="0.01" max="3" step="0.01" value="1" />
+        <span class="freeform-scale-value" id="freeform-scale-value">1.0x</span>
+      </span>
+      <span style="display: flex; align-items: center; gap: 4px;">
+        <label>Clip:</label>
+        <button type="button" id="freeform-clip-left" class="clip-toggle" title="Clip bottom-left (SW)">&#9699;</button>
+        <button type="button" id="freeform-clip-right" class="clip-toggle" title="Clip bottom-right (SE)">&#9698;</button>
+        <span id="clip-adjust-hint" class="clip-hint" style="display: none;">Move to adjust, click to confirm</span>
+      </span>
+    </div>
+    <div class="freeform-zorder">
+      <button type="button" id="freeform-to-front">Front</button>
+      <button type="button" id="freeform-to-back">Back</button>
+      <button type="button" id="freeform-delete" class="danger">Delete</button>
+    </div>
+  </div>
 
   <script type="text/javascript" src="src/globals.js"></script>
   <script type="text/javascript" src="src/utils.js"></script>
