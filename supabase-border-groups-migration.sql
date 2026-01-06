@@ -13,9 +13,13 @@ CREATE TABLE IF NOT EXISTS maze_border_groups (
     border_ids UUID[] DEFAULT '{}',
     map_ids UUID[] DEFAULT '{}',
     assignments JSONB DEFAULT '{}',
+    margin_sixteenths INTEGER DEFAULT 8, -- Margin in 1/16" increments (8 = 1/2")
     sort_order INTEGER DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Add margin column if table already exists
+ALTER TABLE maze_border_groups ADD COLUMN IF NOT EXISTS margin_sixteenths INTEGER DEFAULT 8;
 
 -- Enable RLS
 ALTER TABLE maze_border_groups ENABLE ROW LEVEL SECURITY;

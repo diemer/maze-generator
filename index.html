@@ -2065,10 +2065,11 @@
       border-radius: 12px;
       width: 90%;
       max-width: 800px;
-      max-height: 80vh;
+      max-height: 85vh;
       display: flex;
       flex-direction: column;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
     }
 
     .border-library-header {
@@ -2077,6 +2078,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-shrink: 0;
     }
 
     .border-library-header h3 {
@@ -2102,6 +2104,7 @@
       padding: 20px;
       overflow-y: auto;
       flex: 1;
+      min-height: 0;
     }
 
     .border-upload-zone {
@@ -2437,6 +2440,53 @@
       color: #dc3545;
     }
 
+    .border-group-margin {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #eee;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .border-group-margin label {
+      font-size: 0.85em;
+      color: #666;
+      white-space: nowrap;
+    }
+
+    .border-group-margin .margin-value {
+      font-weight: 600;
+      color: #333;
+    }
+
+    .group-margin-slider {
+      flex: 1;
+      height: 4px;
+      -webkit-appearance: none;
+      background: #ddd;
+      border-radius: 2px;
+      outline: none;
+    }
+
+    .group-margin-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      background: #667eea;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .group-margin-slider::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      background: #667eea;
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+    }
+
     .border-group-preview {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
@@ -2687,6 +2737,7 @@
       display: flex;
       justify-content: flex-end;
       gap: 10px;
+      flex-shrink: 0;
     }
 
     .border-library-footer button {
@@ -3853,13 +3904,6 @@
           <div class="unassigned-maps-grid" id="unassigned-maps-grid">
             <div class="unassigned-maps-empty">All maps are assigned to groups</div>
           </div>
-        </div>
-
-        <!-- Margin Slider -->
-        <div class="border-margin-section">
-          <label for="border-margin-slider">Maze Margin: <span id="border-margin-value">1/2"</span></label>
-          <input type="range" id="border-margin-slider" min="0" max="16" step="1" value="8" />
-          <div class="margin-labels"><span>0"</span><span>1"</span></div>
         </div>
 
         <!-- Preview Section -->
@@ -5222,9 +5266,6 @@
       var borderMarginSixteenths = 8; // Default 8/16 = 1/2 inch
 
       // Margin slider elements
-      var borderMarginSlider = document.getElementById("border-margin-slider");
-      var borderMarginValue = document.getElementById("border-margin-value");
-
       function formatMarginFraction(sixteenths) {
         if (sixteenths === 0) return '0"';
         if (sixteenths === 16) return '1"';
@@ -5234,17 +5275,6 @@
         var num = sixteenths / divisor;
         var den = 16 / divisor;
         return num + "/" + den + '"';
-      }
-
-      if (borderMarginSlider) {
-        borderMarginSlider.addEventListener("input", function() {
-          borderMarginSixteenths = parseInt(this.value, 10);
-          if (borderMarginValue) {
-            borderMarginValue.textContent = formatMarginFraction(borderMarginSixteenths);
-          }
-          // Update preview to show new margin
-          updatePreview();
-        });
       }
 
       // Progress modal elements
@@ -5364,7 +5394,15 @@
             var mazeCanvas = document.getElementById("maze");
             console.log("Maze canvas dimensions:", mazeCanvas.width, "x", mazeCanvas.height);
             // Calculate padding: 1/16" = 18.75px at 300 DPI
-            var marginValue = window.borderMarginSixteenths !== undefined ? window.borderMarginSixteenths : borderMarginSixteenths;
+            // Get margin from the group that contains this map
+            var marginValue = 8; // Default
+            var groups = window.borderGroups || [];
+            for (var g = 0; g < groups.length; g++) {
+              if (groups[g].mapIds && groups[g].mapIds.indexOf(mapId) !== -1) {
+                marginValue = groups[g].marginSixteenths || 8;
+                break;
+              }
+            }
             var padding = Math.round(marginValue * 18.75);
             var maxMazeWidth = PRINT_WIDTH - padding * 2;
             var maxMazeHeight = PRINT_HEIGHT - padding * 2;
@@ -5475,20 +5513,7 @@
 
           var projectId = getCurrentProjectId();
 
-          // Load margin setting
-          if (projectId && typeof SupabaseClient !== "undefined" && SupabaseClient.getBorderSettings) {
-            var settingsResult = await SupabaseClient.getBorderSettings(projectId);
-            if (!settingsResult.error && settingsResult.data) {
-              borderMarginSixteenths = settingsResult.data.margin_sixteenths || 8;
-            } else {
-              borderMarginSixteenths = 8;
-            }
-          }
-          if (borderMarginSlider) borderMarginSlider.value = borderMarginSixteenths;
-          if (borderMarginValue) borderMarginValue.textContent = formatMarginFraction(borderMarginSixteenths);
-          window.borderMarginSixteenths = borderMarginSixteenths;
-
-          // Load border groups
+          // Load border groups (margin is now per-group)
           if (projectId && typeof SupabaseClient !== "undefined" && SupabaseClient.getBorderGroups) {
             var groupsResult = await SupabaseClient.getBorderGroups(projectId);
             if (!groupsResult.error && groupsResult.data) {
@@ -5499,6 +5524,7 @@
                   borderIds: g.border_ids || [],
                   mapIds: g.map_ids || [],
                   assignments: g.assignments || {},
+                  marginSixteenths: g.margin_sixteenths || 8,
                   sortOrder: g.sort_order || 0
                 };
               });
@@ -5655,6 +5681,7 @@
           borderIds: [],
           mapIds: [],
           assignments: {},
+          marginSixteenths: 8,
           sortOrder: borderGroups.length
         };
         borderGroups.push(newGroup);
@@ -5954,8 +5981,35 @@
           mapsSection.appendChild(mapsHeader);
           mapsSection.appendChild(mapsItems);
 
+          // Margin slider for this group
+          var marginSection = document.createElement("div");
+          marginSection.className = "border-group-margin";
+          var marginLabel = document.createElement("label");
+          marginLabel.innerHTML = 'Margin: <span class="margin-value">' + formatMarginFraction(group.marginSixteenths) + '</span>';
+          var marginSlider = document.createElement("input");
+          marginSlider.type = "range";
+          marginSlider.min = "0";
+          marginSlider.max = "16";
+          marginSlider.step = "1";
+          marginSlider.value = group.marginSixteenths;
+          marginSlider.className = "group-margin-slider";
+          (function(gid, slider, label) {
+            slider.addEventListener("input", function() {
+              var grp = borderGroups.find(function(g) { return g.id === gid; });
+              if (grp) {
+                grp.marginSixteenths = parseInt(this.value, 10);
+                label.querySelector(".margin-value").textContent = formatMarginFraction(grp.marginSixteenths);
+                computeAllAssignments();
+                updatePreview();
+              }
+            });
+          })(group.id, marginSlider, marginLabel);
+          marginSection.appendChild(marginLabel);
+          marginSection.appendChild(marginSlider);
+
           content.appendChild(bordersSection);
           content.appendChild(mapsSection);
+          content.appendChild(marginSection);
 
           groupEl.appendChild(header);
           groupEl.appendChild(content);
@@ -6002,6 +6056,16 @@
         });
       }
 
+      function getMarginForMap(mapId) {
+        // Find the group that contains this map and return its margin
+        for (var i = 0; i < borderGroups.length; i++) {
+          if (borderGroups[i].mapIds.indexOf(mapId) !== -1) {
+            return borderGroups[i].marginSixteenths || 8;
+          }
+        }
+        return 8; // Default
+      }
+
       function updatePreview() {
         if (!borderPreviewGrid) return;
 
@@ -6016,13 +6080,6 @@
           return;
         }
 
-        // Calculate margin percentages
-        var marginInches = borderMarginSixteenths / 16;
-        var marginPercentH = (marginInches / 11) * 100;
-        var marginPercentV = (marginInches / 8.5) * 100;
-        var mapWidth = 100 - (marginPercentH * 2);
-        var mapHeight = 100 - (marginPercentV * 2);
-
         borderPreviewGrid.innerHTML = "";
 
         // Show previews for all assigned maps
@@ -6032,6 +6089,14 @@
           var border = bordersCache.find(function(b) { return b.id === borderId; });
 
           if (!map) return;
+
+          // Get margin for this map's group
+          var marginSixteenths = getMarginForMap(mapId);
+          var marginInches = marginSixteenths / 16;
+          var marginPercentH = (marginInches / 11) * 100;
+          var marginPercentV = (marginInches / 8.5) * 100;
+          var mapWidth = 100 - (marginPercentH * 2);
+          var mapHeight = 100 - (marginPercentV * 2);
 
           var item = document.createElement("div");
           item.className = "border-preview-item";
@@ -6101,18 +6166,11 @@
       async function applyBorderAssignments() {
         window.borderAssignments = borderAssignments;
         window.bordersCache = bordersCache;
-        window.borderMarginSixteenths = borderMarginSixteenths;
+        window.borderGroups = borderGroups;
 
         var projectId = getCurrentProjectId();
 
-        // Save margin to border settings
-        if (projectId && typeof SupabaseClient !== "undefined" && SupabaseClient.saveBorderSettings) {
-          await SupabaseClient.saveBorderSettings(projectId, {
-            margin_sixteenths: borderMarginSixteenths
-          });
-        }
-
-        // Save groups
+        // Save groups (margin is stored per-group)
         if (projectId && typeof SupabaseClient !== "undefined" && SupabaseClient.saveBorderGroups) {
           var groupsToSave = borderGroups.map(function(g) {
             return {
@@ -6120,7 +6178,8 @@
               name: g.name,
               border_ids: g.borderIds,
               map_ids: g.mapIds,
-              assignments: g.assignments
+              assignments: g.assignments,
+              marginSixteenths: g.marginSixteenths
             };
           });
           var result = await SupabaseClient.saveBorderGroups(projectId, groupsToSave);
@@ -6129,9 +6188,9 @@
           }
         }
 
-        var marginText = formatMarginFraction(borderMarginSixteenths);
         var assignmentCount = Object.keys(borderAssignments).length;
-        showToast("Border assignments saved (" + assignmentCount + " maps, " + marginText + " margin)", "success");
+        var groupCount = borderGroups.length;
+        showToast("Border assignments saved (" + assignmentCount + " maps in " + groupCount + " group" + (groupCount !== 1 ? "s" : "") + ")", "success");
         closeBorderLibrary();
       }
 

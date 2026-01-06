@@ -771,6 +771,7 @@
         border_ids: group.border_ids || group.borderIds || [],
         map_ids: group.map_ids || group.mapIds || [],
         assignments: group.assignments || {},
+        margin_sixteenths: group.margin_sixteenths || group.marginSixteenths || 8,
         sort_order: index
       };
     });
