@@ -4976,6 +4976,31 @@
         }
       })();
 
+      // Re-initialize when user signs in (handles login without page refresh)
+      if (typeof SupabaseClient !== "undefined" && SupabaseClient.onAuthStateChange) {
+        SupabaseClient.onAuthStateChange(async function(event, session) {
+          if (event === "SIGNED_IN" && session) {
+            // Reload all data after login
+            await loadProjects();
+
+            var currentProjectId = getCurrentProjectId();
+            if (!currentProjectId && projectsCache.length > 0) {
+              currentProjectId = projectsCache[0].id;
+              setCurrentProjectIdLocal(currentProjectId);
+            }
+
+            if (currentProjectId) {
+              await loadMapsForProject(currentProjectId);
+            }
+
+            await renderProjectSelector();
+            await renderProjectsList();
+            renderSavedMapsList();
+            updateMapNameInput();
+          }
+        });
+      }
+
       // Database Export/Import
       async function exportDatabase() {
         // Fetch all projects and maps from Supabase
