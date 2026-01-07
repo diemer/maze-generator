@@ -2875,6 +2875,13 @@
       width: fit-content;
     }
 
+    /* Extra bottom padding for iPad/tablet to allow panning to see full map */
+    @media (pointer: coarse) and (min-width: 768px) {
+      .maze-area {
+        padding-bottom: calc(20vh + env(safe-area-inset-bottom, 0px));
+      }
+    }
+
     /* Drawer notch tabs */
     .drawer-notch {
       position: fixed;
