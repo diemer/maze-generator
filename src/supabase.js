@@ -764,8 +764,7 @@
 
     // Insert all groups with project_id
     var groupsToInsert = groups.map(function(group, index) {
-      return {
-        id: group.id || undefined, // Let DB generate if not provided
+      var groupData = {
         project_id: projectId,
         name: group.name,
         border_ids: group.border_ids || group.borderIds || [],
@@ -774,6 +773,11 @@
         margin_sixteenths: group.margin_sixteenths || group.marginSixteenths || 8,
         sort_order: index
       };
+      // Only include id if it's a valid UUID (not a temp_ id)
+      if (group.id && !group.id.startsWith("temp_")) {
+        groupData.id = group.id;
+      }
+      return groupData;
     });
 
     return await client
