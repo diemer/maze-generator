@@ -3621,7 +3621,7 @@
         </div>
         <div class="saved-maps-header">
           <h4>Maps</h4>
-          <button type="button" id="download-all-btn" class="download-all-btn">
+          <button type="button" id="download-all-btn" class="download-all-btn" style="display: none;">
             Download All
           </button>
         </div>
@@ -5484,6 +5484,17 @@
         publishingExport.addEventListener("click", exportPublishedMap);
       }
 
+      function updateExportButtonText() {
+        if (!publishingExport) return;
+        var count = window.borderAssignments ? Object.keys(window.borderAssignments).length : 0;
+        var svg = publishingExport.querySelector("svg").outerHTML;
+        if (count > 1) {
+          publishingExport.innerHTML = svg + " Export PNGs";
+        } else {
+          publishingExport.innerHTML = svg + " Export PNG";
+        }
+      }
+
       // ============================================
       // Border Library (Group-based Assignment System)
       // ============================================
@@ -6191,6 +6202,7 @@
         var assignmentCount = Object.keys(borderAssignments).length;
         var groupCount = borderGroups.length;
         showToast("Border assignments saved (" + assignmentCount + " maps in " + groupCount + " group" + (groupCount !== 1 ? "s" : "") + ")", "success");
+        updateExportButtonText();
         closeBorderLibrary();
       }
 
