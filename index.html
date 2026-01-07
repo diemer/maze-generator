@@ -3101,11 +3101,14 @@
   <script>
     // Auth initialization - runs early to check session
     (async function() {
+      try {
+      console.log("Auth IIFE starting...");
       var overlay = document.getElementById("login-overlay");
       var emailInput = document.getElementById("login-email");
       var passwordInput = document.getElementById("login-password");
       var submitBtn = document.getElementById("login-submit");
       var errorDiv = document.getElementById("login-error");
+      console.log("Elements found:", { overlay, emailInput, passwordInput, submitBtn, errorDiv });
 
       // Wait for Supabase to be available
       function waitForSupabase() {
@@ -3129,26 +3132,13 @@
         });
       }
 
+      console.log("Waiting for Supabase...");
       await waitForSupabase();
+      console.log("Supabase available:", typeof SupabaseClient);
+      // Note: SupabaseClient.init() is called by the main script block later
 
-      // Initialize Supabase if not already done
-      if (typeof SupabaseClient !== "undefined" && SupabaseClient.init) {
-        SupabaseClient.init();
-      }
-
-      // Check for existing session
-      async function checkSession() {
-        if (typeof SupabaseClient === "undefined") {
-          console.error("Supabase not available");
-          return false;
-        }
-
-        var result = await SupabaseClient.getSession();
-        return result.data && result.data.session !== null;
-      }
-
-      // Handle login
-      async function handleLogin() {
+      // Handle login - fire and forget, onAuthStateChange handles success
+      function handleLogin() {
         var email = emailInput.value.trim();
         var password = passwordInput.value;
 
@@ -3161,37 +3151,28 @@
         submitBtn.textContent = "Signing in...";
         errorDiv.textContent = "";
 
-        try {
-          var result = await SupabaseClient.signIn(email, password);
-
+        // Fire and forget - onAuthStateChange will handle success
+        SupabaseClient.signIn(email, password).then(function(result) {
           if (result.error) {
             errorDiv.textContent = result.error.message || "Login failed";
             submitBtn.disabled = false;
             submitBtn.textContent = "Sign In";
-            return;
           }
-
-          // Success - hide overlay
-          overlay.classList.add("hidden");
-        } catch (err) {
+          // Success is handled by onAuthStateChange
+        }).catch(function(err) {
           errorDiv.textContent = "An error occurred. Please try again.";
           console.error("Login error:", err);
           submitBtn.disabled = false;
           submitBtn.textContent = "Sign In";
-        }
+        });
       }
 
-      // Check if already logged in
-      var isLoggedIn = await checkSession();
-      if (isLoggedIn) {
-        overlay.classList.add("hidden");
-      } else {
-        // Focus email input
-        emailInput.focus();
-      }
-
-      // Event listeners
-      submitBtn.addEventListener("click", handleLogin);
+      // Set up event listeners FIRST (before any async operations that might hang)
+      console.log("Setting up login event listeners, submitBtn:", submitBtn);
+      submitBtn.addEventListener("click", function() {
+        console.log("Login button clicked");
+        handleLogin();
+      });
 
       emailInput.addEventListener("keypress", function(e) {
         if (e.key === "Enter") {
@@ -3205,11 +3186,14 @@
         }
       });
 
-      // Listen for auth state changes
+      // Listen for auth state changes - this is more reliable than awaiting signIn/getSession
       if (typeof SupabaseClient !== "undefined") {
         SupabaseClient.onAuthStateChange(function(event, session) {
+          console.log("Auth state change:", event, session);
           if (event === "SIGNED_IN" && session) {
             overlay.classList.add("hidden");
+            submitBtn.disabled = false;
+            submitBtn.textContent = "Sign In";
           } else if (event === "SIGNED_OUT") {
             overlay.classList.remove("hidden");
             emailInput.value = "";
@@ -3218,8 +3202,17 @@
             submitBtn.disabled = false;
             submitBtn.textContent = "Sign In";
             emailInput.focus();
+          } else if (event === "INITIAL_SESSION" && session) {
+            // Already logged in
+            overlay.classList.add("hidden");
+          } else if (event === "INITIAL_SESSION" && !session) {
+            // Not logged in, focus email
+            emailInput.focus();
           }
         });
+      }
+      } catch (err) {
+        console.error("Auth IIFE error:", err);
       }
     })();
   </script>
@@ -4107,13 +4100,23 @@
       // Logout button
       var logoutBtn = document.getElementById("logout-btn");
       if (logoutBtn) {
-        logoutBtn.addEventListener("click", async function () {
+        logoutBtn.addEventListener("click", function () {
           if (typeof SupabaseClient !== "undefined" && SupabaseClient.signOut) {
             logoutBtn.disabled = true;
             logoutBtn.textContent = "Signing out...";
-            await SupabaseClient.signOut();
-            logoutBtn.disabled = false;
-            logoutBtn.textContent = "Sign Out";
+            // Fire and forget - onAuthStateChange handles SIGNED_OUT
+            SupabaseClient.signOut().then(function(result) {
+              if (result.error) {
+                console.error("Sign out error:", result.error);
+                logoutBtn.disabled = false;
+                logoutBtn.textContent = "Sign Out";
+              }
+              // Success handled by onAuthStateChange
+            }).catch(function(err) {
+              console.error("Sign out error:", err);
+              logoutBtn.disabled = false;
+              logoutBtn.textContent = "Sign Out";
+            });
           }
         });
       }
@@ -4929,77 +4932,83 @@
         });
       }
 
-      // Initial load of projects and maps
-      (async function initProjectsAndMaps() {
-        await loadProjects();
+      // Initial load of projects and maps - called when we have confirmed auth
+      function initProjectsAndMaps() {
+        console.log("initProjectsAndMaps called");
+        loadProjects().then(function() {
+          console.log("Initial loadProjects done, count:", projectsCache.length);
 
-        // Try to restore state from Supabase first
-        var savedState = null;
-        var savedMapId = null;
-        if (typeof SupabaseClient !== "undefined" && SupabaseClient.getUserState) {
-          var stateResult = await SupabaseClient.getUserState();
-          if (!stateResult.error && stateResult.data) {
-            savedState = stateResult.data;
+          // Try to restore state from Supabase
+          if (typeof SupabaseClient !== "undefined" && SupabaseClient.getUserState) {
+            return SupabaseClient.getUserState();
           }
-        }
+          return { data: null };
+        }).then(function(stateResult) {
+          var savedState = (!stateResult.error && stateResult.data) ? stateResult.data : null;
+          console.log("User state:", savedState);
 
-        // Determine current project
-        var currentProjectId = savedState?.current_project_id || getCurrentProjectId();
+          // Determine current project
+          var projId = (savedState && savedState.current_project_id) || getCurrentProjectId();
 
-        // If we have a saved project ID, verify it exists
-        if (currentProjectId) {
-          var projectExists = projectsCache.some(function(p) { return p.id === currentProjectId; });
-          if (!projectExists) {
-            currentProjectId = null;
+          // If we have a saved project ID, verify it exists
+          if (projId) {
+            var projectExists = projectsCache.some(function(p) { return p.id === projId; });
+            if (!projectExists) {
+              projId = null;
+            }
           }
-        }
 
-        // If no valid project, select first one if available
-        if (!currentProjectId && projectsCache.length > 0) {
-          currentProjectId = projectsCache[0].id;
-        }
-
-        if (currentProjectId) {
-          setCurrentProjectIdLocal(currentProjectId);
-          await loadMapsForProject(currentProjectId);
-          await loadBorderSettingsForProject(currentProjectId);
-        }
-
-        await renderProjectSelector();
-        await renderProjectsList();
-        renderSavedMapsList();
-        updateMapNameInput();
-
-        // Restore the map that was being edited
-        if (savedState?.current_map_id) {
-          var mapToLoad = mapsCache.find(function(m) { return m.id === savedState.current_map_id; });
-          if (mapToLoad) {
-            await loadMapAsync(savedState.current_map_id);
+          // If no valid project, select first one if available
+          if (!projId && projectsCache.length > 0) {
+            projId = projectsCache[0].id;
           }
-        }
-      })();
 
-      // Re-initialize when user signs in (handles login without page refresh)
+          if (projId) {
+            setCurrentProjectIdLocal(projId);
+            return loadMapsForProject(projId).then(function() {
+              return loadBorderSettingsForProject(projId);
+            }).then(function() {
+              return savedState;
+            });
+          }
+          return savedState;
+        }).then(function(savedState) {
+          console.log("Rendering UI after initial load...");
+          renderProjectSelector();
+          renderProjectsList();
+          renderSavedMapsList();
+          updateMapNameInput();
+
+          // Restore the map that was being edited
+          if (savedState && savedState.current_map_id) {
+            var mapToLoad = mapsCache.find(function(m) { return m.id === savedState.current_map_id; });
+            if (mapToLoad) {
+              loadMapAsync(savedState.current_map_id);
+            }
+          }
+          console.log("Initial load complete");
+        }).catch(function(err) {
+          console.error("Error in initProjectsAndMaps:", err);
+        });
+      }
+
+      // Don't auto-run - will be called from auth state handler when we have a session
+
+      // Load data when we have a valid session (initial load or new sign-in)
       if (typeof SupabaseClient !== "undefined" && SupabaseClient.onAuthStateChange) {
-        SupabaseClient.onAuthStateChange(async function(event, session) {
-          if (event === "SIGNED_IN" && session) {
-            // Reload all data after login
-            await loadProjects();
-
-            var currentProjectId = getCurrentProjectId();
-            if (!currentProjectId && projectsCache.length > 0) {
-              currentProjectId = projectsCache[0].id;
-              setCurrentProjectIdLocal(currentProjectId);
+        SupabaseClient.onAuthStateChange(function(event, session) {
+          console.log("Data loader auth state change:", event, !!session);
+          if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session) {
+            // Load data when we have a valid session
+            console.log("Loading data for event:", event);
+            initProjectsAndMaps();
+          } else if (event === "SIGNED_OUT") {
+            // Reset logout button state
+            var logoutBtn = document.getElementById("logout-btn");
+            if (logoutBtn) {
+              logoutBtn.disabled = false;
+              logoutBtn.textContent = "Sign Out";
             }
-
-            if (currentProjectId) {
-              await loadMapsForProject(currentProjectId);
-            }
-
-            await renderProjectSelector();
-            await renderProjectsList();
-            renderSavedMapsList();
-            updateMapNameInput();
           }
         });
       }
